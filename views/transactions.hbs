@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction History - Money Journal</title>
+    <link rel="stylesheet" href="/css/transaction.css">
+    <link rel="stylesheet" href="/css/transactions.css">
+</head>
+<body>
+    <div class="container-wide">
+        <div class="header">
+            <div class="user-info">
+                <span class="welcome">Welcome, <strong>{{username}}</strong></span>
+                <div class="header-actions">
+                    <a href="/transaction" class="nav-btn">➕ Add New</a>
+                    <a href="/logout" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="transactions-card">
+            <div class="card-header">
+                <h1>📊 Transaction History</h1>
+                <p>View and manage your expenses</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="monthFilter">📅 Month *</label>
+                    <input type="month" id="monthFilter" required>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="byFilter">👤 Submitted By</label>
+                    <select id="byFilter">
+                        <option value="all">All Users</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="typeFilter">🏷️ Category</label>
+                    <select id="typeFilter">
+                        <option value="all">All Categories</option>
+                        <option value="rumah">🏠 Rumah</option>
+                        <option value="kerja">💼 Kerja</option>
+                        <option value="pacaran">❤️ Pacaran</option>
+                        <option value="personal">👤 Personal</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <div class="summary-label">Total Transactions</div>
+                    <div class="summary-value" id="totalCount">0</div>
+                </div>
+                <div class="summary-card highlight">
+                    <div class="summary-label">Total Amount</div>
+                    <div class="summary-value" id="totalAmount">Rp 0</div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <table id="transactionsTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Date & Time</th>
+                            <th>Category</th>
+                            <th>By</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr class="loading-row">
+                            <td colspan="7">Loading transactions...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>🗑️ Delete Transaction</h3>
+            <p>Are you sure you want to delete this transaction?</p>
+            <p class="modal-details" id="deleteDetails"></p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-delete" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/transactions.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Money Journal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <p>Sheilla & Gilang</p>
+            <h1>Money Journal</h1>
+            <p style="margin-top: 10px; font-size: 18px; color: #333;">Create Account</p>
+        </div>
+        
+        <form method="POST" action="/auth/register">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="Choose a username" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Create a password" required>
+            </div>
+            
+            <button type="submit" class="btn-submit">Register</button>
+        </form>
+        
+        <div class="signup-link" style="margin-top: 20px; color: #666;">
+            Already have an account? <a href="/login" style="color: #7c7fd6; text-decoration: none; font-weight: 600;">Login</a>
+        </div>
+    </div>
+</body>
+</html>

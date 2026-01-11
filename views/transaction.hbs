@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Transaction - Money Journal</title>
+    <link rel="stylesheet" href="/css/transaction.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="user-info">
+                <span class="welcome">Welcome, <strong>{{username}}</strong></span>
+                <div class="header-actions">
+                    <a href="/transactions" class="nav-btn">📊 View All</a>
+                    <a href="/logout" class="logout-btn">Logout</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="transaction-card">
+            <div class="card-header">
+                <h1 id="pageTitle">💰 Add Transaction</h1>
+                <p>Track your expenses together</p>
+            </div>
+
+            <form id="transactionForm">
+                <input type="hidden" id="transactionId" name="transactionId">
+                
+                <div class="form-group">
+                    <label for="date">📅 Date & Time</label>
+                    <input type="datetime-local" id="date" name="date" required>
+                </div>
+
+                <div class="form-group">
+                    <label>🏷️ Category</label>
+                    <div class="type-grid">
+                        <input type="radio" id="rumah" name="type" value="rumah" required>
+                        <label for="rumah" class="type-card">
+                            <span class="type-emoji">🏠</span>
+                            <span class="type-label">Rumah</span>
+                        </label>
+
+                        <input type="radio" id="kerja" name="type" value="kerja" required>
+                        <label for="kerja" class="type-card">
+                            <span class="type-emoji">💼</span>
+                            <span class="type-label">Kerja</span>
+                        </label>
+
+                        <input type="radio" id="pacaran" name="type" value="pacaran" required>
+                        <label for="pacaran" class="type-card">
+                            <span class="type-emoji">❤️</span>
+                            <span class="type-label">Pacaran</span>
+                        </label>
+
+                        <input type="radio" id="personal" name="type" value="personal" required>
+                        <label for="personal" class="type-card">
+                            <span class="type-emoji">👤</span>
+                            <span class="type-label">Personal</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="ngapain">📝 Note</label>
+                    <input type="text" id="ngapain" name="ngapain" placeholder="e.g., Beli groceries, Makan siang, Bensin..." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="by">👤 Submit By</label>
+                    <input type="text" id="by" name="by" value="{{username}}" disabled>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">💵 Amount</label>
+                    <div class="amount-input">
+                        <span class="currency">Rp</span>
+                        <input type="text" id="amount" name="amount" placeholder="0" required>
+                    </div>
+                    <div class="formatted-amount" id="formatted"></div>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn">
+                    <span id="btnText">Save Transaction</span>
+                    <span class="btn-icon">→</span>
+                </button>
+            </form>
+
+            <div id="message" class="message"></div>
+        </div>
+    </div>
+
+    <script src="/js/transaction.js"></script>
+</body>
+</html>

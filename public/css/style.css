@@ -1,0 +1,118 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #7c7fd6 0%, #8e7cc3 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.login-container {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 480px;
+    padding: 50px 45px;
+    text-align: center;
+}
+
+.login-header {
+    margin-bottom: 40px;
+}
+
+.login-header p {
+    color: #999;
+    font-size: 15px;
+    margin-bottom: 10px;
+    font-weight: 400;
+}
+
+.login-header h1 {
+    color: #2d2d2d;
+    font-size: 36px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.form-group {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    color: #5a5a5a;
+    font-size: 15px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 15px 18px;
+    border: 1.5px solid #e5e5e5;
+    border-radius: 10px;
+    font-size: 15px;
+    color: #333;
+    background: #fafafa;
+    transition: all 0.3s;
+}
+
+.form-group input::placeholder {
+    color: #aaa;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #7c7fd6;
+    background: white;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: #7c7fd6;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 15px;
+    box-shadow: 0 4px 15px rgba(124, 127, 214, 0.3);
+}
+
+.btn-submit:hover {
+    background: #6b6ec5;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124, 127, 214, 0.4);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* Responsive Design for Mobile */
+@media (max-width: 480px) {
+    .login-container {
+        padding: 40px 30px;
+        border-radius: 15px;
+    }
+    
+    .login-header h1 {
+        font-size: 30px;
+    }
+    
+    .form-group input {
+        padding: 13px 15px;
+    }
+}
