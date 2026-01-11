@@ -26,6 +26,13 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
+app.get('/', (req, res) => {
+    if (req.session.user) {
+        res.redirect('/journal');
+    } else {
+        res.redirect('/login');
+    }
+});
 
 app.set('view engine', 'hbs');
 
@@ -97,16 +104,6 @@ app.post("/auth/login", async (req, res) => {
 });
 
 // Transaction page route
-// Home route - redirect to login if not authenticated
-app.get('/', (req, res) => {
-    if (req.session.user) {
-        // If logged in, go to journal page
-        res.redirect('/journal');
-    } else {
-        // If not logged in, go to login page
-        res.redirect('/login');
-    }
-});
 
 app.get("/transaction", (req, res) => {
     if (!req.session.userId) {
