@@ -25,21 +25,22 @@ body{
   color: var(--text);
 }
 
-/* Header */
+/* Make header look like a rounded card instead of a full-width bar */
 .header{
-  background: #fff;
-  border-bottom: 1px solid var(--border);
+  background: transparent;      /* remove the full-width white bar look */
+  border-bottom: 0;
+  box-shadow: none;
+  padding: 0;
 }
 
 .user-info{
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 18px;         /* <-- round it */
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  margin: 16px auto 0;         /* add spacing from top */
 }
+
 
 .welcome{
   font-size: 14px;
