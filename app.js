@@ -97,6 +97,17 @@ app.post("/auth/login", async (req, res) => {
 });
 
 // Transaction page route
+// Home route - redirect to login if not authenticated
+app.get('/', (req, res) => {
+    if (req.session.user) {
+        // If logged in, go to journal page
+        res.redirect('/journal');
+    } else {
+        // If not logged in, go to login page
+        res.redirect('/login');
+    }
+});
+
 app.get("/transaction", (req, res) => {
     if (!req.session.userId) {
         return res.redirect('/login');
