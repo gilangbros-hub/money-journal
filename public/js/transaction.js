@@ -98,10 +98,39 @@ document.getElementById('transactionForm').addEventListener('submit', async func
         
         const result = await response.json();
         const messageDiv = document.getElementById('message');
-        
+        let toastTimer;
+
+function showToast(text, type = 'success', duration = 2500) {
+  const messageDiv = document.getElementById('message');
+
+  if (!messageDiv) return;
+
+  // reset
+  clearTimeout(toastTimer);
+  messageDiv.className = 'message'; // keep base class if you want
+  messageDiv.classList.add(type);
+  messageDiv.textContent = text;
+
+  // show
+  messageDiv.classList.add('toast-show');
+
+  // auto hide
+  toastTimer = setTimeout(() => {
+    messageDiv.classList.remove('toast-show');
+  }, duration);
+}
+
         if (response.ok && result.success) {
-            messageDiv.className = 'message success';
-            messageDiv.textContent = '✓ ' + result.message;
+            if (response.ok && result.success) {
+  showToast('✓ ' + result.message, 'success', 2500);
+
+  setTimeout(() => {
+    window.location.href = '/transactions';
+  }, 2500);
+} else {
+  showToast('✗ ' + (result.message || 'Error saving transaction'), 'error', 3500);
+}
+
             
             // Redirect to transactions page after short delay
             setTimeout(() => {
@@ -109,13 +138,28 @@ document.getElementById('transactionForm').addEventListener('submit', async func
             }, 1500);
             
         } else {
-            messageDiv.className = 'message error';
-            messageDiv.textContent = '✗ ' + (result.message || 'Error saving transaction');
+            if (response.ok && result.success) {
+  showToast('✓ ' + result.message, 'success', 2500);
+
+  setTimeout(() => {
+    window.location.href = '/transactions';
+  }, 2500);
+} else {
+  showToast('✗ ' + (result.message || 'Error saving transaction'), 'error', 3500);
+}
+
         }
     } catch (error) {
         console.error('Error:', error);
         const messageDiv = document.getElementById('message');
-        messageDiv.className = 'message error';
-        messageDiv.textContent = '✗ Error saving transaction. Please try again.';
+        if (response.ok && result.success) {
+  showToast('✓ ' + result.message, 'success', 2500);
+
+  setTimeout(() => {
+    window.location.href = '/transactions';
+  }, 2500);
+} else {
+  showToast('✗ ' + (result.message || 'Error saving transaction'), 'error', 3500);
+}
     }
 });
