@@ -186,24 +186,48 @@ input[type="radio"]:checked + .type-card{
 .type-label{ font-weight: 800; color: #0F172A; font-size: 13px; }
 
 /* Amount */
-.amount-input{ position: relative; }
-.amount-input .currency{
+/* Amount input fix */
+.amount-input {
+  position: relative;
+  width: 100%;
+}
+
+.amount-input .currency {
   position: absolute;
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--muted);
-  font-weight: 800;
-  font-size: 13px;
+  color: #6B7280;
+  font-weight: 700;
+  font-size: 14px;
+  pointer-events: none; /* prevent blocking input */
+  z-index: 1;
 }
-.amount-input input{ padding-left: 48px; }
 
-.formatted-amount{
-  margin-top: 8px;
-  min-height: 22px;
-  font-weight: 900;
+.amount-input input {
+  width: 100%;
+  padding: 14px 14px 14px 48px; /* space for "Rp" */
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fff;
+  font-size: 16px;
+  outline: none;
+  transition: box-shadow .15s, border-color .15s;
+}
+
+.amount-input input:focus {
+  border-color: rgba(79,70,229,.6);
+  box-shadow: 0 0 0 4px rgba(79,70,229,.12);
+}
+
+.formatted-amount {
+  margin-top: 10px;
+  min-height: 28px;
+  font-weight: 800;
+  font-size: 20px;
   color: var(--primary);
 }
+
 
 /* Submit */
 .submit-btn{
