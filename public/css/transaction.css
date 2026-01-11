@@ -418,3 +418,10 @@ select, textarea {
     font-size: 32px;
   }
 }
+
+/* Kill any lingering Rp prefix */
+.currency,
+.amount-input .currency,
+span.currency {
+  display: none !important;
+}
