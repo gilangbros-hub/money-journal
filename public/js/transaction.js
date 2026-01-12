@@ -120,9 +120,31 @@ function showToast(text, type = 'success', duration = 2500) {
   }, duration);
 }
 
-        if (response.ok && result.success) {
-            if (response.ok && result.success) {
-  showToast('✓ ' + result.message, 'success', 2500);
+if (response.ok && result.success) {
+    showToast('✓ ' + result.message, 'success', 2500);
+    
+    // Get form values
+    const by = document.getElementById('by').value;
+    const ngapain = document.getElementById('ngapain').value || document.querySelector('textarea[name="ngapain"]').value;
+    const amount = document.getElementById('amount').value;
+    
+    // Format amount with thousand separator
+    const formattedAmount = parseInt(amount).toLocaleString('id-ID');
+    
+    // WhatsApp message
+    const waMessage = `Ada transaksi baru nih! ${by} abis ${ngapain} sebanyak Rp${formattedAmount}!`;
+    
+    // Your WhatsApp number (WITHOUT + sign)
+    const waPhone = '6281220001281'; // ← CHANGE THIS TO YOUR NUMBER
+    
+    // Open WhatsApp in new tab
+    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
+    
+    // Redirect to transactions page after 2.5 seconds
+    setTimeout(() => {
+        window.location.href = '/transactions';
+    }, 2500);
+}
 
   setTimeout(() => {
     window.location.href = '/transactions';
