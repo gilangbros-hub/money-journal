@@ -81,11 +81,14 @@ body {
 
 .md-text-field input,
 .md-text-field select {
+    width: 100%;
     border-radius: 12px;
     border: 1.5px solid #E5E7EB;
     height: 54px;
     font-size: 16px;
     background: #F9FAFB;
+    padding: 0 16px;
+    box-sizing: border-box;
 }
 
 .md-text-field label {
