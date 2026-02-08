@@ -44,6 +44,9 @@ app.use(express.static('public'));
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 
+// Trust proxy (required for Render/Heroku secure cookies)
+app.set('trust proxy', 1);
+
 app.use(session({
     secret: process.env.SESSION_SECRET || 'moneyjournal-secret-key',
     resave: false,
