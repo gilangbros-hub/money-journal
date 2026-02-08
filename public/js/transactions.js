@@ -40,10 +40,16 @@ function updateDashboardUI() {
     // 1. Render Total
     document.getElementById('totalAmount').textContent = dashboardData.total.formatted;
 
-    // 2. Render Categories
+    // 2. Render Monthly Comparison
+    renderComparison(dashboardData.comparison);
+
+    // 3. Render Budget Alerts
+    renderBudgetAlerts(dashboardData.budgetAlerts);
+
+    // 4. Render Categories
     renderCategoryList();
 
-    // 3. Render Recent History (Default view)
+    // 5. Render Recent History (Default view)
     renderTransactionList(dashboardData.recent, false);
 
     // Reset Header
@@ -54,6 +60,46 @@ function updateDashboardUI() {
             header.nextElementSibling.style.display = 'block'; // Show Export button
         }
     }
+}
+
+function renderComparison(comparison) {
+    const card = document.getElementById('comparisonCard');
+    const icon = document.getElementById('comparisonIcon');
+    const value = document.getElementById('comparisonValue');
+
+    if (!comparison || !comparison.hasLastMonth) {
+        card.style.display = 'none';
+        return;
+    }
+
+    card.style.display = 'flex';
+
+    if (comparison.increased) {
+        icon.textContent = '📈';
+        value.textContent = `▲ +${comparison.difference} (${comparison.percentChange}% more)`;
+        value.className = 'comparison-value increased';
+    } else {
+        icon.textContent = '📉';
+        value.textContent = `▼ -${comparison.difference} (${comparison.percentChange}% less)`;
+        value.className = 'comparison-value decreased';
+    }
+}
+
+function renderBudgetAlerts(alerts) {
+    const container = document.getElementById('budgetAlerts');
+
+    if (!alerts || alerts.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    container.innerHTML = alerts.map(alert => `
+        <div class="alert-item ${alert.status}">
+            <span class="alert-icon">${alert.status === 'danger' ? '🔴' : '⚠️'}</span>
+            <span class="alert-text">${alert.pocket}: ${alert.spent} / ${alert.budget}</span>
+            <span class="alert-percentage">${alert.percentage}%</span>
+        </div>
+    `).join('');
 }
 
 function renderCategoryList() {

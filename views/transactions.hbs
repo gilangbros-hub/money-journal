@@ -30,7 +30,20 @@
             <input type="month" id="monthFilter" class="month-selector">
             <div class="total-spent-label">Total Expenses</div>
             <h1 class="total-spent-amount" id="totalAmount">Rp 0</h1>
-            <!-- Optional: Add a small progress bar or target here later -->
+        </div>
+
+        <!-- Monthly Comparison Card -->
+        <div id="comparisonCard" class="comparison-card" style="display: none;">
+            <div class="comparison-icon" id="comparisonIcon">📊</div>
+            <div class="comparison-text">
+                <span class="comparison-label">vs Last Month</span>
+                <span class="comparison-value" id="comparisonValue">-</span>
+            </div>
+        </div>
+
+        <!-- Budget Alerts -->
+        <div id="budgetAlerts" class="budget-alerts">
+            <!-- Injected by JS -->
         </div>
 
         <!-- Categories Section -->

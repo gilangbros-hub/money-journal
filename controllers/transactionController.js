@@ -147,32 +147,99 @@ exports.getSubmitters = async (req, res) => {
 exports.getDashboardSummary = async (req, res) => {
     try {
         const { month } = req.query; // Format: YYYY-MM
-        const userId = req.session.userId;
+        const PocketBudget = require('../models/pocketBudget');
 
-        let startDate, endDate;
+        let currentYear, currentMonth;
         if (month) {
-            const [year, monthNum] = month.split('-');
-            startDate = new Date(year, monthNum - 1, 1);
-            endDate = new Date(year, monthNum, 0, 23, 59, 59);
+            [currentYear, currentMonth] = month.split('-').map(Number);
         } else {
             const now = new Date();
-            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            currentYear = now.getFullYear();
+            currentMonth = now.getMonth() + 1;
         }
 
-        const filter = {
-            date: { $gte: startDate, $lte: endDate }
-        };
+        // Current month date range
+        const startDate = new Date(currentYear, currentMonth - 1, 1);
+        const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+
+        // Last month date range
+        let lastMonthYear = currentYear;
+        let lastMonth = currentMonth - 1;
+        if (lastMonth === 0) {
+            lastMonth = 12;
+            lastMonthYear--;
+        }
+        const lastMonthStart = new Date(lastMonthYear, lastMonth - 1, 1);
+        const lastMonthEnd = new Date(lastMonthYear, lastMonth, 0, 23, 59, 59);
+
+        const filter = { date: { $gte: startDate, $lte: endDate } };
+        const lastMonthFilter = { date: { $gte: lastMonthStart, $lte: lastMonthEnd } };
 
         // Parallel Execution
-        const [transactions, recentTransactions] = await Promise.all([
-            Transaction.find(filter).sort({ date: -1 }), // For calculations
-            Transaction.find(filter).sort({ date: -1 }).limit(5).populate('by', 'username') // For display
+        const [transactions, recentTransactions, lastMonthTransactions, budgets] = await Promise.all([
+            Transaction.find(filter).sort({ date: -1 }),
+            Transaction.find(filter).sort({ date: -1 }).limit(5).populate('by', 'username'),
+            Transaction.find(lastMonthFilter),
+            PocketBudget.find({ month: currentMonth, year: currentYear })
         ]);
 
         const totalExpenses = calculateTotalExpenses(transactions);
         const categoryBreakdown = getCategoryBreakdown(transactions);
         const roleBreakdown = getRoleBreakdown(transactions);
+
+        // Calculate last month total
+        const lastMonthTotal = lastMonthTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+        // Monthly comparison
+        const difference = totalExpenses.raw - lastMonthTotal;
+        const percentChange = lastMonthTotal > 0
+            ? Math.round((difference / lastMonthTotal) * 100)
+            : (totalExpenses.raw > 0 ? 100 : 0);
+
+        const comparison = {
+            lastMonth: formatCurrency(lastMonthTotal),
+            difference: formatCurrency(Math.abs(difference)),
+            percentChange: Math.abs(percentChange),
+            increased: difference > 0,
+            hasLastMonth: lastMonthTotal > 0
+        };
+
+        // Calculate spending per pocket for budget alerts
+        const pocketSpending = {};
+        transactions.forEach(t => {
+            pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
+        });
+
+        // Generate budget alerts
+        const budgetAlerts = [];
+        budgets.forEach(b => {
+            const spent = pocketSpending[b.pocket] || 0;
+            if (b.budget > 0) {
+                const percentage = Math.round((spent / b.budget) * 100);
+                if (percentage >= 100) {
+                    budgetAlerts.push({
+                        pocket: b.pocket,
+                        status: 'danger',
+                        percentage,
+                        spent: formatCurrency(spent),
+                        budget: formatCurrency(b.budget),
+                        message: `${b.pocket}: ${percentage}% over budget!`
+                    });
+                } else if (percentage >= 80) {
+                    budgetAlerts.push({
+                        pocket: b.pocket,
+                        status: 'warning',
+                        percentage,
+                        spent: formatCurrency(spent),
+                        budget: formatCurrency(b.budget),
+                        message: `${b.pocket}: ${percentage}% used`
+                    });
+                }
+            }
+        });
+
+        // Sort alerts: danger first, then warning
+        budgetAlerts.sort((a, b) => (b.status === 'danger' ? 1 : 0) - (a.status === 'danger' ? 1 : 0));
 
         // Format Recent Transactions
         const formattedRecent = recentTransactions.map(t => ({
@@ -193,7 +260,9 @@ exports.getDashboardSummary = async (req, res) => {
                 total: totalExpenses,
                 categories: categoryBreakdown,
                 roles: roleBreakdown,
-                recent: formattedRecent
+                recent: formattedRecent,
+                comparison,
+                budgetAlerts
             }
         });
 

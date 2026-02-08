@@ -231,3 +231,84 @@ body {
     font-weight: 700;
     font-size: 14px;
 }
+
+/* Monthly Comparison Card */
+.comparison-card {
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.comparison-icon {
+    font-size: 32px;
+}
+
+.comparison-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.comparison-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+
+.comparison-value {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.comparison-value.increased {
+    color: #EF4444;
+}
+
+.comparison-value.decreased {
+    color: #10B981;
+}
+
+/* Budget Alerts */
+.budget-alerts {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.alert-item {
+    padding: 14px 16px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.alert-item.warning {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.alert-item.danger {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+.alert-icon {
+    font-size: 18px;
+}
+
+.alert-text {
+    flex: 1;
+}
+
+.alert-percentage {
+    font-size: 13px;
+    font-weight: 700;
+}
