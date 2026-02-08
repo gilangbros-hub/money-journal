@@ -15,10 +15,18 @@ dotenv.config({ path: './.env' });
 // Connect to database
 connectDB();
 
+const path = require('path');
+
+// ... 
+
 const app = express();
 
+// View Engine Setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'hbs');
+
 // Register partials
-hbs.registerPartials(__dirname + '/views/partials');
+hbs.registerPartials(path.join(__dirname, 'views/partials'));
 
 // Register Helpers
 hbs.registerHelper('split', function (string) {
@@ -41,7 +49,7 @@ hbs.registerHelper('eq', function (a, b) {
     return a === b;
 });
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
