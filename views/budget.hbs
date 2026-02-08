@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{> head}}
+    <title>Pocket Budget</title>
+    <link rel="stylesheet" href="/css/budget.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <header class="budget-header">
+            <h1 class="page-title">💰 Pocket Budget</h1>
+            <div class="user-info" onclick="toggleMenu()">
+                <span class="username">{{username}}</span>
+                <span class="avatar">{{avatar}}</span>
+            </div>
+            <div id="userMenu" class="user-menu">
+                <a href="/profile">Edit Profile</a>
+                <a href="/logout" class="logout">Logout</a>
+            </div>
+        </header>
+
+        <!-- Month Selector -->
+        <div class="month-selector">
+            <button class="month-nav" id="prevMonth">
+                <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+            <div class="current-month" id="currentMonth">Februari 2026</div>
+            <button class="month-nav" id="nextMonth">
+                <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+        </div>
+
+        <!-- Role Notice -->
+        {{#unless canEdit}}
+        <div class="role-notice">
+            <span>👁️</span> View-only mode. Only Wife can edit budgets.
+        </div>
+        {{/unless}}
+
+        <!-- Budget List -->
+        <div class="budget-list" id="budgetList">
+            <p class="loading">Loading budgets...</p>
+        </div>
+
+        <!-- Total Card -->
+        <div class="total-card">
+            <span class="total-label">Total Budget</span>
+            <span class="total-amount" id="totalBudget">Rp 0</span>
+        </div>
+
+        <!-- History Button -->
+        <button class="history-btn" onclick="showHistory()">
+            <span class="material-symbols-outlined">history</span>
+            View History
+        </button>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>Edit Budget</h3>
+            <div class="modal-pocket" id="modalPocket">💰 Pocket Name</div>
+            <div class="amount-input-wrapper">
+                <span class="currency-prefix">Rp</span>
+                <input type="number" id="budgetInput" placeholder="0" min="0">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-save" onclick="saveBudget()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content history-content">
+            <h3>Budget History</h3>
+            <div id="historyList" class="history-list">
+                <p class="loading">Loading...</p>
+            </div>
+            <button class="btn-close" onclick="closeHistoryModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- Hidden Data -->
+    <input type="hidden" id="canEdit" value="{{canEdit}}">
+    <input type="hidden" id="userRole" value="{{role}}">
+
+    <div id="message"></div>
+
+    {{> navbar}}
+
+    <script src="/js/common.js"></script>
+    <script src="/js/budget.js"></script>
+</body>
+
+</html>

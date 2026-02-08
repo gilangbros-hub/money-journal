@@ -1,0 +1,367 @@
+/* Budget Page Styles */
+body {
+    background-color: #F8FAFC;
+    padding-bottom: 80px;
+}
+
+.main-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 16px 20px;
+}
+
+/* Header */
+.budget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+.page-title {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0;
+    color: #1F2937;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.username {
+    font-size: 14px;
+    font-weight: 600;
+    color: #6B7280;
+}
+
+.avatar {
+    font-size: 28px;
+}
+
+.user-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 45px;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 140px;
+    z-index: 1000;
+}
+
+.user-menu a {
+    display: block;
+    padding: 10px 12px;
+    text-decoration: none;
+    color: #374151;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+.user-menu a:hover {
+    background: #F3F4F6;
+}
+
+.user-menu a.logout {
+    color: #EF4444;
+}
+
+/* Month Selector */
+.month-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    background: white;
+    padding: 12px;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.month-nav {
+    background: #F3F4F6;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.month-nav:hover {
+    background: #E5E7EB;
+}
+
+.current-month {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1F2937;
+    min-width: 160px;
+    text-align: center;
+}
+
+/* Role Notice */
+.role-notice {
+    background: #FEF3C7;
+    color: #92400E;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Budget List */
+.budget-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.budget-item {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.budget-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.budget-item.readonly {
+    cursor: default;
+}
+
+.budget-item.readonly:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pocket-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pocket-icon {
+    font-size: 28px;
+}
+
+.pocket-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.budget-amount {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--md-sys-color-primary, #4F46E5);
+}
+
+.budget-amount.zero {
+    color: #9CA3AF;
+}
+
+/* Total Card */
+.total-card {
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    padding: 20px;
+    border-radius: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.total-label {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.total-amount {
+    color: white;
+    font-size: 24px;
+    font-weight: 800;
+}
+
+/* History Button */
+.history-btn {
+    width: 100%;
+    background: white;
+    border: 1px solid #E5E7EB;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #6B7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.history-btn:hover {
+    background: #F9FAFB;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    padding: 24px;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+}
+
+.modal-content h3 {
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    color: #1F2937;
+}
+
+.modal-pocket {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+    color: #374151;
+}
+
+.amount-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: #F3F4F6;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+}
+
+.currency-prefix {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--md-sys-color-primary, #4F46E5);
+    margin-right: 8px;
+}
+
+#budgetInput {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--md-sys-color-primary, #4F46E5);
+    width: 100%;
+    outline: none;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-cancel,
+.btn-save,
+.btn-close {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-cancel {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+.btn-save {
+    background: var(--md-sys-color-primary, #4F46E5);
+    color: white;
+}
+
+.btn-close {
+    background: #F3F4F6;
+    color: #374151;
+    margin-top: 16px;
+}
+
+/* History Modal */
+.history-content {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.history-list {
+    text-align: left;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 14px;
+    border-bottom: 1px solid #F3F4F6;
+    cursor: pointer;
+}
+
+.history-item:hover {
+    background: #F9FAFB;
+}
+
+.history-month {
+    font-weight: 600;
+    color: #374151;
+}
+
+.history-total {
+    font-weight: 700;
+    color: var(--md-sys-color-primary, #4F46E5);
+}
+
+.loading {
+    text-align: center;
+    color: #9CA3AF;
+    padding: 20px;
+}

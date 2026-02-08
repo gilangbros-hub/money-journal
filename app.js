@@ -9,6 +9,7 @@ const connectDB = require('./database');
 // Routes
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
+const budgetRoutes = require('./routes/budget');
 
 dotenv.config({ path: './.env' });
 
@@ -86,6 +87,7 @@ app.get('/', (req, res) => {
 // Use Routes
 app.use(authRoutes);
 app.use(transactionRoutes);
+app.use(budgetRoutes);
 
 const PORT = process.env.PORT || 5000;
 
