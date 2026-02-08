@@ -355,26 +355,29 @@ body {
   background-color: #333;
   color: #fff;
   text-align: center;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 16px;
   position: fixed;
-  z-index: 1;
+  z-index: 9999;
   left: 50%;
   bottom: 30px;
   transform: translateX(-50%);
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 0;
+  transition: opacity 0.3s, bottom 0.3s;
 }
 
 #message.show {
   visibility: visible;
-  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+  opacity: 1;
+  bottom: 50px;
 }
 
-@keyframes fadein {
-  from {bottom: 0; opacity: 0;}
-  to {bottom: 30px; opacity: 1;}
+#message.success {
+  background-color: #065F46; /* Green */
 }
 
-@keyframes fadeout {
-  from {bottom: 30px; opacity: 1;}
-  to {bottom: 0; opacity: 0;}
+#message.error {
+  background-color: #991B1B; /* Red */
 }

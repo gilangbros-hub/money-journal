@@ -1,16 +1,32 @@
-// Check if editing mode (URL has transactionId parameter)
+// Helper: Toast Message
+let toastTimer;
+function showToast(text, type = 'success', duration = 2500) {
+    const messageDiv = document.getElementById('message');
+    if (!messageDiv) return;
+
+    clearTimeout(toastTimer);
+    messageDiv.className = ''; // Reset classes
+    messageDiv.classList.add(type === 'success' ? 'success' : 'error');
+    messageDiv.innerText = text;
+    messageDiv.classList.add('show');
+
+    toastTimer = setTimeout(() => {
+        messageDiv.classList.remove('show');
+    }, duration);
+}
+
+// Check if editing mode (URL has edit parameter)
 const urlParams = new URLSearchParams(window.location.search);
 const editId = urlParams.get('edit');
 
-// Set today's date as default
 document.addEventListener('DOMContentLoaded', function() {
-    const dateInput = document.getElementById('date');
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    dateInput.value = now.toISOString().slice(0, 16);
-    
-    // If edit mode, load transaction data
-    if (editId) {
+    // Set default date if not editing
+    if (!editId) {
+        const dateInput = document.getElementById('date');
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        dateInput.value = now.toISOString().slice(0, 16);
+    } else {
         loadTransactionForEdit(editId);
     }
 });
@@ -21,56 +37,56 @@ async function loadTransactionForEdit(id) {
         const response = await fetch(`/api/transaction/${id}`);
         const transaction = await response.json();
         
-        // Update page title
-        document.getElementById('pageTitle').textContent = '✏️ Edit Transaction';
-        document.getElementById('btnText').textContent = 'Update Transaction';
-        
-        // Fill form
+        // Update UI for Edit Mode
+        document.querySelector('.app-bar-title').textContent = 'Edit Transaction';
+        document.getElementById('submitBtn').innerHTML = 'Update Transaction';
         document.getElementById('transactionId').value = transaction._id;
         
+        // Date
         const date = new Date(transaction.date);
         date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
         document.getElementById('date').value = date.toISOString().slice(0, 16);
         
-        document.querySelector(`input[name="type"][value="${transaction.type}"]`).checked = true;
+        // Radio Buttons (Type & Pocket)
+        if (transaction.type) {
+            const typeRadio = document.querySelector(`input[name="type"][value="${transaction.type}"]`);
+            if (typeRadio) typeRadio.checked = true;
+        }
+        if (transaction.pocket) {
+            const pocketRadio = document.querySelector(`input[name="pocket"][value="${transaction.pocket}"]`);
+            if (pocketRadio) pocketRadio.checked = true;
+        }
+
+        // Text Fields
         document.getElementById('ngapain').value = transaction.ngapain;
         document.getElementById('amount').value = transaction.amount;
         
-        // Trigger amount formatting
-        const formatted = new Intl.NumberFormat('id-ID').format(transaction.amount);
-        document.getElementById('formatted').textContent = `Rp ${formatted}`;
-        
     } catch (error) {
         console.error('Error loading transaction:', error);
-        alert('Error loading transaction data');
+        showToast('Error loading transaction data', 'error');
     }
 }
-
-// Format amount with thousand separators
-const amountInput = document.getElementById('amount');
-const formattedDiv = document.getElementById('formatted');
-
-amountInput.addEventListener('input', function(e) {
-    let value = e.target.value.replace(/[^0-9]/g, '');
-    e.target.value = value;
-    
-    if (value && value !== '0') {
-        const formatted = new Intl.NumberFormat('id-ID').format(value);
-        formattedDiv.textContent = `Rp ${formatted}`;
-    } else {
-        formattedDiv.textContent = '';
-    }
-});
 
 // Handle form submission
 document.getElementById('transactionForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const amountValue = document.getElementById('amount').value;
-    if (!amountValue || amountValue === '0') {
-        const messageDiv = document.getElementById('message');
-        messageDiv.className = 'message error';
-        messageDiv.textContent = '✗ Amount must be greater than 0';
+    if (!amountValue || amountValue <= 0) {
+        showToast('Amount must be greater than 0', 'error');
+        return;
+    }
+
+    // Validate Radios
+    const typeChecked = document.querySelector('input[name="type"]:checked');
+    const pocketChecked = document.querySelector('input[name="pocket"]:checked');
+
+    if (!typeChecked) {
+        showToast('Please select an Expense Type', 'error');
+        return;
+    }
+    if (!pocketChecked) {
+        showToast('Please select a Pocket Source', 'error');
         return;
     }
     
@@ -79,7 +95,8 @@ document.getElementById('transactionForm').addEventListener('submit', async func
     
     const formData = {
         date: document.getElementById('date').value,
-        type: document.querySelector('input[name="type"]:checked').value,
+        type: typeChecked.value,
+        pocket: pocketChecked.value,
         ngapain: document.getElementById('ngapain').value,
         amount: amountValue
     };
@@ -90,98 +107,33 @@ document.getElementById('transactionForm').addEventListener('submit', async func
         
         const response = await fetch(url, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData)
         });
         
         const result = await response.json();
-        const messageDiv = document.getElementById('message');
-        let toastTimer;
-
-function showToast(text, type = 'success', duration = 2500) {
-  const messageDiv = document.getElementById('message');
-
-  if (!messageDiv) return;
-
-  // reset
-  clearTimeout(toastTimer);
-  messageDiv.className = 'message'; // keep base class if you want
-  messageDiv.classList.add(type);
-  messageDiv.textContent = text;
-
-  // show
-  messageDiv.classList.add('toast-show');
-
-  // auto hide
-  toastTimer = setTimeout(() => {
-    messageDiv.classList.remove('toast-show');
-  }, duration);
-}
-
-if (response.ok && result.success) {
-    showToast('✓ ' + result.message, 'success', 2500);
-    
-    // Get form values
-    const by = document.getElementById('by').value;
-    const ngapain = document.getElementById('ngapain').value || document.querySelector('textarea[name="ngapain"]').value;
-    const amount = document.getElementById('amount').value;
-    
-    // Format amount with thousand separator
-    const formattedAmount = parseInt(amount).toLocaleString('id-ID');
-    
-    // WhatsApp message
-    const waMessage = `Ada transaksi baru nih! ${by} abis ${ngapain} sebanyak Rp${formattedAmount}!`;
-    
-    // Your WhatsApp number (WITHOUT + sign)
-    const waPhone = '6281220001281'; // ← CHANGE THIS TO YOUR NUMBER
-    
-    // Open WhatsApp in new tab
-    window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
-    
-    // Redirect to transactions page after 2.5 seconds
-    setTimeout(() => {
-        window.location.href = '/transactions';
-    }, 2500);
-}
-
-  setTimeout(() => {
-    window.location.href = '/transactions';
-  }, 2500);
-} else {
-  showToast('✗ ' + (result.message || 'Error saving transaction'), 'error', 3500);
-}
-
+        
+        if (response.ok && result.success) {
+            showToast(result.message, 'success');
             
-            // Redirect to transactions page after short delay
+            // Only send WhatsApp on new transactions (optional, keeping your logic)
+            if (!isEdit) {
+                 // WhatsApp Logic
+                 const formattedAmount = parseInt(amountValue).toLocaleString('id-ID');
+                 const waMessage = `*New Transaction*\nType: ${formData.type}\nPocket: ${formData.pocket}\nNote: ${formData.ngapain}\nAmount: Rp ${formattedAmount}`;
+                 // const waPhone = '6281220001281'; 
+                 // window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}`, '_blank');
+            }
+
             setTimeout(() => {
                 window.location.href = '/transactions';
-            }, 1500);
-            
+            }, 1000);
         } else {
-            if (response.ok && result.success) {
-  showToast('✓ ' + result.message, 'success', 2500);
-
-  setTimeout(() => {
-    window.location.href = '/transactions';
-  }, 2500);
-} else {
-  showToast('✗ ' + (result.message || 'Error saving transaction'), 'error', 3500);
-}
-
+            showToast(result.message || 'Error saving transaction', 'error');
         }
+
     } catch (error) {
         console.error('Error:', error);
-        const messageDiv = document.getElementById('message');
-        if (response.ok && result.success) {
-  showToast('✓ ' + result.message, 'success', 2500);
-
-  setTimeout(() => {
-    window.location.href = '/transactions';
-  }, 2500);
-} else {
-  showToast('✗ ' + (result.message || 'Error saving transaction'), 'error', 3500);
-}
+        showToast('Network error occurred', 'error');
     }
 });

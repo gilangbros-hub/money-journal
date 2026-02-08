@@ -2,95 +2,205 @@
 <html lang="en">
 <head>
     {{> head}}
-    <title>Money Journal - Add Transaction</title>
+    <title>Add Transaction</title>
+    <style>
+        /* Modern Compact Styles */
+        body { background-color: #ffffff; }
+        
+        /* Grid for option buttons */
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Adaptive columns */
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        /* Hidden radio logic */
+        .option-input { display: none; }
+
+        /* Icon Button Style */
+        .icon-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 4px;
+            background: #F3F4F6;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 100%;
+            min-height: 70px;
+        }
+
+        .icon-btn:active { transform: scale(0.96); }
+
+        .emoji-icon { font-size: 24px; margin-bottom: 4px; line-height: 1; }
+        .label-text { 
+            font-size: 11px; 
+            font-weight: 500; 
+            text-align: center; 
+            line-height: 1.2;
+            color: #4B5563;
+        }
+
+        /* Selected State */
+        .option-input:checked + .icon-btn {
+            background-color: #EEF2FF;
+            border-color: var(--md-sys-color-primary);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06);
+        }
+        
+        .option-input:checked + .icon-btn .label-text {
+            color: var(--md-sys-color-primary);
+            font-weight: 700;
+        }
+
+        /* Section Headers */
+        .section-label {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #9CA3AF;
+            margin-bottom: 8px;
+            margin-top: 16px;
+        }
+        .section-label:first-child { margin-top: 0; }
+
+        /* Floating Input Style Overrides for Compactness */
+        .compact-field {
+            margin-bottom: 12px;
+        }
+        .compact-field .md-text-field input {
+            padding: 12px 16px;
+            height: 48px; /* Shorter height */
+        }
+        .compact-field .md-text-field label {
+            top: 12px;
+        }
+        .compact-field .md-text-field input:focus ~ label,
+        .compact-field .md-text-field input:not(:placeholder-shown) ~ label {
+            top: -8px;
+        }
+
+        /* Amount Field Special Styling */
+        .amount-wrapper {
+            position: relative;
+            margin-bottom: 12px;
+        }
+        .amount-prefix {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 700;
+            color: var(--md-sys-color-primary);
+            font-size: 18px;
+            pointer-events: none;
+        }
+        .amount-input-styled {
+            padding-left: 48px !important; 
+            font-size: 20px !important;
+            font-weight: 700;
+            color: var(--md-sys-color-primary) !important;
+        }
+        
+        /* Sticky Footer for Mobile */
+        .sticky-footer {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            padding: 12px 16px;
+            border-top: 1px solid #E5E7EB;
+            margin: 0 -16px -16px -16px; /* Negate container padding */
+        }
+    </style>
 </head>
 <body>
-    <header class="md-top-app-bar">
-        <h1 class="app-bar-title">Add Transaction</h1>
+    <header class="md-top-app-bar" style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6;">
         <div class="d-flex align-center gap-2">
-            <span class="md-subhead" style="margin-right: 8px;">{{username}}</span>
-            <a href="/logout" class="md-btn text" style="color: var(--md-sys-color-error);">
-                <span class="material-symbols-outlined">logout</span>
+            <a href="/transactions" class="md-btn text" style="min-width:auto; padding:0 8px;">
+                <span class="material-symbols-outlined">close</span>
             </a>
+            <h1 class="app-bar-title" style="font-size:18px;">New Transaction</h1>
+        </div>
+        <div class="d-flex align-center">
+            <span class="md-subhead" style="font-size:14px;">{{username}}</span>
         </div>
     </header>
 
-    <div class="main-container">
-        <div class="md-card" style="max-width: 600px; margin: 24px auto;">
-            <div class="md-card-header">
-                <h2 class="md-headline">New Entry</h2>
-                <p class="md-subhead">Track your expenses</p>
+    <div class="main-container" style="max-width: 600px; padding-bottom: 0;">
+        <form id="transactionForm" style="padding-bottom: 80px;"> <!-- Padding for sticky footer -->
+            <input type="hidden" id="transactionId" name="transactionId">
+
+            <!-- 1. Expense Type -->
+            <div class="section-label">Expense Type</div>
+            <div class="option-grid">
+                {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}
+                <label>
+                    <input type="radio" name="type" value="{{this}}" class="option-input" required>
+                    <div class="icon-btn">
+                        <span class="emoji-icon">{{getEmoji this}}</span>
+                        <span class="label-text">{{this}}</span>
+                    </div>
+                </label>
+                {{/each}}
             </div>
 
-            <form id="transactionForm">
-                <input type="hidden" id="transactionId" name="transactionId">
-                
-                <!-- Category Chips -->
-                <div class="mb-4">
-                    <label class="md-subhead" style="display:block; margin-bottom:8px; font-weight:500;">Category</label>
-                    <div class="chip-group">
-                        <label class="md-chip">
-                            <input type="radio" name="type" value="rumah" required>
-                            <span class="material-symbols-outlined" style="font-size:18px; margin-right:6px;">home</span>
-                            Rumah
-                        </label>
-                        <label class="md-chip">
-                            <input type="radio" name="type" value="kerja" required>
-                            <span class="material-symbols-outlined" style="font-size:18px; margin-right:6px;">work</span>
-                            Kerja
-                        </label>
-                        <label class="md-chip">
-                            <input type="radio" name="type" value="pacaran" required>
-                            <span class="material-symbols-outlined" style="font-size:18px; margin-right:6px;">favorite</span>
-                            Pacaran
-                        </label>
-                        <label class="md-chip">
-                            <input type="radio" name="type" value="personal" required>
-                            <span class="material-symbols-outlined" style="font-size:18px; margin-right:6px;">person</span>
-                            Personal
-                        </label>
+            <!-- 2. Notes -->
+            <div class="section-label">Details</div>
+            <div class="md-text-field compact-field">
+                <input type="text" id="ngapain" name="ngapain" placeholder=" " required>
+                <label for="ngapain">📝 Notes (What is this for?)</label>
+            </div>
+
+            <!-- 3. Amount -->
+            <div class="amount-wrapper">
+                <div class="md-text-field compact-field" style="margin-bottom:0;">
+                    <span class="amount-prefix">Rp.</span>
+                    <input type="number" id="amount" name="amount" class="amount-input-styled" placeholder="0" required>
+                </div>
+            </div>
+
+            <!-- 4. Pocket -->
+            <div class="section-label">Pocket Source</div>
+            <div class="option-grid" style="grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));">
+                {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Dana Darurat,IPL")}}
+                <label>
+                    <input type="radio" name="pocket" value="{{this}}" class="option-input" required>
+                    <div class="icon-btn">
+                        <span class="emoji-icon">{{getPocketEmoji this}}</span>
+                        <span class="label-text">{{this}}</span>
                     </div>
-                </div>
+                </label>
+                {{/each}}
+            </div>
 
-                <div class="md-text-field">
-                    <input type="datetime-local" id="date" name="date" placeholder=" " required>
-                    <label for="date">Date & Time</label>
-                </div>
+            <!-- 5. Date Time (Auto Filled) -->
+            <div class="section-label" style="margin-top:12px;">Date & Time</div>
+            <div class="md-text-field compact-field">
+                <input type="datetime-local" id="date" name="date" required>
+            </div>
 
-                <div class="md-text-field">
-                    <input type="text" id="ngapain" name="ngapain" placeholder=" " required>
-                    <label for="ngapain">Description (e.g. Lunch)</label>
-                </div>
-
-                <div class="md-text-field">
-                    <input type="number" id="amount" name="amount" placeholder=" " required>
-                    <label for="amount">Amount (Rp)</label>
-                </div>
-                <div id="formatted" class="md-headline" style="color: var(--md-sys-color-primary); margin-bottom: 24px;"></div>
-
-                <button type="submit" class="md-btn filled md-btn-block" id="submitBtn">
-                    <span class="material-symbols-outlined">save</span>
-                    <span id="btnText">Save Transaction</span>
+            <!-- Sticky Submit Button -->
+            <div class="sticky-footer">
+                <button type="submit" class="md-btn filled md-btn-block" id="submitBtn" style="height: 50px; font-size: 16px;">
+                    Save Transaction
                 </button>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
-    <!-- Floating Action Button to View History -->
-    <a href="/transactions" class="md-fab" title="View History">
-        <span class="material-symbols-outlined">list_alt</span>
-    </a>
-
     <div id="message"></div>
-
     <script src="/js/transaction.js"></script>
     <script>
-        // Inline chip selection logic
-        document.querySelectorAll('.md-chip input').forEach(input => {
-            input.addEventListener('change', () => {
-                document.querySelectorAll('.md-chip').forEach(chip => chip.classList.remove('selected'));
-                if(input.checked) input.parentElement.classList.add('selected');
-            });
+        // Set Default Date to Now
+        window.addEventListener('load', () => {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('date').value = now.toISOString().slice(0, 16);
         });
     </script>
 </body>

@@ -18,6 +18,28 @@ const app = express();
 // Register partials
 hbs.registerPartials(__dirname + '/views/partials');
 
+// Register Helpers
+hbs.registerHelper('split', function(string) {
+    return string.split(',');
+});
+
+hbs.registerHelper('getEmoji', function(type) {
+    const emojis = {
+        'Eat': '🍽️', 'Snack': '🍿', 'Groceries': '🛒', 'Laundry': '🧺',
+        'Bensin': '⛽', 'Flazz': '💳', 'Home Appliance': '🏠', 'Jumat Berkah': '🤲',
+        'Uang Sampah': '🗑️', 'Uang Keamanan': '👮', 'Medicine': '💊', 'Others': '📦'
+    };
+    return emojis[type] || '📝';
+});
+
+hbs.registerHelper('getPocketEmoji', function(pocket) {
+    const emojis = {
+        'Kwintals': '💰', 'Groceries': '🥦', 'Weekday Transport': '🚌',
+        'Weekend Transport': '🚗', 'Investasi': '📈', 'Dana Darurat': '🆘', 'IPL': '🏘️'
+    };
+    return emojis[pocket] || '👛';
+});
+
 app.use(express.static('public'));
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());

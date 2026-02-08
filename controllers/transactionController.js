@@ -10,10 +10,11 @@ exports.getTransactionsPage = (req, res) => {
 
 exports.createTransaction = async (req, res) => {
     try {
-        const { date, type, ngapain, amount } = req.body;
+        const { date, type, pocket, ngapain, amount } = req.body;
         const transaction = new Transaction({
             date: new Date(date),
             type,
+            pocket,
             ngapain,
             by: req.session.userId,
             amount: parseFloat(amount)
@@ -70,10 +71,11 @@ exports.getTransaction = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
     try {
-        const { date, type, ngapain, amount } = req.body;
+        const { date, type, pocket, ngapain, amount } = req.body;
         await Transaction.findByIdAndUpdate(req.params.id, {
             date: new Date(date),
             type,
+            pocket,
             ngapain,
             amount: parseFloat(amount)
         });

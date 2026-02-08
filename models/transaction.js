@@ -9,9 +9,21 @@ const transactionSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: ['rumah', 'kerja', 'pacaran', 'personal']
+        enum: [
+            'Eat', 'Snack', 'Groceries', 'Laundry', 'Bensin', 'Flazz', 
+            'Home Appliance', 'Jumat Berkah', 'Uang Sampah', 'Uang Keamanan', 
+            'Medicine', 'Others'
+        ]
     },
-    ngapain: {              // Add this field
+    pocket: {
+        type: String,
+        required: true,
+        enum: [
+            'Kwintals', 'Groceries', 'Weekday Transport', 'Weekend Transport', 
+            'Investasi', 'Dana Darurat', 'IPL'
+        ]
+    },
+    ngapain: {              // Notes
         type: String,
         required: true,
         trim: true
