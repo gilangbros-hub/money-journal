@@ -1,4 +1,7 @@
 const Transaction = require('../models/transaction');
+const { Resend } = require('resend');
+
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 exports.getTransactionPage = (req, res) => {
     res.render('transaction', { 
@@ -27,6 +30,28 @@ exports.createTransaction = async (req, res) => {
         });
         
         await transaction.save();
+
+        // Send Email Notification (Non-blocking)
+        if (resend) {
+            const formattedAmount = new Intl.NumberFormat('id-ID').format(amount);
+            resend.emails.send({
+                from: 'Money Journal <onboarding@resend.dev>',
+                to: process.env.NOTIFY_EMAIL || 'your-email@example.com', 
+                subject: `💸 New Transaction: Rp ${formattedAmount}`,
+                html: `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
+                        <h2 style="color: #4F46E5;">New Spending Alert!</h2>
+                        <p><strong>Who:</strong> ${req.session.username}</p>
+                        <p><strong>Amount:</strong> Rp ${formattedAmount}</p>
+                        <p><strong>Category:</strong> ${type} (${pocket})</p>
+                        <p><strong>Notes:</strong> ${ngapain}</p>
+                        <hr style="border: 0; border-top: 1px solid #eee;">
+                        <p style="font-size: 12px; color: #666;">This is an automated notification from your Money Journal.</p>
+                    </div>
+                `
+            }).catch(err => console.error('Email failed:', err));
+        }
+
         res.json({ success: true, message: "Transaction saved successfully!" });
     } catch (error) {
         console.error('Create transaction error:', error);
