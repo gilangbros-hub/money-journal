@@ -65,7 +65,20 @@ function renderCategoryList() {
         return;
     }
 
-    categoryList.innerHTML = categories.map(cat => {
+    // Add 'All' / Total Card at the top
+    const allCard = `
+        <div class="category-item" onclick="resetFilter()" style="cursor: pointer; margin-bottom: 12px; border: 1px solid #E5E7EB; background: #F9FAFB;">
+            <div class="cat-icon">♾️</div>
+            <div class="cat-details">
+                <div class="cat-header">
+                    <span class="cat-name">Show All</span>
+                    <span class="cat-amount">${total.formatted}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    categoryList.innerHTML = allCard + categories.map(cat => {
         return `
             <div class="category-item" onclick="filterByCategory('${cat.category}')" style="cursor: pointer;">
                 <div class="cat-icon">${cat.icon}</div>
@@ -81,6 +94,55 @@ function renderCategoryList() {
             </div>
         `;
     }).join('');
+}
+
+function resetFilter() {
+    // Reset Header
+    const header = document.getElementById('recentTransactionsHeader');
+    if (header) {
+        header.textContent = 'Recent Transactions';
+        if (header.nextElementSibling) {
+            header.nextElementSibling.style.display = 'block'; // Show Export button
+        }
+    }
+
+    // Restore original recent list or fetch all?
+    // dashboardData.recent only contains the last 5. 
+    // To "Show All" for the month, we should probably fetch the full list for the month.
+    // Or just revert to 'dashboardData.recent' which is the default view (top 5).
+    // The user said "REVERT TO SHOW ALL TRANSACTIONS".
+    // Usually "Recent Transactions" implies the dashboard view (last 5).
+    // IF they want *ALL* transactions for the month, that's a different query.
+    // BUT, the initial load is `fetchDashboardData` which sets `dashboardData.recent`.
+    // Let's revert to the initial state (Recent 5) as that's what "revert" usually means in this context,
+    // OR we trigger a fetch for month's all transactions.
+    // Given the dashboard nature, reverting to the initial state is safer UI behavior.
+
+    // HOWEVER, if I filter by category, I see ALL transactions for that category in that month.
+    // So "Show All" might imply showing ALL transactions for that month.
+    // Let's fetch all for the month.
+
+    fetchAllTransactionsForMonth();
+}
+
+async function fetchAllTransactionsForMonth() {
+    const list = document.getElementById('historyList');
+    list.innerHTML = '<p class="text-center" style="padding: 20px; color: #6B7280;">Loading all...</p>';
+
+    try {
+        const response = await fetch(`/api/transactions?month=${currentMonth}`);
+        const transactions = await response.json();
+
+        // Update Header
+        const header = document.getElementById('recentTransactionsHeader');
+        if (header) header.textContent = 'All Transactions';
+
+        renderTransactionList(transactions, true);
+    } catch (e) {
+        console.error(e);
+        // Fallback to recent
+        renderTransactionList(dashboardData.recent, false);
+    }
 }
 
 async function filterByCategory(category) {
