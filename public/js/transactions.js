@@ -89,9 +89,11 @@ function renderChart() {
     
     // Aggregate Data
     const dataMap = {};
+    let totalSum = 0;
     currentTransactions.forEach(t => {
         const key = currentChartGroupBy === 'pocket' ? t.pocket : t.type;
         dataMap[key] = (dataMap[key] || 0) + t.amount;
+        totalSum += t.amount;
     });
 
     const labels = Object.keys(dataMap);
@@ -103,6 +105,7 @@ function renderChart() {
 
     expenseChart = new Chart(ctx, {
         type: 'doughnut',
+        plugins: [ChartDataLabels],
         data: {
             labels: labels,
             datasets: [{
@@ -125,6 +128,17 @@ function renderChart() {
                         usePointStyle: true,
                         padding: 15,
                         font: { size: 11, weight: '600' }
+                    }
+                },
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 11
+                    },
+                    formatter: (value) => {
+                        const percentage = ((value / totalSum) * 100).toFixed(0);
+                        return percentage > 5 ? `${percentage}%` : ''; // Only show if > 5% to avoid clutter
                     }
                 }
             },
