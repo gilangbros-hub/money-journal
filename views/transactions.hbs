@@ -2,109 +2,221 @@
 <html lang="en">
 <head>
     {{> head}}
-    <title>Money Journal - History</title>
+    <title>Transaction History</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #ffffff; color: #1F2937; }
+        
+        .main-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 16px 20px 40px 20px;
+        }
+
+        /* Filter Card Styling */
+        .filter-section {
+            background: #F9FAFB;
+            border: 1.5px solid #F3F4F6;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .md-text-field.compact {
+            margin-bottom: 0;
+        }
+        
+        .md-text-field.compact input, .md-text-field.compact select {
+            height: 48px;
+            border-radius: 12px;
+            background: #ffffff;
+            font-size: 14px;
+        }
+
+        /* Chart Section */
+        .chart-card {
+            background: #ffffff;
+            border: 1.5px solid #F3F4F6;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-toggle {
+            display: flex;
+            background: #F3F4F6;
+            padding: 4px;
+            border-radius: 12px;
+        }
+
+        .toggle-btn {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: transparent;
+            color: #6B7280;
+        }
+
+        .toggle-btn.active {
+            background: #ffffff;
+            color: var(--md-sys-color-primary);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Table Styling */
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .transaction-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: #ffffff;
+            border: 1.5px solid #F3F4F6;
+            border-radius: 18px;
+            gap: 16px;
+            transition: transform 0.2s;
+        }
+
+        .transaction-item:active { transform: scale(0.98); }
+
+        .type-icon {
+            width: 48px;
+            height: 48px;
+            background: #F3F4F6;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .item-details { flex: 1; }
+        .item-title { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+        .item-meta { font-size: 12px; color: #9CA3AF; display: flex; gap: 8px; }
+
+        .item-amount {
+            text-align: right;
+            font-weight: 800;
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .pocket-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            background: #EEF2FF;
+            color: var(--md-sys-color-primary);
+            border-radius: 99px;
+            text-transform: uppercase;
+        }
+
+        /* Modal Overrides */
+        #deleteModal .md-card {
+            border-radius: 28px;
+            padding: 32px;
+        }
+    </style>
 </head>
 <body>
-    <header class="md-top-app-bar">
+    <header class="md-top-app-bar" style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6; padding: 12px 20px;">
         <div class="d-flex align-center gap-2">
-            <a href="/transaction" class="md-btn text" style="min-width: auto; padding: 0 8px;">
+            <a href="/transaction" class="md-btn text" style="min-width:auto; padding:0 8px; color: #374151;">
                 <span class="material-symbols-outlined">arrow_back</span>
             </a>
-            <h1 class="app-bar-title">History</h1>
+            <h1 class="app-bar-title" style="font-size:19px; font-weight: 700;">History</h1>
         </div>
-        <div class="d-flex align-center gap-2">
-            <span class="md-subhead">{{username}}</span>
+        <div class="d-flex align-center">
+            <span style="font-size:14px; font-weight: 600; color: #6B7280;">{{username}}</span>
         </div>
     </header>
 
     <div class="main-container">
-        <!-- Filters Card -->
-        <div class="md-card outlined mb-4">
-            <div class="md-card-header">
-                <h2 class="md-headline" style="font-size: 20px;">Filters</h2>
-            </div>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                <div class="md-text-field" style="margin-bottom: 0;">
-                    <input type="month" id="monthFilter" placeholder=" ">
+        
+        <!-- Filters -->
+        <div class="filter-section">
+            <div class="filter-grid">
+                <div class="md-text-field compact">
+                    <input type="month" id="monthFilter" required>
                     <label for="monthFilter">Month</label>
                 </div>
-                <div class="md-text-field" style="margin-bottom: 0;">
+                <div class="md-text-field compact">
                     <select id="typeFilter">
-                        <option value="all">All Categories</option>
-                        <option value="rumah">🏠 Rumah</option>
-                        <option value="kerja">💼 Kerja</option>
-                        <option value="pacaran">❤️ Pacaran</option>
-                        <option value="personal">👤 Personal</option>
+                        <option value="all">All Types</option>
+                        {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}
+                        <option value="{{this}}">{{this}}</option>
+                        {{/each}}
                     </select>
-                    <label for="typeFilter">Category</label>
-                </div>
-                <div class="md-text-field" style="margin-bottom: 0;">
-                    <select id="byFilter">
-                        <option value="all">All Users</option>
-                    </select>
-                    <label for="byFilter">Submitter</label>
+                    <label for="typeFilter">Type</label>
                 </div>
             </div>
         </div>
 
-        <!-- Summary Cards -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
-            <div class="md-card">
-                <p class="md-subhead">Total Transactions</p>
-                <h2 class="md-headline" id="totalCount">0</h2>
+        <!-- Summary & Chart -->
+        <div class="chart-card">
+            <div class="chart-header">
+                <div>
+                    <p style="font-size: 12px; font-weight: 700; color: #9CA3AF; margin: 0;">TOTAL SPENT</p>
+                    <h2 id="totalAmount" style="margin: 4px 0 0 0; font-size: 24px; font-weight: 800; color: var(--md-sys-color-primary);">Rp 0</h2>
+                </div>
+                <div class="chart-toggle">
+                    <button class="toggle-btn active" onclick="updateChartType('pocket')">Pocket</button>
+                    <button class="toggle-btn" onclick="updateChartType('type')">Type</button>
+                </div>
             </div>
-            <div class="md-card" style="background-color: var(--md-sys-color-primary-container);">
-                <p class="md-subhead" style="color: var(--md-sys-color-on-primary-container);">Total Amount</p>
-                <h2 class="md-headline" id="totalAmount" style="color: var(--md-sys-color-on-primary-container);">Rp 0</h2>
+            <div style="height: 220px; display: flex; justify-content: center;">
+                <canvas id="expenseChart"></canvas>
             </div>
         </div>
 
-        <!-- Transactions Table -->
-        <div class="md-table-container">
-            <table class="md-table" id="transactionsTable">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Category</th>
-                        <th>By</th>
-                        <th>Amount</th>
-                        <th>Description</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr><td colspan="6" class="text-center">Loading...</td></tr>
-                </tbody>
-            </table>
+        <!-- Transaction List -->
+        <div class="history-list" id="historyList">
+            <!-- Items injected by JS -->
+            <p class="text-center md-subhead">Loading history...</p>
         </div>
     </div>
 
-    <!-- Delete Confirmation Dialog (Modal) -->
-    <div id="deleteModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
-        <div class="md-card" style="width: 100%; max-width: 320px;">
-            <h3 class="md-headline" style="font-size: 24px;">Delete?</h3>
-            <p class="md-subhead">This cannot be undone.</p>
-            <p id="deleteDetails" style="margin: 16px 0; font-size: 14px;"></p>
-            <div class="d-flex justify-between mt-4">
-                <button class="md-btn text" onclick="closeDeleteModal()">Cancel</button>
-                <button class="md-btn filled" style="background-color: var(--md-sys-color-error); color: var(--md-sys-color-on-error);" onclick="confirmDelete()">Delete</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Add FAB -->
-    <a href="/transaction" class="md-fab" title="Add Transaction">
+    <!-- Floating Action Button -->
+    <a href="/transaction" class="md-fab">
         <span class="material-symbols-outlined">add</span>
     </a>
 
-    <div id="message"></div>
+    <!-- Delete Confirmation -->
+    <div id="deleteModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="md-card" style="width: 100%; max-width: 340px; text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+            <h3 class="md-headline" style="font-size: 22px;">Delete this?</h3>
+            <p class="md-subhead" id="deleteDetails"></p>
+            <div class="d-flex gap-2 mt-4">
+                <button class="md-btn text md-btn-block" onclick="closeDeleteModal()">Cancel</button>
+                <button class="md-btn filled md-btn-block" style="background: #EF4444;" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
 
+    <div id="message"></div>
     <script src="/js/transactions.js"></script>
-    <script>
-        // Simple modal logic if not present in js
-        function showDeleteModal(id) {
-             document.getElementById('deleteModal').style.display = 'flex';
-        }
-    </script>
 </body>
 </html>

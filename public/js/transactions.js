@@ -1,187 +1,160 @@
-let currentTransactionId = null;
-let allTransactions = [];
+let currentTransactions = [];
+let expenseChart = null;
+let currentChartGroupBy = 'pocket'; // default
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-    // Set current month as default
+// Emoji Mappings
+const typeEmojis = {
+    'Eat': '🍽️', 'Snack': '🍿', 'Groceries': '🛒', 'Laundry': '🧺',
+    'Bensin': '⛽', 'Flazz': '💳', 'Home Appliance': '🏠', 'Jumat Berkah': '🤲',
+    'Uang Sampah': '🗑️', 'Uang Keamanan': '👮', 'Medicine': '💊', 'Others': '📦'
+};
+
+const pocketEmojis = {
+    'Kwintals': '💰', 'Groceries': '🥦', 'Weekday Transport': '🚌',
+    'Weekend Transport': '🚗', 'Investasi': '📈', 'Dana Darurat': '🆘', 'IPL': '🏘️'
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Set default month to current
+    const monthFilter = document.getElementById('monthFilter');
     const now = new Date();
-    const monthString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    document.getElementById('monthFilter').value = monthString;
-    
-    // Load submitters for filter
-    loadSubmitters();
-    
-    // Load transactions
-    loadTransactions();
-    
-    // Add event listeners for filters
-    document.getElementById('monthFilter').addEventListener('change', loadTransactions);
-    document.getElementById('byFilter').addEventListener('change', loadTransactions);
-    document.getElementById('typeFilter').addEventListener('change', loadTransactions);
+    monthFilter.value = now.toISOString().slice(0, 7);
+
+    fetchTransactions();
+
+    // Listeners
+    monthFilter.addEventListener('change', fetchTransactions);
+    document.getElementById('typeFilter').addEventListener('change', fetchTransactions);
 });
 
-// Load unique submitters
-async function loadSubmitters() {
-    try {
-        const response = await fetch('/api/submitters');
-        const submitters = await response.json();
-        
-        const select = document.getElementById('byFilter');
-        submitters.forEach(submitter => {
-            const option = document.createElement('option');
-            option.value = submitter;
-            option.textContent = submitter;
-            select.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error loading submitters:', error);
-    }
-}
-
-// Load transactions
-async function loadTransactions() {
+async function fetchTransactions() {
     const month = document.getElementById('monthFilter').value;
-    const by = document.getElementById('byFilter').value;
     const type = document.getElementById('typeFilter').value;
-    
-    if (!month) {
-        return;
-    }
-    
+
     try {
-        const params = new URLSearchParams({ month, by, type });
-        const response = await fetch(`/api/transactions?${params}`);
-        allTransactions = await response.json();
-        
-        displayTransactions(allTransactions);
-        updateSummary(allTransactions);
-        
+        const response = await fetch(`/api/transactions?month=${month}&type=${type}`);
+        currentTransactions = await response.json();
+        renderHistory();
+        renderChart();
     } catch (error) {
-        console.error('Error loading transactions:', error);
-        document.getElementById('tableBody').innerHTML = `
-            <tr class="empty-row">
-                <td colspan="7">Error loading transactions</td>
-            </tr>
-        `;
+        console.error('Error:', error);
     }
 }
 
-// Display transactions in table
-function displayTransactions(transactions) {
-    const tbody = document.getElementById('tableBody');
-    
-    if (transactions.length === 0) {
-        tbody.innerHTML = `
-            <tr class="empty-row">
-                <td colspan="7">No transactions found</td>
-            </tr>
-        `;
+function renderHistory() {
+    const list = document.getElementById('historyList');
+    if (currentTransactions.length === 0) {
+        list.innerHTML = '<p class="text-center md-subhead" style="margin-top:20px;">No transactions found 💨</p>';
+        document.getElementById('totalAmount').textContent = 'Rp 0';
         return;
     }
-    
-    tbody.innerHTML = transactions.map((transaction, index) => {
-        const date = new Date(transaction.date);
-        const formattedDate = date.toLocaleDateString('id-ID', { 
-            day: '2-digit', 
-            month: 'short', 
-            year: 'numeric' 
-        });
-        const formattedTime = date.toLocaleTimeString('id-ID', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-        });
-        
-        const amount = new Intl.NumberFormat('id-ID').format(transaction.amount);
-        
-        const categoryEmoji = {
-            'rumah': '🏠',
-            'kerja': '💼',
-            'pacaran': '❤️',
-            'personal': '👤'
-        }[transaction.type];
+
+    let total = 0;
+    list.innerHTML = currentTransactions.map(t => {
+        total += t.amount;
+        const date = new Date(t.date);
+        const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         
         return `
-            <tr>
-                <td>${index + 1}</td>
-                <td>
-                    <div>${formattedDate}</div>
-                    <div style="font-size: 12px; color: #999;">${formattedTime}</div>
-                </td>
-                <td>
-                    <span class="category-badge category-${transaction.type}">
-                        ${categoryEmoji} ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
-                    </span>
-                </td>
-                <td>${transaction.by}</td>
-                <td class="amount-cell">Rp ${amount}</td>
-                <td>${transaction.ngapain}</td>
-                <td>
-                    <div class="action-buttons">
-                        <button class="btn-edit" onclick="editTransaction('${transaction._id}')">
-                            ✏️ Edit
-                        </button>
-                        <button class="btn-delete-small" onclick="deleteTransaction('${transaction._id}', '${transaction.ngapain}', ${transaction.amount})">
-                            🗑️ Delete
-                        </button>
+            <div class="transaction-item" onclick="openOptions('${t._id}', '${t.ngapain}', ${t.amount})">
+                <div class="type-icon">${typeEmojis[t.type] || '📝'}</div>
+                <div class="item-details">
+                    <div class="item-title">${t.ngapain}</div>
+                    <div class="item-meta">
+                        <span>${dateStr} • ${timeStr}</span>
+                        <span class="pocket-badge">${pocketEmojis[t.pocket] || '👛'} ${t.pocket}</span>
                     </div>
-                </td>
-            </tr>
+                </div>
+                <div class="item-amount">Rp ${t.amount.toLocaleString('id-ID')}</div>
+            </div>
         `;
     }).join('');
+
+    document.getElementById('totalAmount').textContent = `Rp ${total.toLocaleString('id-ID')}`;
 }
 
-// Update summary
-function updateSummary(transactions) {
-    const totalCount = transactions.length;
-    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
+// Chart Logic
+function updateChartType(type) {
+    currentChartGroupBy = type;
+    // Update UI Buttons
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.innerText.toLowerCase() === type);
+    });
+    renderChart();
+}
+
+function renderChart() {
+    const ctx = document.getElementById('expenseChart').getContext('2d');
     
-    document.getElementById('totalCount').textContent = totalCount;
-    document.getElementById('totalAmount').textContent = 
-        'Rp ' + new Intl.NumberFormat('id-ID').format(totalAmount);
-}
+    // Aggregate Data
+    const dataMap = {};
+    currentTransactions.forEach(t => {
+        const key = currentChartGroupBy === 'pocket' ? t.pocket : t.type;
+        dataMap[key] = (dataMap[key] || 0) + t.amount;
+    });
 
-// Edit transaction
-function editTransaction(id) {
-    window.location.href = `/transaction?edit=${id}`;
-}
+    const labels = Object.keys(dataMap);
+    const values = Object.values(dataMap);
 
-// Delete transaction
-function deleteTransaction(id, description, amount) {
-    currentTransactionId = id;
-    const formattedAmount = new Intl.NumberFormat('id-ID').format(amount);
-    document.getElementById('deleteDetails').innerHTML = `
-        <strong>${description}</strong><br>
-        Amount: Rp ${formattedAmount}
-    `;
-    document.getElementById('deleteModal').classList.add('active');
-}
+    if (expenseChart) expenseChart.destroy();
 
-// Close delete modal
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('active');
-    currentTransactionId = null;
-}
+    if (labels.length === 0) return;
 
-// Confirm delete
-async function confirmDelete() {
-    if (!currentTransactionId) return;
-    
-    try {
-        const response = await fetch(`/api/transaction/${currentTransactionId}`, {
-            method: 'DELETE'
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            closeDeleteModal();
-            loadTransactions(); // Reload table
-        } else {
-            alert('Error deleting transaction: ' + result.message);
+    expenseChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: values,
+                backgroundColor: [
+                    '#4F46E5', '#10B981', '#F59E0B', '#EF4444', 
+                    '#8B5CF6', '#EC4899', '#06B6D4', '#6366F1'
+                ],
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 15,
+                        font: { size: 11, weight: '600' }
+                    }
+                }
+            },
+            cutout: '70%'
         }
-        
+    });
+}
+
+// Delete Logic
+let deleteId = null;
+function openOptions(id, note, amount) {
+    deleteId = id;
+    const modal = document.getElementById('deleteModal');
+    document.getElementById('deleteDetails').innerText = `${note} - Rp ${amount.toLocaleString('id-ID')}`;
+    modal.style.display = 'flex';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+}
+
+async function confirmDelete() {
+    if (!deleteId) return;
+    try {
+        const response = await fetch(`/api/transaction/${deleteId}`, { method: 'DELETE' });
+        if (response.ok) {
+            closeDeleteModal();
+            fetchTransactions();
+        }
     } catch (error) {
-        console.error('Error deleting transaction:', error);
-        alert('Error deleting transaction');
+        console.error(error);
     }
 }
