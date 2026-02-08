@@ -117,36 +117,10 @@ document.getElementById('transactionForm').addEventListener('submit', async func
             const username = document.getElementById('currentUsername').value;
             showToast(`Input berhasil! Makaci yaa ${username}!`, 'success');
             
-            // Only send WhatsApp on new transactions
-            if (!isEdit) {
-                 const formattedAmount = parseInt(amountValue).toLocaleString('id-ID');
-                 
-                 // 1. Define the target phone number (Country code + Number)
-                 // CHANGE THIS to your partner's number or group chat link if needed
-                 const targetNumber = '6281220001281'; 
-
-                 // 2. Construct Message
-                 const waMessage = 
-`*Money Journal Alert* 💸
-👤 *${username}* just spent money!
-
-💰 *Rp ${formattedAmount}*
-📂 ${formData.pocket} ➡️ ${formData.type}
-📝 "${formData.ngapain}"
-
-_Check details on app_`;
-
-                 // 3. Open WhatsApp
-                 // Uses a slight delay to allow the Toast to be read first
-                 setTimeout(() => {
-                     window.open(`https://wa.me/${targetNumber}?text=${encodeURIComponent(waMessage)}`, '_blank');
-                     window.location.href = '/transactions';
-                 }, 1000);
-            } else {
-                setTimeout(() => {
-                    window.location.href = '/transactions';
-                }, 1000);
-            }
+            // Redirect to transactions page after a short delay
+            setTimeout(() => {
+                window.location.href = '/transactions';
+            }, 1000);
         } else {
             showToast(result.message || 'Error saving transaction', 'error');
         }
