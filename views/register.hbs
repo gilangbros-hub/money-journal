@@ -1,44 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     {{> head}}
     <title>Money Journal - Register</title>
 </head>
+
 <body>
     <div class="center-container">
         <div class="md-card" style="width: 100%; max-width: 400px;">
             <div class="md-card-header text-center">
+                <img src="/images/logo.png" alt="Money Journal Logo" style="width: 80px; margin-bottom: 8px;">
                 <h1 class="md-headline">Create Account</h1>
                 <p class="md-subhead">Join Money Journal</p>
 
                 {{#if error}}
-                <div style="background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); padding: 8px; border-radius: 4px; margin-top: 16px; font-size: 14px;">
+                <div
+                    style="background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); padding: 8px; border-radius: 4px; margin-top: 16px; font-size: 14px;">
                     {{error}}
                 </div>
                 {{/if}}
             </div>
-            
+
             <form method="POST" action="/auth/register">
                 <div class="md-text-field">
                     <input type="text" id="username" name="username" placeholder=" " required>
                     <label for="username">Username</label>
                 </div>
-                
+
                 <div class="md-text-field">
                     <input type="email" id="email" name="email" placeholder=" " required>
                     <label for="email">Email</label>
                 </div>
-                
+
                 <div class="md-text-field">
                     <input type="password" id="password" name="password" placeholder=" " required>
                     <label for="password">Password</label>
                 </div>
-                
+
                 <button type="submit" class="md-btn filled md-btn-block">
                     Register
                 </button>
             </form>
-            
+
             <div class="text-center mt-4">
                 <p class="md-subhead">Already have an account?</p>
                 <a href="/login" class="md-btn text">Login</a>
@@ -46,4 +50,5 @@
         </div>
     </div>
 </body>
+
 </html>
