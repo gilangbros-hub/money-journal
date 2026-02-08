@@ -231,11 +231,11 @@ function openOptions(id, note, amount) {
     // Simple formatting for the modal
     const formatted = typeof amount === 'number' ? `Rp ${amount.toLocaleString('id-ID')}` : amount;
     document.getElementById('deleteDetails').innerText = `${note} - ${formatted}`;
-    modal.style.display = 'flex';
+    modal.classList.add('show');
 }
 
 function closeDeleteModal() {
-    document.getElementById('deleteModal').style.display = 'none';
+    document.getElementById('deleteModal').classList.remove('show');
 }
 
 async function confirmDelete() {
