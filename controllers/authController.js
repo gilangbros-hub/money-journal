@@ -11,15 +11,20 @@ exports.getRegister = (req, res) => {
 exports.postRegister = async (req, res) => {
     try {
         const { username, email, password } = req.body;
+
+        if (!password || password.length < 8) {
+            return res.redirect('/register?error=Password must be at least 8 characters long');
+        }
+
         const existingUser = await User.findOne({ $or: [{ email }, { username }] });
-        
+
         if (existingUser) {
             return res.redirect('/register?error=User already exists');
         }
-        
+
         const user = new User({ username, email, password });
         await user.save();
-        
+
         res.redirect('/login?success=Registration successful! Please login.');
     } catch (error) {
         console.error('Registration error:', error);
@@ -31,15 +36,15 @@ exports.postLogin = async (req, res) => {
     try {
         const { username, password } = req.body;
         const user = await User.findOne({ username });
-        
+
         if (!user || !(await user.comparePassword(password))) {
             return res.redirect('/login?error=Invalid username or password');
         }
-        
+
         req.session.userId = user._id;
         req.session.username = user.username;
         req.session.avatar = user.avatar || '👤'; // Cache avatar
-        
+
         res.redirect('/welcome');
     } catch (error) {
         console.error('Login error:', error);
@@ -56,9 +61,9 @@ exports.getProfile = async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     try {
         const user = await User.findById(req.session.userId);
-        res.render('profile', { 
-            username: user.username, 
-            currentAvatar: user.avatar || '👤' 
+        res.render('profile', {
+            username: user.username,
+            currentAvatar: user.avatar || '👤'
         });
     } catch (error) {
         res.redirect('/transaction');
@@ -70,11 +75,11 @@ exports.postProfile = async (req, res) => {
     try {
         const { username, avatar } = req.body;
         const user = await User.findByIdAndUpdate(req.session.userId, { username, avatar }, { new: true });
-        
+
         // Update session
         req.session.username = user.username;
         req.session.avatar = user.avatar;
-        
+
         res.redirect('/transaction');
     } catch (error) {
         console.error('Profile update error:', error);

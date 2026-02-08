@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+const { TRANSACTION_TYPES, POCKETS } = require('../utils/constants');
+
 const transactionSchema = new mongoose.Schema({
     date: {
         type: Date,
@@ -9,19 +11,12 @@ const transactionSchema = new mongoose.Schema({
     type: {
         type: String,
         required: true,
-        enum: [
-            'Eat', 'Snack', 'Groceries', 'Laundry', 'Bensin', 'Flazz', 
-            'Home Appliance', 'Jumat Berkah', 'Uang Sampah', 'Uang Keamanan', 
-            'Medicine', 'Others'
-        ]
+        enum: Object.keys(TRANSACTION_TYPES)
     },
     pocket: {
         type: String,
         required: true,
-        enum: [
-            'Kwintals', 'Groceries', 'Weekday Transport', 'Weekend Transport', 
-            'Investasi', 'Dana Darurat', 'IPL'
-        ]
+        enum: Object.keys(POCKETS)
     },
     ngapain: {              // Notes
         type: String,

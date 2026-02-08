@@ -1,7 +1,7 @@
 const express = require('express');
 const hbs = require('hbs');
 const dotenv = require('dotenv');
-const session = require('express-session'); 
+const session = require('express-session');
 let MongoStore = require('connect-mongo');
 if (MongoStore.default) MongoStore = MongoStore.default;
 const connectDB = require('./database');
@@ -10,10 +10,10 @@ const connectDB = require('./database');
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 
-dotenv.config({ path: './.env'});
+dotenv.config({ path: './.env' });
 
 // Connect to database
-connectDB();  
+connectDB();
 
 const app = express();
 
@@ -21,49 +21,53 @@ const app = express();
 hbs.registerPartials(__dirname + '/views/partials');
 
 // Register Helpers
-hbs.registerHelper('split', function(string) {
+hbs.registerHelper('split', function (string) {
     return string.split(',');
 });
 
-hbs.registerHelper('getEmoji', function(type) {
-    const emojis = {
-        'Eat': '🍽️', 'Snack': '🍿', 'Groceries': '🛒', 'Laundry': '🧺',
-        'Bensin': '⛽', 'Flazz': '💳', 'Home Appliance': '🏠', 'Jumat Berkah': '🤲',
-        'Uang Sampah': '🗑️', 'Uang Keamanan': '👮', 'Medicine': '💊', 'Others': '📦'
-    };
-    return emojis[type] || '📝';
+const { TRANSACTION_TYPES, POCKETS } = require('./utils/constants');
+
+hbs.registerHelper('getEmoji', function (type) {
+    return TRANSACTION_TYPES[type] || '📝';
+
 });
 
-hbs.registerHelper('getPocketEmoji', function(pocket) {
-    const emojis = {
-        'Kwintals': '💰', 'Groceries': '🥦', 'Weekday Transport': '🚌',
-        'Weekend Transport': '🚗', 'Investasi': '📈', 'Dana Darurat': '🆘', 'IPL': '🏘️'
-    };
-    return emojis[pocket] || '👛';
+hbs.registerHelper('getPocketEmoji', function (pocket) {
+    return POCKETS[pocket] || '👛';
+
 });
 
-hbs.registerHelper('eq', function(a, b) {
+hbs.registerHelper('eq', function (a, b) {
     return a === b;
 });
 
 app.use(express.static('public'));
-app.use(express.urlencoded({extended: false}));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // Trust proxy (required for Render/Heroku secure cookies)
 app.set('trust proxy', 1);
 
+if (!process.env.SESSION_SECRET) {
+    console.error('FATAL ERROR: SESSION_SECRET is not defined.');
+    process.exit(1);
+}
+
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'moneyjournal-secret-key',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/moneyjournal',
+        mongoUrl: process.env.MONGODB_URI, // fallback handle in database.js or here? database.js handles connection, but store needs url too. 
+        // Actually, MongoStore can reuse the existing connection if we pass the client, or we just pass the URL.
+        // Let's rely on database.js to enforce the URL existence, but here we need it too.
+        // Let's just use process.env.MONGODB_URI and assume it's checked elsewhere or fail here too.
+        mongoUrl: process.env.MONGODB_URI,
         ttl: 14 * 24 * 60 * 60 // 14 days
     }),
-    cookie: { 
+    cookie: {
         maxAge: 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === 'production' 
+        secure: process.env.NODE_ENV === 'production'
     }
 }));
 
