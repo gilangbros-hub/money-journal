@@ -1,46 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transaction History - Money Journal</title>
-    <link rel="stylesheet" href="/css/transaction.css">
-    <link rel="stylesheet" href="/css/transactions.css">
+    {{> head}}
+    <title>Money Journal - History</title>
 </head>
 <body>
-    <div class="container-wide">
-        <div class="header">
-            <div class="user-info">
-                <span class="welcome">Welcome, <strong>{{username}}</strong></span>
-                <div class="header-actions">
-                    <a href="/transaction" class="nav-btn">➕ Add New</a>
-                    <a href="/logout" class="logout-btn">Logout</a>
-                </div>
-            </div>
+    <header class="md-top-app-bar">
+        <div class="d-flex align-center gap-2">
+            <a href="/transaction" class="md-btn text" style="min-width: auto; padding: 0 8px;">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <h1 class="app-bar-title">History</h1>
         </div>
+        <div class="d-flex align-center gap-2">
+            <span class="md-subhead">{{username}}</span>
+        </div>
+    </header>
 
-        <div class="transactions-card">
-            <div class="card-header">
-                <h1>📊 Transaction History</h1>
-                <p>View and manage your expenses</p>
+    <div class="main-container">
+        <!-- Filters Card -->
+        <div class="md-card outlined mb-4">
+            <div class="md-card-header">
+                <h2 class="md-headline" style="font-size: 20px;">Filters</h2>
             </div>
-
-            <!-- Filters -->
-            <div class="filters">
-                <div class="filter-group">
-                    <label for="monthFilter">📅 Month *</label>
-                    <input type="month" id="monthFilter" required>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div class="md-text-field" style="margin-bottom: 0;">
+                    <input type="month" id="monthFilter" placeholder=" ">
+                    <label for="monthFilter">Month</label>
                 </div>
-                
-                <div class="filter-group">
-                    <label for="byFilter">👤 Submitted By</label>
-                    <select id="byFilter">
-                        <option value="all">All Users</option>
-                    </select>
-                </div>
-                
-                <div class="filter-group">
-                    <label for="typeFilter">🏷️ Category</label>
+                <div class="md-text-field" style="margin-bottom: 0;">
                     <select id="typeFilter">
                         <option value="all">All Categories</option>
                         <option value="rumah">🏠 Rumah</option>
@@ -48,58 +36,75 @@
                         <option value="pacaran">❤️ Pacaran</option>
                         <option value="personal">👤 Personal</option>
                     </select>
+                    <label for="typeFilter">Category</label>
+                </div>
+                <div class="md-text-field" style="margin-bottom: 0;">
+                    <select id="byFilter">
+                        <option value="all">All Users</option>
+                    </select>
+                    <label for="byFilter">Submitter</label>
                 </div>
             </div>
+        </div>
 
-            <!-- Summary -->
-            <div class="summary-cards">
-                <div class="summary-card">
-                    <div class="summary-label">Total Transactions</div>
-                    <div class="summary-value" id="totalCount">0</div>
-                </div>
-                <div class="summary-card highlight">
-                    <div class="summary-label">Total Amount</div>
-                    <div class="summary-value" id="totalAmount">Rp 0</div>
-                </div>
+        <!-- Summary Cards -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="md-card">
+                <p class="md-subhead">Total Transactions</p>
+                <h2 class="md-headline" id="totalCount">0</h2>
             </div>
+            <div class="md-card" style="background-color: var(--md-sys-color-primary-container);">
+                <p class="md-subhead" style="color: var(--md-sys-color-on-primary-container);">Total Amount</p>
+                <h2 class="md-headline" id="totalAmount" style="color: var(--md-sys-color-on-primary-container);">Rp 0</h2>
+            </div>
+        </div>
 
-            <!-- Table -->
-            <div class="table-container">
-                <table id="transactionsTable">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Date & Time</th>
-                            <th>Category</th>
-                            <th>By</th>
-                            <th>Amount</th>
-                            <th>Description</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        <tr class="loading-row">
-                            <td colspan="7">Loading transactions...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <!-- Transactions Table -->
+        <div class="md-table-container">
+            <table class="md-table" id="transactionsTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        <th>By</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <h3>🗑️ Delete Transaction</h3>
-            <p>Are you sure you want to delete this transaction?</p>
-            <p class="modal-details" id="deleteDetails"></p>
-            <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-delete" onclick="confirmDelete()">Delete</button>
+    <!-- Delete Confirmation Dialog (Modal) -->
+    <div id="deleteModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+        <div class="md-card" style="width: 100%; max-width: 320px;">
+            <h3 class="md-headline" style="font-size: 24px;">Delete?</h3>
+            <p class="md-subhead">This cannot be undone.</p>
+            <p id="deleteDetails" style="margin: 16px 0; font-size: 14px;"></p>
+            <div class="d-flex justify-between mt-4">
+                <button class="md-btn text" onclick="closeDeleteModal()">Cancel</button>
+                <button class="md-btn filled" style="background-color: var(--md-sys-color-error); color: var(--md-sys-color-on-error);" onclick="confirmDelete()">Delete</button>
             </div>
         </div>
     </div>
+    
+    <!-- Add FAB -->
+    <a href="/transaction" class="md-fab" title="Add Transaction">
+        <span class="material-symbols-outlined">add</span>
+    </a>
+
+    <div id="message"></div>
 
     <script src="/js/transactions.js"></script>
+    <script>
+        // Simple modal logic if not present in js
+        function showDeleteModal(id) {
+             document.getElementById('deleteModal').style.display = 'flex';
+        }
+    </script>
 </body>
 </html>

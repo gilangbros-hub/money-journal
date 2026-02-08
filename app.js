@@ -1,4 +1,5 @@
 const express = require('express');
+const hbs = require('hbs');
 const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
 const session = require('express-session'); 
@@ -12,6 +13,9 @@ dotenv.config({ path: './.env'});
 connectDB();  
 
 const app = express();
+
+// Register partials
+hbs.registerPartials(__dirname + '/views/partials');
 
 // Add this line to serve static files
 app.use(express.static('public'));
@@ -35,10 +39,6 @@ app.get('/', (req, res) => {
 });
 
 app.set('view engine', 'hbs');
-
-app.get("/", (req, res) => {
-    res.send("Welcome to Login App");
-});
 
 app.get("/login", (req, res) => {
     res.render("login");
