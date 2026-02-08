@@ -39,11 +39,16 @@ exports.postLogin = async (req, res) => {
         req.session.userId = user._id;
         req.session.username = user.username;
         
-        res.redirect('/transaction');
+        res.redirect('/welcome');
     } catch (error) {
         console.error('Login error:', error);
         res.redirect('/login?error=Error during login');
     }
+};
+
+exports.getWelcome = (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    res.render('welcome', { username: req.session.username });
 };
 
 exports.logout = (req, res) => {

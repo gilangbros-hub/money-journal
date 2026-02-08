@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{> head}}
+    <title>Welcome - Money Journal</title>
+    <style>
+        body {
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .welcome-text {
+            font-family: 'Roboto', sans-serif;
+            font-weight: 500; /* Semibold */
+            font-size: 32px;
+            color: var(--md-sys-color-on-background);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.8s ease forwards;
+        }
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="welcome-text">
+        Hi! {{username}}
+    </div>
+
+    <script>
+        // Wait 3 seconds then redirect to the transaction page
+        setTimeout(() => {
+            window.location.href = '/transaction';
+        }, 3000);
+    </script>
+</body>
+</html>

@@ -114,7 +114,8 @@ document.getElementById('transactionForm').addEventListener('submit', async func
         const result = await response.json();
         
         if (response.ok && result.success) {
-            showToast(result.message, 'success');
+            const username = document.getElementById('currentUsername').value;
+            showToast(`Input berhasil! Makaci yaa ${username}!`, 'success');
             
             // Only send WhatsApp on new transactions (optional, keeping your logic)
             if (!isEdit) {
