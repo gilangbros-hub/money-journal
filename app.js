@@ -87,6 +87,12 @@ app.use(authRoutes);
 app.use(transactionRoutes);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`);
-});
+
+// Only start the server if running directly (not required/imported)
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Server started on port ${PORT}`);
+    });
+}
+
+module.exports = app;
