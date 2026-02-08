@@ -4,190 +4,242 @@
     {{> head}}
     <title>Add Transaction</title>
     <style>
-        /* Modern Compact Styles */
-        body { background-color: #ffffff; }
+        /* Modern Compact & Spaced Styles */
+        body { background-color: #ffffff; color: #1F2937; }
         
-        /* Grid for option buttons */
-        .option-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Adaptive columns */
-            gap: 8px;
-            margin-bottom: 4px;
+        .main-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 16px 20px 100px 20px; /* Extra bottom padding for sticky button */
         }
 
-        /* Hidden radio logic */
-        .option-input { display: none; }
+        /* Consistent Section Spacing */
+        .form-section {
+            margin-bottom: 28px; /* Consistent gap between rows */
+        }
 
-        /* Icon Button Style */
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #6B7280;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Consistent Grid Spacing */
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3 columns for better symmetry on mobile */
+            gap: 10px; /* Uniform gap: left, right, up, down */
+        }
+
         .icon-btn {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 10px 4px;
-            background: #F3F4F6;
-            border: 1px solid transparent;
-            border-radius: 12px;
+            padding: 12px 8px;
+            background: #F9FAFB;
+            border: 1.5px solid #F3F4F6;
+            border-radius: 16px;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            height: 100%;
-            min-height: 70px;
+            min-height: 85px;
         }
 
-        .icon-btn:active { transform: scale(0.96); }
+        .option-input { display: none; }
 
-        .emoji-icon { font-size: 24px; margin-bottom: 4px; line-height: 1; }
-        .label-text { 
-            font-size: 11px; 
-            font-weight: 500; 
-            text-align: center; 
-            line-height: 1.2;
-            color: #4B5563;
-        }
-
-        /* Selected State */
         .option-input:checked + .icon-btn {
             background-color: #EEF2FF;
             border-color: var(--md-sys-color-primary);
-            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.1), 0 2px 4px -1px rgba(79, 70, 229, 0.06);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .emoji-icon { font-size: 28px; margin-bottom: 6px; }
+        .label-text { 
+            font-size: 11px; 
+            font-weight: 600; 
+            text-align: center;
+            color: #4B5563;
+        }
+
+        /* Input Field Styling */
+        .md-text-field {
+            margin-bottom: 0; /* Handled by form-section */
         }
         
-        .option-input:checked + .icon-btn .label-text {
-            color: var(--md-sys-color-primary);
-            font-weight: 700;
+        .md-text-field input, .md-text-field select {
+            border-radius: 12px;
+            border: 1.5px solid #E5E7EB;
+            height: 54px;
+            font-size: 16px;
+            background: #F9FAFB;
         }
 
-        /* Section Headers */
-        .section-label {
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        .md-text-field label {
+            background: transparent !important;
+            padding: 0;
+            left: 16px;
+            top: 17px;
             color: #9CA3AF;
-            margin-bottom: 8px;
-            margin-top: 16px;
         }
-        .section-label:first-child { margin-top: 0; }
 
-        /* Floating Input Style Overrides for Compactness */
-        .compact-field {
-            margin-bottom: 12px;
-        }
-        .compact-field .md-text-field input {
-            padding: 12px 16px;
-            height: 48px; /* Shorter height */
-        }
-        .compact-field .md-text-field label {
-            top: 12px;
-        }
-        .compact-field .md-text-field input:focus ~ label,
-        .compact-field .md-text-field input:not(:placeholder-shown) ~ label {
-            top: -8px;
+        .md-text-field input:focus ~ label,
+        .md-text-field input:not(:placeholder-shown) ~ label {
+            background: #ffffff !important;
+            padding: 0 6px;
+            left: 12px;
+            top: -10px;
+            color: var(--md-sys-color-primary);
+            font-weight: 600;
         }
 
         /* Amount Field Special Styling */
-        .amount-wrapper {
-            position: relative;
-            margin-bottom: 12px;
-        }
-        .amount-prefix {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-weight: 700;
-            color: var(--md-sys-color-primary);
-            font-size: 18px;
-            pointer-events: none;
-        }
-        .amount-input-styled {
-            padding-left: 48px !important; 
-            font-size: 20px !important;
-            font-weight: 700;
-            color: var(--md-sys-color-primary) !important;
+        .amount-card {
+            background: #F5F3FF;
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid #DDD6FE;
         }
         
-        /* Sticky Footer for Mobile */
-        .sticky-footer {
-            position: sticky;
-            bottom: 0;
-            background: white;
-            padding: 12px 16px;
-            border-top: 1px solid #E5E7EB;
-            margin: 0 -16px -16px -16px; /* Negate container padding */
+        .amount-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
         }
+
+        .amount-prefix {
+            font-weight: 800;
+            color: var(--md-sys-color-primary);
+            font-size: 24px;
+            margin-right: 8px;
+        }
+
+        .amount-input-styled {
+            background: transparent !important;
+            border: none !important;
+            font-size: 32px !important;
+            font-weight: 800;
+            color: var(--md-sys-color-primary) !important;
+            padding: 0 !important;
+            height: auto !important;
+            width: 100%;
+        }
+        
+        .amount-input-styled:focus {
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Sticky Footer */
+        .sticky-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 16px 20px;
+            border-top: 1px solid #F3F4F6;
+            z-index: 100;
+        }
+
+        .submit-btn {
+            height: 56px;
+            border-radius: 18px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
     </style>
 </head>
 <body>
-    <header class="md-top-app-bar" style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6;">
+    <header class="md-top-app-bar" style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6; padding: 12px 20px;">
         <div class="d-flex align-center gap-2">
-            <a href="/transactions" class="md-btn text" style="min-width:auto; padding:0 8px;">
+            <a href="/transactions" class="md-btn text" style="min-width:auto; padding:0 8px; color: #374151;">
                 <span class="material-symbols-outlined">close</span>
             </a>
-            <h1 class="app-bar-title" style="font-size:18px;">New Transaction</h1>
+            <h1 class="app-bar-title" style="font-size:19px; font-weight: 700;">New Transaction</h1>
         </div>
         <div class="d-flex align-center">
-            <span class="md-subhead" style="font-size:14px;">{{username}}</span>
+            <span style="font-size:14px; font-weight: 600; color: #6B7280;">{{username}}</span>
         </div>
     </header>
 
-    <div class="main-container" style="max-width: 600px; padding-bottom: 0;">
+    <div class="main-container">
         <input type="hidden" id="currentUsername" value="{{username}}">
-        <form id="transactionForm" style="padding-bottom: 80px;"> <!-- Padding for sticky footer -->
+        <form id="transactionForm">
             <input type="hidden" id="transactionId" name="transactionId">
 
             <!-- 1. Expense Type -->
-            <div class="section-label">Expense Type</div>
-            <div class="option-grid">
-                {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}
-                <label>
-                    <input type="radio" name="type" value="{{this}}" class="option-input" required>
-                    <div class="icon-btn">
-                        <span class="emoji-icon">{{getEmoji this}}</span>
-                        <span class="label-text">{{this}}</span>
-                    </div>
-                </label>
-                {{/each}}
+            <div class="form-section">
+                <div class="section-label"><span>🏷️</span> Expense Type</div>
+                <div class="option-grid">
+                    {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}
+                    <label>
+                        <input type="radio" name="type" value="{{this}}" class="option-input" required>
+                        <div class="icon-btn">
+                            <span class="emoji-icon">{{getEmoji this}}</span>
+                            <span class="label-text">{{this}}</span>
+                        </div>
+                    </label>
+                    {{/each}}
+                </div>
             </div>
 
             <!-- 2. Notes -->
-            <div class="section-label">Details</div>
-            <div class="md-text-field compact-field">
-                <input type="text" id="ngapain" name="ngapain" placeholder=" " required>
-                <label for="ngapain">📝 Notes (What is this for?)</label>
+            <div class="form-section">
+                <div class="section-label"><span>📝</span> Description</div>
+                <div class="md-text-field">
+                    <input type="text" id="ngapain" name="ngapain" placeholder=" " required>
+                    <label for="ngapain">What did you buy?</label>
+                </div>
             </div>
 
             <!-- 3. Amount -->
-            <div class="amount-wrapper">
-                <div class="md-text-field compact-field" style="margin-bottom:0;">
-                    <span class="amount-prefix">Rp.</span>
-                    <input type="number" id="amount" name="amount" class="amount-input-styled" placeholder="0" required>
+            <div class="form-section">
+                <div class="section-label"><span>💵</span> Amount</div>
+                <div class="amount-card">
+                    <div class="amount-wrapper">
+                        <span class="amount-prefix">Rp</span>
+                        <input type="number" id="amount" name="amount" class="amount-input-styled" placeholder="0" required>
+                    </div>
                 </div>
             </div>
 
             <!-- 4. Pocket -->
-            <div class="section-label">Pocket Source</div>
-            <div class="option-grid" style="grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));">
-                {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Dana Darurat,IPL")}}
-                <label>
-                    <input type="radio" name="pocket" value="{{this}}" class="option-input" required>
-                    <div class="icon-btn">
-                        <span class="emoji-icon">{{getPocketEmoji this}}</span>
-                        <span class="label-text">{{this}}</span>
-                    </div>
-                </label>
-                {{/each}}
+            <div class="form-section">
+                <div class="section-label"><span>👛</span> Pocket Source</div>
+                <div class="option-grid">
+                    {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Dana Darurat,IPL")}}
+                    <label>
+                        <input type="radio" name="pocket" value="{{this}}" class="option-input" required>
+                        <div class="icon-btn">
+                            <span class="emoji-icon">{{getPocketEmoji this}}</span>
+                            <span class="label-text">{{this}}</span>
+                        </div>
+                    </label>
+                    {{/each}}
+                </div>
             </div>
 
-            <!-- 5. Date Time (Auto Filled) -->
-            <div class="section-label" style="margin-top:12px;">Date & Time</div>
-            <div class="md-text-field compact-field">
-                <input type="datetime-local" id="date" name="date" required>
+            <!-- 5. Date Time -->
+            <div class="form-section">
+                <div class="section-label"><span>📅</span> Date & Time</div>
+                <div class="md-text-field">
+                    <input type="datetime-local" id="date" name="date" required>
+                </div>
             </div>
 
             <!-- Sticky Submit Button -->
             <div class="sticky-footer">
-                <button type="submit" class="md-btn filled md-btn-block" id="submitBtn" style="height: 50px; font-size: 16px;">
+                <button type="submit" class="md-btn filled md-btn-block submit-btn" id="submitBtn">
                     Save Transaction
                 </button>
             </div>
@@ -197,11 +249,12 @@
     <div id="message"></div>
     <script src="/js/transaction.js"></script>
     <script>
-        // Set Default Date to Now
         window.addEventListener('load', () => {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            document.getElementById('date').value = now.toISOString().slice(0, 16);
+            if (!document.getElementById('transactionId').value) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                document.getElementById('date').value = now.toISOString().slice(0, 16);
+            }
         });
     </script>
 </body>

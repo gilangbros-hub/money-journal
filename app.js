@@ -2,6 +2,7 @@ const express = require('express');
 const hbs = require('hbs');
 const dotenv = require('dotenv');
 const session = require('express-session'); 
+const MongoStore = require('connect-mongo');
 const connectDB = require('./database');
 
 // Routes
@@ -51,9 +52,13 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'moneyjournal-secret-key',
     resave: false,
     saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/moneyjournal',
+        ttl: 14 * 24 * 60 * 60 // 14 days
+    }),
     cookie: { 
         maxAge: 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === 'production' // Better security
+        secure: process.env.NODE_ENV === 'production' 
     }
 }));
 
