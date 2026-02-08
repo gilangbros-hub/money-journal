@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {{> head}}
+    <title>Edit Profile</title>
+    <style>
+        body { background-color: #ffffff; color: #1F2937; }
+        .main-container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .avatar-option {
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            padding: 4px;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 32px;
+            background: #F3F4F6;
+        }
+
+        .avatar-radio { display: none; }
+        .avatar-radio:checked + .avatar-option {
+            border-color: var(--md-sys-color-primary);
+            background: #EEF2FF;
+            transform: scale(1.1);
+        }
+
+        .md-text-field { margin-bottom: 24px; }
+    </style>
+</head>
+<body>
+    <header class="md-top-app-bar" style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6; padding: 12px 20px;">
+        <div class="d-flex align-center gap-2">
+            <a href="/transaction" class="md-btn text" style="min-width:auto; padding:0 8px; color: #374151;">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <h1 class="app-bar-title" style="font-size:19px; font-weight: 700;">Edit Profile</h1>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <form action="/profile" method="POST">
+            <div class="section-label" style="font-weight:700; color:#6B7280; margin-bottom:12px;">CHOOSE AVATAR</div>
+            <div class="avatar-grid">
+                {{#each (split "👨‍💼,👩‍💼,🧑‍💻,🦸‍♂️,🦹‍♀️,🧙‍♂️,🧛‍♂️,🧟‍♂️,🐱,🐶,🦊,🐻")}}
+                <label>
+                    <input type="radio" name="avatar" value="{{this}}" class="avatar-radio" {{#if (eq ../currentAvatar this)}}checked{{/if}}>
+                    <div class="avatar-option">{{this}}</div>
+                </label>
+                {{/each}}
+            </div>
+
+            <div class="md-text-field">
+                <input type="text" id="username" name="username" value="{{username}}" required>
+                <label for="username">Username</label>
+            </div>
+
+            <button type="submit" class="md-btn filled md-btn-block" style="height:50px; border-radius:12px;">
+                Save Changes
+            </button>
+        </form>
+    </div>
+</body>
+</html>

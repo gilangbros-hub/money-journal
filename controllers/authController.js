@@ -38,6 +38,7 @@ exports.postLogin = async (req, res) => {
         
         req.session.userId = user._id;
         req.session.username = user.username;
+        req.session.avatar = user.avatar || '👤'; // Cache avatar
         
         res.redirect('/welcome');
     } catch (error) {
@@ -49,6 +50,36 @@ exports.postLogin = async (req, res) => {
 exports.getWelcome = (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     res.render('welcome', { username: req.session.username });
+};
+
+exports.getProfile = async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    try {
+        const user = await User.findById(req.session.userId);
+        res.render('profile', { 
+            username: user.username, 
+            currentAvatar: user.avatar || '👤' 
+        });
+    } catch (error) {
+        res.redirect('/transaction');
+    }
+};
+
+exports.postProfile = async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    try {
+        const { username, avatar } = req.body;
+        const user = await User.findByIdAndUpdate(req.session.userId, { username, avatar }, { new: true });
+        
+        // Update session
+        req.session.username = user.username;
+        req.session.avatar = user.avatar;
+        
+        res.redirect('/transaction');
+    } catch (error) {
+        console.error('Profile update error:', error);
+        res.redirect('/profile?error=Error updating profile');
+    }
 };
 
 exports.logout = (req, res) => {

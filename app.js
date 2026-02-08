@@ -41,6 +41,10 @@ hbs.registerHelper('getPocketEmoji', function(pocket) {
     return emojis[pocket] || '👛';
 });
 
+hbs.registerHelper('eq', function(a, b) {
+    return a === b;
+});
+
 app.use(express.static('public'));
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());

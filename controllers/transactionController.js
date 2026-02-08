@@ -1,11 +1,17 @@
 const Transaction = require('../models/transaction');
 
 exports.getTransactionPage = (req, res) => {
-    res.render('transaction', { username: req.session.username });
+    res.render('transaction', { 
+        username: req.session.username,
+        avatar: req.session.avatar || '👤' 
+    });
 };
 
 exports.getTransactionsPage = (req, res) => {
-    res.render('transactions', { username: req.session.username });
+    res.render('transactions', { 
+        username: req.session.username,
+        avatar: req.session.avatar || '👤' 
+    });
 };
 
 exports.createTransaction = async (req, res) => {
