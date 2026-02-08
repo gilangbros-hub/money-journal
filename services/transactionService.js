@@ -44,6 +44,35 @@ const getCategoryBreakdown = (transactions) => {
 };
 
 /**
+ * Aggregates transactions by paidBy role.
+ * @param {Array} transactions 
+ * @returns {Array} [{ role: 'Husband', total: 1000, percentage: 50 }, ...]
+ */
+const getRoleBreakdown = (transactions) => {
+    if (!transactions || transactions.length === 0) return [];
+
+    const totalSpent = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+    const roleStats = transactions.reduce((acc, t) => {
+        const role = t.paidBy || 'Self';
+        acc[role] = (acc[role] || 0) + (t.amount || 0);
+        return acc;
+    }, {});
+
+    // Ensure all roles exist for chart consistency (optional, but good for pie chart)
+    const roles = ['Husband', 'Wife', 'Self'];
+
+    return roles.map(role => {
+        const amount = roleStats[role] || 0;
+        return {
+            role,
+            total: amount,
+            formattedTotal: formatCurrency(amount),
+            percentage: totalSpent > 0 ? Math.round((amount / totalSpent) * 100) : 0
+        };
+    }).filter(r => r.total > 0 || roleStats[r.role] !== undefined); // Show only if data exists or standard roles
+};
+
+/**
  * calculateTotalExpenses
  * @param {Array} transactions 
  * @returns {Object} { raw: number, formatted: string }
@@ -58,5 +87,6 @@ const calculateTotalExpenses = (transactions) => {
 
 module.exports = {
     getCategoryBreakdown,
+    getRoleBreakdown,
     calculateTotalExpenses
 };

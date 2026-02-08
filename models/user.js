@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '👤'
     },
+    role: {
+        type: String,
+        enum: ['Husband', 'Wife', 'Self'],
+        default: 'Self'
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -29,13 +34,13 @@ const userSchema = new mongoose.Schema({
 });
 
 // Hash password before saving - NO next() needed in Mongoose 6+
-userSchema.pre('save', async function() {
+userSchema.pre('save', async function () {
     if (!this.isModified('password')) return;
     this.password = await bcrypt.hash(this.password, 10);
 });
 
 // Method to compare password
-userSchema.methods.comparePassword = async function(candidatePassword) {
+userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 

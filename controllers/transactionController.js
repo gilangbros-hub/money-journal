@@ -1,6 +1,6 @@
 const Transaction = require('../models/transaction');
 const { Resend } = require('resend');
-const { getCategoryBreakdown, calculateTotalExpenses } = require('../services/transactionService');
+const { getCategoryBreakdown, calculateTotalExpenses, getRoleBreakdown } = require('../services/transactionService');
 const { formatCurrency } = require('../utils/formatters');
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -28,7 +28,7 @@ exports.createTransaction = async (req, res) => {
             pocket,
             ngapain,
             by: req.session.userId,
-            paidBy: paidBy || 'Self', // Default if missing
+            paidBy: paidBy || req.session.role || 'Self', // Default to session role or 'Self'
             amount: parseFloat(amount)
         });
 
@@ -137,7 +137,7 @@ exports.getSubmitters = async (req, res) => {
     try {
         // Since we now store IDs, we need to get unique user IDs then find their names
         const submitterIds = await Transaction.distinct('by');
-        const users = await require('../models/user').find({ _id: { $in: submitterIds } }, 'username');
+        const users = await require('../models/User').find({ _id: { $in: submitterIds } }, 'username');
         res.json(users.map(u => u.username));
     } catch (error) {
         res.status(500).json({ error: "Error" });
@@ -172,6 +172,7 @@ exports.getDashboardSummary = async (req, res) => {
 
         const totalExpenses = calculateTotalExpenses(transactions);
         const categoryBreakdown = getCategoryBreakdown(transactions);
+        const roleBreakdown = getRoleBreakdown(transactions);
 
         // Format Recent Transactions
         const formattedRecent = recentTransactions.map(t => ({
@@ -191,6 +192,7 @@ exports.getDashboardSummary = async (req, res) => {
             data: {
                 total: totalExpenses,
                 categories: categoryBreakdown,
+                roles: roleBreakdown,
                 recent: formattedRecent
             }
         });

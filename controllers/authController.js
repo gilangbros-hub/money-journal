@@ -1,4 +1,4 @@
-const User = require('../models/user');
+const User = require('../models/User');
 
 exports.getLogin = (req, res) => {
     res.render('login', { error: req.query.error, success: req.query.success });
@@ -44,6 +44,7 @@ exports.postLogin = async (req, res) => {
         req.session.userId = user._id;
         req.session.username = user.username;
         req.session.avatar = user.avatar || '👤'; // Cache avatar
+        req.session.role = user.role || 'Self'; // Cache role
 
         res.redirect('/welcome');
     } catch (error) {
@@ -63,7 +64,8 @@ exports.getProfile = async (req, res) => {
         const user = await User.findById(req.session.userId);
         res.render('profile', {
             username: user.username,
-            currentAvatar: user.avatar || '👤'
+            currentAvatar: user.avatar || '👤',
+            currentRole: user.role || 'Self'
         });
     } catch (error) {
         res.redirect('/transaction');
@@ -73,12 +75,17 @@ exports.getProfile = async (req, res) => {
 exports.postProfile = async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     try {
-        const { username, avatar } = req.body;
-        const user = await User.findByIdAndUpdate(req.session.userId, { username, avatar }, { new: true });
+        const { username, avatar, role } = req.body;
+        const user = await User.findByIdAndUpdate(
+            req.session.userId,
+            { username, avatar, role },
+            { new: true }
+        );
 
         // Update session
         req.session.username = user.username;
         req.session.avatar = user.avatar;
+        req.session.role = user.role;
 
         res.redirect('/transaction');
     } catch (error) {
