@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     {{> head}}
     <title>Transaction History</title>
@@ -7,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
+
 <body>
     <div class="main-container">
         <!-- Header -->
@@ -17,9 +19,13 @@
             <div class="user-avatar" onclick="toggleMenu()" style="cursor: pointer;">
                 {{avatar}}
             </div>
-             <div id="userMenu" style="display:none; position:absolute; right:20px; top:70px; background:white; border:1px solid #E5E7EB; border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:140px; z-index:1000;">
-                <a href="/profile" style="display:block; padding:8px 12px; text-decoration:none; color:#374151; font-size:14px; border-radius:8px;">Edit Profile</a>
-                <a href="/logout" style="display:block; padding:8px 12px; text-decoration:none; color:#EF4444; font-size:14px; border-radius:8px;">Logout</a>
+            <div id="userMenu"
+                style="display:none; position:absolute; right:20px; top:70px; background:white; border:1px solid #E5E7EB; border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:140px; z-index:1000;">
+                <a href="/profile"
+                    style="display:block; padding:8px 12px; text-decoration:none; color:#374151; font-size:14px; border-radius:8px;">Edit
+                    Profile</a>
+                <a href="/logout"
+                    style="display:block; padding:8px 12px; text-decoration:none; color:#EF4444; font-size:14px; border-radius:8px;">Logout</a>
             </div>
         </header>
 
@@ -41,13 +47,14 @@
         </div>
 
         <!-- Recent Transactions -->
-         <div class="section-header">
-            <h2 class="section-title">Recent Transactions</h2>
-            <button onclick="exportToCSV()" class="md-btn text" style="min-width:auto; padding:0; color: #10B981; font-size: 14px;">Export</button>
+        <div class="section-header">
+            <h2 class="section-title" id="recentTransactionsHeader">Recent Transactions</h2>
+            <button onclick="exportToCSV()" class="md-btn text"
+                style="min-width:auto; padding:0; color: #10B981; font-size: 14px;">Export</button>
         </div>
 
         <div class="transaction-list-mini" id="historyList">
-             <!-- Injected by JS -->
+            <!-- Injected by JS -->
         </div>
 
     </div>
@@ -58,14 +65,17 @@
     </a>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
-        <div class="md-card" style="width: 100%; max-width: 340px; text-align: center; border-radius: 24px; padding: 32px;">
+    <div id="deleteModal"
+        style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; padding: 20px;">
+        <div class="md-card"
+            style="width: 100%; max-width: 340px; text-align: center; border-radius: 24px; padding: 32px;">
             <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
             <h3 class="md-headline" style="font-size: 22px;">Delete this?</h3>
             <p class="md-subhead" id="deleteDetails"></p>
             <div class="d-flex gap-2 mt-4">
                 <button class="md-btn text md-btn-block" onclick="closeDeleteModal()">Cancel</button>
-                <button class="md-btn filled md-btn-block" style="background: #EF4444;" onclick="confirmDelete()">Delete</button>
+                <button class="md-btn filled md-btn-block" style="background: #EF4444;"
+                    onclick="confirmDelete()">Delete</button>
             </div>
         </div>
     </div>
@@ -76,7 +86,7 @@
             const menu = document.getElementById('userMenu');
             menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         }
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const menu = document.getElementById('userMenu');
             const trigger = document.querySelector('.user-avatar');
             if (menu && trigger && !trigger.contains(event.target) && !menu.contains(event.target)) {
@@ -85,4 +95,5 @@
         });
     </script>
 </body>
+
 </html>

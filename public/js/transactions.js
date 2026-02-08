@@ -47,8 +47,13 @@ function updateDashboardUI() {
     renderTransactionList(dashboardData.recent, false);
 
     // Reset Header
-    document.querySelector('h2.text-lg').textContent = 'Recent Transactions';
-    document.querySelector('h2.text-lg').nextElementSibling.style.display = 'block'; // Show Export button
+    const header = document.getElementById('recentTransactionsHeader');
+    if (header) {
+        header.textContent = 'Recent Transactions';
+        if (header.nextElementSibling) {
+            header.nextElementSibling.style.display = 'block'; // Show Export button
+        }
+    }
 }
 
 function renderCategoryList() {
@@ -96,8 +101,13 @@ async function filterByCategory(category) {
         console.log('Received transactions:', transactions);
 
         // Update Header
-        document.querySelector('h2.text-lg').textContent = `${category} Transactions`;
-        document.querySelector('h2.text-lg').nextElementSibling.style.display = 'none'; // Hide Export button for filtered view (optional)
+        const header = document.getElementById('recentTransactionsHeader');
+        if (header) {
+            header.textContent = `${category} Transactions`;
+            if (header.nextElementSibling) {
+                header.nextElementSibling.style.display = 'none'; // Hide Export button for filtered view
+            }
+        }
 
         // Render sorted by date
         if (Array.isArray(transactions)) {
