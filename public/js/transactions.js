@@ -85,19 +85,31 @@ async function filterByCategory(category) {
 
     try {
         // Fetch full list for this category
+        console.log(`Fetching transactions for category: ${category}`);
         const response = await fetch(`/api/transactions?month=${currentMonth}&type=${category}`);
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
         const transactions = await response.json();
+        console.log('Received transactions:', transactions);
 
         // Update Header
         document.querySelector('h2.text-lg').textContent = `${category} Transactions`;
         document.querySelector('h2.text-lg').nextElementSibling.style.display = 'none'; // Hide Export button for filtered view (optional)
 
         // Render sorted by date
-        renderTransactionList(transactions, true);
+        if (Array.isArray(transactions)) {
+            renderTransactionList(transactions, true);
+        } else {
+            console.error('Expected array but got:', transactions);
+            throw new Error('Invalid data format received from API');
+        }
 
     } catch (error) {
         console.error('Error fetching category transactions:', error);
-        list.innerHTML = '<p class="text-center" style="color: red;">Error loading data</p>';
+        list.innerHTML = `<p class="text-center" style="color: red;">Error loading data: ${error.message}</p>`;
     }
 }
 
@@ -110,30 +122,32 @@ function renderTransactionList(transactions, isFullList) {
     }
 
     list.innerHTML = transactions.map(t => {
-        const date = new Date(t.date);
-        const dateStr = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+        try {
+            const date = new Date(t.date);
+            const dateStr = isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 
-        // Handle formatCurrency difference (API returns formattedAmount, raw list might not if using old endpoint)
-        // actually getAllTransactions returns raw objects, but dashboard summary returns formattedAmount.
-        // Let's format client-side if missing to be safe, or use the util if I shared it (I didn't).
-        // Simple formatter:
-        const formattedAmount = t.formattedAmount || `Rp ${t.amount.toLocaleString('id-ID')}`;
-        const icon = typeEmojis[t.type] || '📦';
-        const paidByLabel = t.paidBy && t.paidBy !== 'Self' ? `<span style="font-size: 10px; background: #EEF2FF; color: #4F46E5; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.paidBy}</span>` : '';
+            // Handle formatCurrency difference
+            const formattedAmount = t.formattedAmount || `Rp ${Number(t.amount).toLocaleString('id-ID')}`;
+            const icon = typeEmojis[t.type] || '📦';
+            const paidByLabel = t.paidBy && t.paidBy !== 'Self' ? `<span style="font-size: 10px; background: #EEF2FF; color: #4F46E5; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.paidBy}</span>` : '';
 
-        return `
-            <div class="trans-item-mini" onclick="openOptions('${t._id}', '${t.ngapain}', ${t.amount})">
-                <div class="trans-icon-mini">${icon}</div>
-                <div class="trans-info">
-                    <div class="trans-title">
-                        ${t.ngapain}
-                        ${paidByLabel}
+            return `
+                <div class="trans-item-mini" onclick="openOptions('${t._id}', '${t.ngapain ? t.ngapain.replace(/'/g, "\\'") : ""}', ${t.amount})">
+                    <div class="trans-icon-mini">${icon}</div>
+                    <div class="trans-info">
+                        <div class="trans-title">
+                            ${t.ngapain || 'No Description'}
+                            ${paidByLabel}
+                        </div>
+                        <div class="trans-date">${dateStr} • ${t.pocket || 'Unknown'}</div>
                     </div>
-                    <div class="trans-date">${dateStr} • ${t.pocket}</div>
+                    <div class="trans-amount">- ${formattedAmount}</div>
                 </div>
-                <div class="trans-amount">- ${formattedAmount}</div>
-            </div>
-        `;
+            `;
+        } catch (err) {
+            console.error('Error rendering item:', t, err);
+            return '';
+        }
     }).join('');
 }
 
