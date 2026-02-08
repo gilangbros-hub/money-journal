@@ -172,3 +172,45 @@ async function confirmDelete() {
         console.error(error);
     }
 }
+
+function exportToCSV() {
+    if (currentTransactions.length === 0) {
+        alert("No transactions to export!");
+        return;
+    }
+
+    const month = document.getElementById('monthFilter').value;
+    const csvRows = [];
+    
+    // Headers
+    csvRows.push(['Date', 'Time', 'Type', 'Pocket', 'Description', 'Amount', 'Submitted By']);
+
+    // Data
+    currentTransactions.forEach(t => {
+        const date = new Date(t.date);
+        const dateStr = date.toLocaleDateString('en-GB');
+        const timeStr = date.toLocaleTimeString('en-GB');
+        
+        // Escape quotes in description to avoid CSV breaking
+        const safeDesc = `"${t.ngapain.replace(/"/g, '""')}"`;
+        
+        csvRows.push([
+            dateStr,
+            timeStr,
+            t.type,
+            t.pocket,
+            safeDesc,
+            t.amount,
+            t.by || 'Unknown' // Assuming 'by' is populated string
+        ]);
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `MoneyJournal_${month}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}

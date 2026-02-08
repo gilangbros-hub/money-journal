@@ -154,7 +154,13 @@
             </a>
             <h1 class="app-bar-title" style="font-size:19px; font-weight: 700;">History</h1>
         </div>
-        <div class="dropdown" style="position:relative;">
+        <div class="d-flex align-center gap-2">
+            <!-- Export Button -->
+            <button onclick="exportToCSV()" class="md-btn text" style="min-width:auto; padding:0 8px; color: #10B981;" title="Export to Excel">
+                <span class="material-symbols-outlined">download</span>
+            </button>
+
+            <div class="dropdown" style="position:relative;">
             <div class="d-flex align-center" onclick="toggleMenu()" style="cursor:pointer;">
                 <span style="font-size:14px; font-weight: 600; color: #6B7280; margin-right:8px;">{{username}}</span>
                 <span style="font-size:24px;">{{avatar}}</span>
