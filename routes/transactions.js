@@ -11,13 +11,20 @@ const isAuthenticated = (req, res, next) => {
     res.redirect('/login');
 };
 
+// Assuming requireAuth is the same as isAuthenticated for this context,
+// or that it's a specific middleware that needs to be defined.
+// For now, we'll use isAuthenticated as requireAuth is not defined in the original document.
+// If requireAuth is a distinct middleware, it should be defined or imported.
+const requireAuth = isAuthenticated; // Placeholder: replace with actual requireAuth if different
+
 router.use(isAuthenticated);
 
 router.get('/transaction', transactionController.getTransactionPage);
 router.get('/transactions', transactionController.getTransactionsPage);
 
-router.post('/api/transaction', transactionController.createTransaction);
-router.get('/api/transactions', transactionController.getAllTransactions);
+router.post('/api/transaction', transactionController.createTransaction);// API
+router.get('/api/dashboard/summary', requireAuth, transactionController.getDashboardSummary);
+router.get('/api/transactions', requireAuth, transactionController.getAllTransactions);
 router.get('/api/transaction/:id', transactionController.getTransaction);
 router.put('/api/transaction/:id', transactionController.updateTransaction);
 router.delete('/api/transaction/:id', transactionController.deleteTransaction);

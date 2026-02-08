@@ -28,6 +28,12 @@ const transactionSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    paidBy: {
+        type: String,
+        enum: ['Husband', 'Wife', 'Self'],
+        default: 'Self',
+        required: true
+    },
     amount: {
         type: Number,
         required: true
