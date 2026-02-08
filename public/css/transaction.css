@@ -1,0 +1,165 @@
+/* Transaction Form Styles */
+/* Modern Compact & Spaced Styles */
+body {
+    background-color: #ffffff;
+    color: #1F2937;
+}
+
+.main-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 16px 20px 100px 20px;
+    /* Extra bottom padding for sticky button */
+}
+
+/* Consistent Section Spacing */
+.form-section {
+    margin-bottom: 28px;
+    /* Consistent gap between rows */
+}
+
+.section-label {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6B7280;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Consistent Grid Spacing */
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.icon-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    background: #F9FAFB;
+    border: 1.5px solid #F3F4F6;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 85px;
+}
+
+.option-input {
+    display: none;
+}
+
+.option-input:checked+.icon-btn {
+    background-color: #EEF2FF;
+    border-color: var(--md-sys-color-primary);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
+    transform: translateY(-2px);
+}
+
+.emoji-icon {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.label-text {
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    color: #4B5563;
+}
+
+/* Input Field Styling */
+.md-text-field {
+    margin-bottom: 0;
+}
+
+.md-text-field input,
+.md-text-field select {
+    border-radius: 12px;
+    border: 1.5px solid #E5E7EB;
+    height: 54px;
+    font-size: 16px;
+    background: #F9FAFB;
+}
+
+.md-text-field label {
+    background: transparent !important;
+    padding: 0;
+    left: 16px;
+    top: 17px;
+    color: #9CA3AF;
+}
+
+.md-text-field input:focus~label,
+.md-text-field input:not(:placeholder-shown)~label {
+    background: #ffffff !important;
+    padding: 0 6px;
+    left: 12px;
+    top: -10px;
+    color: var(--md-sys-color-primary);
+    font-weight: 600;
+}
+
+/* Amount Field Special Styling */
+.amount-card {
+    background: #F5F3FF;
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid #DDD6FE;
+}
+
+.amount-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.amount-prefix {
+    font-weight: 800;
+    color: var(--md-sys-color-primary);
+    font-size: 24px;
+    margin-right: 8px;
+}
+
+.amount-input-styled {
+    background: transparent !important;
+    border: none !important;
+    font-size: 32px !important;
+    font-weight: 800;
+    color: var(--md-sys-color-primary) !important;
+    padding: 0 !important;
+    height: auto !important;
+    width: 100%;
+}
+
+.amount-input-styled:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Sticky Footer */
+.sticky-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    padding: 16px 20px;
+    border-top: 1px solid #F3F4F6;
+    z-index: 100;
+}
+
+.submit-btn {
+    height: 56px;
+    border-radius: 18px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}

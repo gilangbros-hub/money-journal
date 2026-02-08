@@ -1,0 +1,26 @@
+<!-- Shared Header with User Menu -->
+<header class="md-top-app-bar"
+    style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6; padding: 12px 20px;">
+    <div class="d-flex align-center gap-2">
+        {{#if backLink}}
+        <a href="{{backLink}}" class="md-btn text" style="min-width:auto; padding:0 8px; color: #374151;">
+            <span class="material-symbols-outlined">{{#if backIcon}}{{backIcon}}{{else}}arrow_back{{/if}}</span>
+        </a>
+        {{/if}}
+        <h1 class="app-bar-title" style="font-size:19px; font-weight: 700;">{{title}}</h1>
+    </div>
+    <div class="dropdown" style="position:relative;">
+        <div class="d-flex align-center" onclick="toggleMenu()" style="cursor:pointer;">
+            <span style="font-size:14px; font-weight: 600; color: #6B7280; margin-right:8px;">{{username}}</span>
+            <span style="font-size:24px;">{{avatar}}</span>
+        </div>
+        <div id="userMenu"
+            style="display:none; position:absolute; right:0; top:36px; background:white; border:1px solid #E5E7EB; border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:140px; z-index:1000;">
+            <a href="/profile"
+                style="display:block; padding:8px 12px; text-decoration:none; color:#374151; font-size:14px; border-radius:8px;">Edit
+                Profile</a>
+            <a href="/logout"
+                style="display:block; padding:8px 12px; text-decoration:none; color:#EF4444; font-size:14px; border-radius:8px;">Logout</a>
+        </div>
+    </div>
+</header>

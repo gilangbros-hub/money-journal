@@ -1,166 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     {{> head}}
     <title>Add Transaction</title>
-    <style>
-        /* Modern Compact & Spaced Styles */
-        body { background-color: #ffffff; color: #1F2937; }
-        
-        .main-container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 16px 20px 100px 20px; /* Extra bottom padding for sticky button */
-        }
-
-        /* Consistent Section Spacing */
-        .form-section {
-            margin-bottom: 28px; /* Consistent gap between rows */
-        }
-
-        .section-label {
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #6B7280;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Consistent Grid Spacing */
-        .option-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr); /* 3 columns for better symmetry on mobile */
-            gap: 10px; /* Uniform gap: left, right, up, down */
-        }
-
-        .icon-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 12px 8px;
-            background: #F9FAFB;
-            border: 1.5px solid #F3F4F6;
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            min-height: 85px;
-        }
-
-        .option-input { display: none; }
-
-        .option-input:checked + .icon-btn {
-            background-color: #EEF2FF;
-            border-color: var(--md-sys-color-primary);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
-            transform: translateY(-2px);
-        }
-
-        .emoji-icon { font-size: 28px; margin-bottom: 6px; }
-        .label-text { 
-            font-size: 11px; 
-            font-weight: 600; 
-            text-align: center;
-            color: #4B5563;
-        }
-
-        /* Input Field Styling */
-        .md-text-field {
-            margin-bottom: 0; /* Handled by form-section */
-        }
-        
-        .md-text-field input, .md-text-field select {
-            border-radius: 12px;
-            border: 1.5px solid #E5E7EB;
-            height: 54px;
-            font-size: 16px;
-            background: #F9FAFB;
-        }
-
-        .md-text-field label {
-            background: transparent !important;
-            padding: 0;
-            left: 16px;
-            top: 17px;
-            color: #9CA3AF;
-        }
-
-        .md-text-field input:focus ~ label,
-        .md-text-field input:not(:placeholder-shown) ~ label {
-            background: #ffffff !important;
-            padding: 0 6px;
-            left: 12px;
-            top: -10px;
-            color: var(--md-sys-color-primary);
-            font-weight: 600;
-        }
-
-        /* Amount Field Special Styling */
-        .amount-card {
-            background: #F5F3FF;
-            padding: 20px;
-            border-radius: 20px;
-            border: 1px solid #DDD6FE;
-        }
-        
-        .amount-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .amount-prefix {
-            font-weight: 800;
-            color: var(--md-sys-color-primary);
-            font-size: 24px;
-            margin-right: 8px;
-        }
-
-        .amount-input-styled {
-            background: transparent !important;
-            border: none !important;
-            font-size: 32px !important;
-            font-weight: 800;
-            color: var(--md-sys-color-primary) !important;
-            padding: 0 !important;
-            height: auto !important;
-            width: 100%;
-        }
-        
-        .amount-input-styled:focus {
-            outline: none !important;
-            box-shadow: none !important;
-        }
-
-        /* Sticky Footer */
-        .sticky-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            padding: 16px 20px;
-            border-top: 1px solid #F3F4F6;
-            z-index: 100;
-        }
-
-        .submit-btn {
-            height: 56px;
-            border-radius: 18px;
-            font-size: 16px;
-            font-weight: 700;
-            letter-spacing: 0.02em;
-        }
-
-    </style>
+    <link rel="stylesheet" href="/css/transaction.css">
 </head>
+
 <body>
-    <header class="md-top-app-bar" style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6; padding: 12px 20px;">
+    <header class="md-top-app-bar"
+        style="background:white; box-shadow:none; border-bottom:1px solid #F3F4F6; padding: 12px 20px;">
         <div class="d-flex align-center gap-2">
             <a href="/transactions" class="md-btn text" style="min-width:auto; padding:0 8px; color: #374151;">
                 <span class="material-symbols-outlined">close</span>
@@ -172,9 +21,13 @@
                 <span style="font-size:14px; font-weight: 600; color: #6B7280; margin-right:8px;">{{username}}</span>
                 <span style="font-size:24px;">{{avatar}}</span>
             </div>
-            <div id="userMenu" style="display:none; position:absolute; right:0; top:36px; background:white; border:1px solid #E5E7EB; border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:140px; z-index:1000;">
-                <a href="/profile" style="display:block; padding:8px 12px; text-decoration:none; color:#374151; font-size:14px; border-radius:8px;">Edit Profile</a>
-                <a href="/logout" style="display:block; padding:8px 12px; text-decoration:none; color:#EF4444; font-size:14px; border-radius:8px;">Logout</a>
+            <div id="userMenu"
+                style="display:none; position:absolute; right:0; top:36px; background:white; border:1px solid #E5E7EB; border-radius:12px; padding:8px; box-shadow:0 4px 12px rgba(0,0,0,0.1); width:140px; z-index:1000;">
+                <a href="/profile"
+                    style="display:block; padding:8px 12px; text-decoration:none; color:#374151; font-size:14px; border-radius:8px;">Edit
+                    Profile</a>
+                <a href="/logout"
+                    style="display:block; padding:8px 12px; text-decoration:none; color:#EF4444; font-size:14px; border-radius:8px;">Logout</a>
             </div>
         </div>
         <script>
@@ -183,7 +36,7 @@
                 menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
             }
             // Close menu when clicking outside
-            document.addEventListener('click', function(event) {
+            document.addEventListener('click', function (event) {
                 const menu = document.getElementById('userMenu');
                 const trigger = document.querySelector('.dropdown');
                 if (!trigger.contains(event.target)) {
@@ -202,7 +55,8 @@
             <div class="form-section">
                 <div class="section-label"><span>🏷️</span> Expense Type</div>
                 <div class="option-grid">
-                    {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}
+                    {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang
+                    Sampah,Uang Keamanan,Medicine,Others")}}
                     <label>
                         <input type="radio" name="type" value="{{this}}" class="option-input" required>
                         <div class="icon-btn">
@@ -229,7 +83,8 @@
                 <div class="amount-card">
                     <div class="amount-wrapper">
                         <span class="amount-prefix">Rp</span>
-                        <input type="number" id="amount" name="amount" class="amount-input-styled" placeholder="0" required>
+                        <input type="number" id="amount" name="amount" class="amount-input-styled" placeholder="0"
+                            required>
                     </div>
                 </div>
             </div>
@@ -238,7 +93,8 @@
             <div class="form-section">
                 <div class="section-label"><span>👛</span> Pocket Source</div>
                 <div class="option-grid">
-                    {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Dana Darurat,IPL")}}
+                    {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Dana
+                    Darurat,IPL")}}
                     <label>
                         <input type="radio" name="pocket" value="{{this}}" class="option-input" required>
                         <div class="icon-btn">
@@ -268,6 +124,7 @@
     </div>
 
     <div id="message"></div>
+    <script src="/js/common.js"></script>
     <script src="/js/transaction.js"></script>
     <script>
         window.addEventListener('load', () => {
@@ -279,4 +136,5 @@
         });
     </script>
 </body>
+
 </html>

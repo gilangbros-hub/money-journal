@@ -17,7 +17,6 @@ connectDB();
 
 const path = require('path');
 
-// ... 
 
 const app = express();
 
@@ -66,10 +65,6 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI, // fallback handle in database.js or here? database.js handles connection, but store needs url too. 
-        // Actually, MongoStore can reuse the existing connection if we pass the client, or we just pass the URL.
-        // Let's rely on database.js to enforce the URL existence, but here we need it too.
-        // Let's just use process.env.MONGODB_URI and assume it's checked elsewhere or fail here too.
         mongoUrl: process.env.MONGODB_URI,
         ttl: 14 * 24 * 60 * 60 // 14 days
     }),
@@ -78,8 +73,6 @@ app.use(session({
         secure: process.env.NODE_ENV === 'production'
     }
 }));
-
-app.set('view engine', 'hbs');
 
 // Root Route
 app.get('/', (req, res) => {

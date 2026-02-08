@@ -80,20 +80,8 @@
         </div>
     </div>
 
+    <script src="/js/common.js"></script>
     <script src="/js/transactions.js"></script>
-    <script>
-        function toggleMenu() {
-            const menu = document.getElementById('userMenu');
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-        }
-        document.addEventListener('click', function (event) {
-            const menu = document.getElementById('userMenu');
-            const trigger = document.querySelector('.user-avatar');
-            if (menu && trigger && !trigger.contains(event.target) && !menu.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-        });
-    </script>
 </body>
 
 </html>
