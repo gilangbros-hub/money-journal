@@ -1,5 +1,7 @@
 const Transaction = require('../models/transaction');
 const { Resend } = require('resend');
+const { getCategoryBreakdown, calculateTotalExpenses } = require('../services/transactionService');
+const { formatCurrency } = require('../utils/formatters');
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -139,64 +141,62 @@ exports.getSubmitters = async (req, res) => {
         res.json(users.map(u => u.username));
     } catch (error) {
         res.status(500).json({ error: "Error" });
-    } const { getCategoryBreakdown, calculateTotalExpenses } = require('../services/transactionService');
-    const { formatCurrency } = require('../utils/formatters');
+    }
+};
 
-    exports.getDashboardSummary = async (req, res) => {
-        try {
-            const { month } = req.query; // Format: YYYY-MM
-            const userId = req.session.userId;
+exports.getDashboardSummary = async (req, res) => {
+    try {
+        const { month } = req.query; // Format: YYYY-MM
+        const userId = req.session.userId;
 
-            let startDate, endDate;
-            if (month) {
-                const [year, monthNum] = month.split('-');
-                startDate = new Date(year, monthNum - 1, 1);
-                endDate = new Date(year, monthNum, 0, 23, 59, 59);
-            } else {
-                const now = new Date();
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-            }
-
-            const filter = {
-                date: { $gte: startDate, $lte: endDate }
-                // Note: We might want to filter by user or household eventually
-            };
-
-            // Parallel Execution
-            const [transactions, recentTransactions] = await Promise.all([
-                Transaction.find(filter).sort({ date: -1 }), // For calculations
-                Transaction.find(filter).sort({ date: -1 }).limit(5).populate('by', 'username') // For display
-            ]);
-
-            const totalExpenses = calculateTotalExpenses(transactions);
-            const categoryBreakdown = getCategoryBreakdown(transactions);
-
-            // Format Recent Transactions
-            const formattedRecent = recentTransactions.map(t => ({
-                _id: t._id,
-                date: t.date,
-                type: t.type,
-                pocket: t.pocket,
-                ngapain: t.ngapain,
-                amount: t.amount,
-                formattedAmount: formatCurrency(t.amount),
-                paidBy: t.paidBy,
-                by: t.by ? t.by.username : 'Unknown'
-            }));
-
-            res.json({
-                success: true,
-                data: {
-                    total: totalExpenses,
-                    categories: categoryBreakdown,
-                    recent: formattedRecent
-                }
-            });
-
-        } catch (error) {
-            console.error('Dashboard Error:', error);
-            res.status(500).json({ success: false, message: "Error fetching dashboard data" });
+        let startDate, endDate;
+        if (month) {
+            const [year, monthNum] = month.split('-');
+            startDate = new Date(year, monthNum - 1, 1);
+            endDate = new Date(year, monthNum, 0, 23, 59, 59);
+        } else {
+            const now = new Date();
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
         }
-    };
+
+        const filter = {
+            date: { $gte: startDate, $lte: endDate }
+        };
+
+        // Parallel Execution
+        const [transactions, recentTransactions] = await Promise.all([
+            Transaction.find(filter).sort({ date: -1 }), // For calculations
+            Transaction.find(filter).sort({ date: -1 }).limit(5).populate('by', 'username') // For display
+        ]);
+
+        const totalExpenses = calculateTotalExpenses(transactions);
+        const categoryBreakdown = getCategoryBreakdown(transactions);
+
+        // Format Recent Transactions
+        const formattedRecent = recentTransactions.map(t => ({
+            _id: t._id,
+            date: t.date,
+            type: t.type,
+            pocket: t.pocket,
+            ngapain: t.ngapain,
+            amount: t.amount,
+            formattedAmount: formatCurrency(t.amount),
+            paidBy: t.paidBy,
+            by: t.by ? t.by.username : 'Unknown'
+        }));
+
+        res.json({
+            success: true,
+            data: {
+                total: totalExpenses,
+                categories: categoryBreakdown,
+                recent: formattedRecent
+            }
+        });
+
+    } catch (error) {
+        console.error('Dashboard Error:', error);
+        res.status(500).json({ success: false, message: "Error fetching dashboard data" });
+    }
 };
