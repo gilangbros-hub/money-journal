@@ -34,9 +34,11 @@ exports.createTransaction = async (req, res) => {
         // Send Email Notification (Non-blocking)
         if (resend) {
             const formattedAmount = new Intl.NumberFormat('id-ID').format(amount);
+            const recipients = process.env.NOTIFY_EMAIL ? process.env.NOTIFY_EMAIL.split(';').map(email => email.trim()) : ['your-email@example.com'];
+            
             resend.emails.send({
                 from: 'Money Journal <onboarding@resend.dev>',
-                to: process.env.NOTIFY_EMAIL || 'your-email@example.com', 
+                to: recipients, 
                 subject: `💸 New Transaction: Rp ${formattedAmount}`,
                 html: `
                     <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
