@@ -137,7 +137,7 @@ exports.getSubmitters = async (req, res) => {
     try {
         // Since we now store IDs, we need to get unique user IDs then find their names
         const submitterIds = await Transaction.distinct('by');
-        const users = await require('../models/User').find({ _id: { $in: submitterIds } }, 'username');
+        const users = await require('../models/user').find({ _id: { $in: submitterIds } }, 'username');
         res.json(users.map(u => u.username));
     } catch (error) {
         res.status(500).json({ error: "Error" });

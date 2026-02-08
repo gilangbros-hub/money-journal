@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const User = require('../models/user');
 
 exports.getLogin = (req, res) => {
     res.render('login', { error: req.query.error, success: req.query.success });
