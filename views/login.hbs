@@ -11,6 +11,18 @@
                 <span class="material-symbols-outlined" style="font-size: 48px; color: var(--md-sys-color-primary);">account_balance_wallet</span>
                 <h1 class="md-headline">Money Journal</h1>
                 <p class="md-subhead">Sheilla & Gilang</p>
+                
+                {{#if error}}
+                <div style="background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); padding: 8px; border-radius: 4px; margin-top: 16px; font-size: 14px;">
+                    {{error}}
+                </div>
+                {{/if}}
+
+                {{#if success}}
+                <div style="background-color: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); padding: 8px; border-radius: 4px; margin-top: 16px; font-size: 14px;">
+                    {{success}}
+                </div>
+                {{/if}}
             </div>
             
             <form method="POST" action="/auth/login">

@@ -10,6 +10,12 @@
             <div class="md-card-header text-center">
                 <h1 class="md-headline">Create Account</h1>
                 <p class="md-subhead">Join Money Journal</p>
+
+                {{#if error}}
+                <div style="background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); padding: 8px; border-radius: 4px; margin-top: 16px; font-size: 14px;">
+                    {{error}}
+                </div>
+                {{/if}}
             </div>
             
             <form method="POST" action="/auth/register">

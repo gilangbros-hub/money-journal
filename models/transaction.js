@@ -17,7 +17,8 @@ const transactionSchema = new mongoose.Schema({
         trim: true
     },
     by: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     amount: {
