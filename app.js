@@ -2,7 +2,8 @@ const express = require('express');
 const hbs = require('hbs');
 const dotenv = require('dotenv');
 const session = require('express-session'); 
-const MongoStore = require('connect-mongo');
+let MongoStore = require('connect-mongo');
+if (MongoStore.default) MongoStore = MongoStore.default;
 const connectDB = require('./database');
 
 // Routes
