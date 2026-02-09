@@ -59,6 +59,9 @@ function renderBudgets(data) {
     const list = document.getElementById('budgetList');
     const isEditable = data.canEdit;
 
+    // Render Health Summary
+    renderHealthSummary(data);
+
     if (data.pockets.length === 0) {
         list.innerHTML = '<p class="loading">No pockets configured</p>';
         return;
@@ -67,17 +70,53 @@ function renderBudgets(data) {
     list.innerHTML = data.pockets.map(pocket => `
         <div class="budget-item ${isEditable ? '' : 'readonly'}" 
              onclick="${isEditable ? `openEditModal('${pocket.pocket}', '${pocket.icon}', ${pocket.budget})` : ''}">
-            <div class="pocket-info">
-                <span class="pocket-icon">${pocket.icon}</span>
-                <span class="pocket-name">${pocket.pocket}</span>
+            <div class="pocket-left">
+                <div class="pocket-info">
+                    <span class="pocket-icon">${pocket.icon}</span>
+                    <span class="pocket-name">${pocket.pocket}</span>
+                </div>
+                <div class="pocket-progress">
+                    <div class="pocket-bar ${pocket.status}" style="width: ${Math.min(pocket.percentage, 100)}%"></div>
+                </div>
+                <div class="pocket-stats">
+                    <span class="pocket-spent">${pocket.formattedSpent} spent</span>
+                    <span class="pocket-remaining ${pocket.isOver ? 'over' : ''}">${pocket.isOver ? '-' : ''}${pocket.formattedRemaining} left</span>
+                </div>
             </div>
-            <span class="budget-amount ${pocket.budget === 0 ? 'zero' : ''}">
-                ${pocket.budget === 0 ? 'Rp 0' : pocket.formattedBudget}
-            </span>
+            <div class="pocket-right">
+                <span class="budget-amount ${pocket.budget === 0 ? 'zero' : ''}">
+                    ${pocket.budget === 0 ? 'Rp 0' : pocket.formattedBudget}
+                </span>
+                <span class="budget-percentage ${pocket.status}">${pocket.percentage}%</span>
+            </div>
         </div>
     `).join('');
+}
 
-    document.getElementById('totalBudget').textContent = data.formattedTotal;
+function renderHealthSummary(data) {
+    // Update health emoji and label
+    document.getElementById('healthEmoji').textContent = data.health.emoji;
+    document.getElementById('healthLabel').textContent = data.health.label;
+    document.getElementById('healthPercentage').textContent = `${data.overallPercentage}% used`;
+
+    // Update health progress bar
+    const healthBar = document.getElementById('healthBar');
+    healthBar.style.width = `${Math.min(data.overallPercentage, 100)}%`;
+    healthBar.className = `health-bar ${data.health.status}`;
+
+    // Update totals
+    document.getElementById('totalBudgetDisplay').textContent = data.formattedTotal;
+    document.getElementById('totalSpentDisplay').textContent = data.formattedSpent;
+    document.getElementById('totalRemainingDisplay').textContent =
+        (data.isOverBudget ? '-' : '') + data.formattedRemaining;
+
+    // Update remaining color based on status
+    const remainingEl = document.getElementById('totalRemainingDisplay');
+    if (data.isOverBudget) {
+        remainingEl.style.color = '#EF4444';
+    } else {
+        remainingEl.style.color = '#10B981';
+    }
 }
 
 function openEditModal(pocket, icon, budget) {

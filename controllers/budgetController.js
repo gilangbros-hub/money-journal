@@ -29,10 +29,12 @@ exports.getBudgetPage = (req, res) => {
     });
 };
 
-// GET /api/budget?month=YYYY-MM - Get budgets for a specific month
+// GET /api/budget?month=YYYY-MM - Get budgets for a specific month with spending data
 exports.getBudgets = async (req, res) => {
     try {
         const { month } = req.query;
+        const Transaction = require('../models/transaction');
+
         let targetMonth, targetYear;
 
         if (month) {
@@ -45,25 +47,74 @@ exports.getBudgets = async (req, res) => {
             targetYear = now.getFullYear();
         }
 
-        const budgets = await PocketBudget.find({
-            month: targetMonth,
-            year: targetYear
-        }).sort({ pocket: 1 });
+        // Date range for the month
+        const startDate = new Date(targetYear, targetMonth - 1, 1);
+        const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
 
-        // Build response with all pockets (including those without budgets)
-        const allPockets = Object.keys(POCKETS);
+        // Fetch budgets and transactions in parallel
+        const [budgets, transactions] = await Promise.all([
+            PocketBudget.find({ month: targetMonth, year: targetYear }).sort({ pocket: 1 }),
+            Transaction.find({ date: { $gte: startDate, $lte: endDate } })
+        ]);
+
+        // Calculate spending per pocket
+        const pocketSpending = {};
+        transactions.forEach(t => {
+            pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
+        });
+
+        // Build budget map
         const budgetMap = {};
         budgets.forEach(b => { budgetMap[b.pocket] = b; });
 
-        const result = allPockets.map(pocket => ({
-            pocket,
-            icon: POCKETS[pocket],
-            budget: budgetMap[pocket]?.budget || 0,
-            formattedBudget: formatCurrency(budgetMap[pocket]?.budget || 0),
-            _id: budgetMap[pocket]?._id || null
-        }));
+        // Build response with all pockets
+        const allPockets = Object.keys(POCKETS);
+        const result = allPockets.map(pocket => {
+            const budget = budgetMap[pocket]?.budget || 0;
+            const spent = pocketSpending[pocket] || 0;
+            const remaining = budget - spent;
+            const percentage = budget > 0 ? Math.round((spent / budget) * 100) : 0;
 
+            // Determine status color
+            let status = 'good'; // green
+            if (percentage >= 90) status = 'danger'; // red
+            else if (percentage >= 70) status = 'warning'; // yellow
+
+            return {
+                pocket,
+                icon: POCKETS[pocket],
+                budget,
+                formattedBudget: formatCurrency(budget),
+                spent,
+                formattedSpent: formatCurrency(spent),
+                remaining,
+                formattedRemaining: formatCurrency(Math.abs(remaining)),
+                percentage,
+                status,
+                isOver: remaining < 0,
+                _id: budgetMap[pocket]?._id || null
+            };
+        });
+
+        // Calculate totals for health summary
         const totalBudget = result.reduce((sum, p) => sum + p.budget, 0);
+        const totalSpent = result.reduce((sum, p) => sum + p.spent, 0);
+        const totalRemaining = totalBudget - totalSpent;
+        const overallPercentage = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
+
+        // Overall health status
+        let healthStatus = 'good';
+        let healthEmoji = '🟢';
+        let healthLabel = 'On Track';
+        if (overallPercentage >= 100) {
+            healthStatus = 'danger';
+            healthEmoji = '🔴';
+            healthLabel = 'Over Budget';
+        } else if (overallPercentage >= 70) {
+            healthStatus = 'warning';
+            healthEmoji = '🟡';
+            healthLabel = 'Caution';
+        }
 
         res.json({
             success: true,
@@ -73,7 +124,18 @@ exports.getBudgets = async (req, res) => {
                 canEdit: req.session.role === 'Wife' && isEditableMonth(targetMonth, targetYear),
                 pockets: result,
                 totalBudget,
-                formattedTotal: formatCurrency(totalBudget)
+                formattedTotal: formatCurrency(totalBudget),
+                totalSpent,
+                formattedSpent: formatCurrency(totalSpent),
+                totalRemaining,
+                formattedRemaining: formatCurrency(Math.abs(totalRemaining)),
+                overallPercentage,
+                isOverBudget: totalRemaining < 0,
+                health: {
+                    status: healthStatus,
+                    emoji: healthEmoji,
+                    label: healthLabel
+                }
             }
         });
     } catch (error) {
