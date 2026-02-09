@@ -108,13 +108,10 @@ function renderSpendingChart() {
 
     canvas.parentElement.style.display = 'block';
 
-    // Prepare data
-    const labels = categories.map(c => c.type);
-    const data = categories.map(c => c.amount);
-    const percentages = categories.map(c => {
-        const pct = total.raw > 0 ? Math.round((c.amount / total.raw) * 100) : 0;
-        return pct;
-    });
+    // Prepare data - API returns 'category' and 'total', not 'type' and 'amount'
+    const labels = categories.map(c => c.category);
+    const data = categories.map(c => c.total);
+    const percentages = categories.map(c => c.percentage || 0);
 
     // Destroy previous chart if exists
     if (spendingChart) {
@@ -158,11 +155,12 @@ function renderSpendingChart() {
     legendContainer.innerHTML = categories.map((cat, i) => `
         <div class="legend-item">
             <span class="legend-color" style="background: ${chartColors[i % chartColors.length]}"></span>
-            <span class="legend-label">${typeEmojis[cat.type] || '📦'} ${cat.type}</span>
-            <span class="legend-value">${percentages[i]}%</span>
+            <span class="legend-label">${cat.icon || typeEmojis[cat.category] || '📦'} ${cat.category}</span>
+            <span class="legend-value">${cat.percentage}%</span>
         </div>
     `).join('');
 }
+
 
 function formatRupiah(num) {
     return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
