@@ -43,11 +43,12 @@ function updateDashboardUI() {
     // 2. Render Monthly Comparison
     renderComparison(dashboardData.comparison);
 
-    // 3. Render Budget Alerts
-    renderBudgetAlerts(dashboardData.budgetAlerts);
+    // 3. Render Spending Pie Chart
+    renderSpendingChart();
 
     // 4. Render Categories
     renderCategoryList();
+
 
     // 5. Render Recent History (Default view)
     renderTransactionList(dashboardData.recent, false);
@@ -85,22 +86,88 @@ function renderComparison(comparison) {
     }
 }
 
-function renderBudgetAlerts(alerts) {
-    const container = document.getElementById('budgetAlerts');
+// Global chart instance
+let spendingChart = null;
 
-    if (!alerts || alerts.length === 0) {
-        container.innerHTML = '';
+// Chart color palette
+const chartColors = [
+    '#4F46E5', '#7C3AED', '#EC4899', '#EF4444', '#F59E0B',
+    '#10B981', '#06B6D4', '#8B5CF6', '#F97316', '#84CC16'
+];
+
+function renderSpendingChart() {
+    const canvas = document.getElementById('spendingChart');
+    const legendContainer = document.getElementById('chartLegend');
+    const { categories, total } = dashboardData;
+
+    if (!categories || categories.length === 0) {
+        canvas.parentElement.style.display = 'none';
+        legendContainer.innerHTML = '<p style="text-align:center; color:#9CA3AF;">No data yet</p>';
         return;
     }
 
-    container.innerHTML = alerts.map(alert => `
-        <div class="alert-item ${alert.status}">
-            <span class="alert-icon">${alert.status === 'danger' ? '🔴' : '⚠️'}</span>
-            <span class="alert-text">${alert.pocket}: ${alert.spent} / ${alert.budget}</span>
-            <span class="alert-percentage">${alert.percentage}%</span>
+    canvas.parentElement.style.display = 'block';
+
+    // Prepare data
+    const labels = categories.map(c => c.type);
+    const data = categories.map(c => c.amount);
+    const percentages = categories.map(c => {
+        const pct = total.raw > 0 ? Math.round((c.amount / total.raw) * 100) : 0;
+        return pct;
+    });
+
+    // Destroy previous chart if exists
+    if (spendingChart) {
+        spendingChart.destroy();
+    }
+
+    // Create pie chart
+    spendingChart = new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: chartColors.slice(0, labels.length),
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false // We'll use custom legend
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            const value = context.raw;
+                            const pct = percentages[context.dataIndex];
+                            return ` ${formatRupiah(value)} (${pct}%)`;
+                        }
+                    }
+                }
+            },
+            cutout: '60%'
+        }
+    });
+
+    // Render custom legend
+    legendContainer.innerHTML = categories.map((cat, i) => `
+        <div class="legend-item">
+            <span class="legend-color" style="background: ${chartColors[i % chartColors.length]}"></span>
+            <span class="legend-label">${typeEmojis[cat.type] || '📦'} ${cat.type}</span>
+            <span class="legend-value">${percentages[i]}%</span>
         </div>
     `).join('');
 }
+
+function formatRupiah(num) {
+    return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
 
 function renderCategoryList() {
     const categoryList = document.getElementById('categoryList');

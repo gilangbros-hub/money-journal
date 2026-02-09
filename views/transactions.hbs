@@ -41,14 +41,22 @@
             </div>
         </div>
 
-        <!-- Budget Alerts -->
-        <div id="budgetAlerts" class="budget-alerts">
-            <!-- Injected by JS -->
+        <!-- Spending Breakdown Pie Chart -->
+        <div class="chart-card">
+            <div class="section-header">
+                <h2 class="section-title">Spending Breakdown</h2>
+            </div>
+            <div class="chart-container">
+                <canvas id="spendingChart"></canvas>
+            </div>
+            <div id="chartLegend" class="chart-legend">
+                <!-- Injected by JS -->
+            </div>
         </div>
 
         <!-- Categories Section -->
         <div class="section-header">
-            <h2 class="section-title">Spending by Category</h2>
+            <h2 class="section-title">By Category</h2>
         </div>
         <div class="category-list" id="categoryList">
             <!-- Injected by JS -->
@@ -81,8 +89,10 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/js/common.js"></script>
     <script src="/js/transactions.js"></script>
+
 
     {{> navbar isDashboard=true}}
 </body>
