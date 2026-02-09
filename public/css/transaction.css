@@ -146,24 +146,42 @@ body {
     box-shadow: none !important;
 }
 
-/* Sticky Footer */
+/* Floating Submit Button */
 .sticky-footer {
     position: fixed;
-    bottom: 60px;
+    bottom: 80px;
     /* Above navbar */
-    left: 0;
-    right: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px);
+    max-width: 460px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(10px);
     padding: 16px 20px;
-    border-top: 1px solid #F3F4F6;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
     z-index: 100;
 }
 
 .submit-btn {
+    width: 100%;
     height: 56px;
-    border-radius: 18px;
+    border-radius: 16px;
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.02em;
+    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    border: none;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
 }
