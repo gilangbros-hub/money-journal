@@ -1,6 +1,6 @@
 /* Budget Page Styles */
 body {
-    background-color: #F8FAFC;
+    background-color: var(--md-sys-color-background, #F7F7F7);
     padding-bottom: 80px;
 }
 
@@ -357,7 +357,7 @@ body {
 .budget-amount {
     font-size: 16px;
     font-weight: 700;
-    color: var(--md-sys-color-primary, #4F46E5);
+    color: #1A1A1A;
 }
 
 .budget-amount.zero {
@@ -366,7 +366,7 @@ body {
 
 /* Total Card */
 .total-card {
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    background: linear-gradient(135deg, #1A1A1A 0%, #3D3D3D 100%);
     padding: 20px;
     border-radius: 20px;
     display: flex;
@@ -460,7 +460,7 @@ body {
 .currency-prefix {
     font-size: 20px;
     font-weight: 700;
-    color: var(--md-sys-color-primary, #4F46E5);
+    color: #1A1A1A;
     margin-right: 8px;
 }
 
@@ -469,7 +469,7 @@ body {
     background: transparent;
     font-size: 24px;
     font-weight: 700;
-    color: var(--md-sys-color-primary, #4F46E5);
+    color: #1A1A1A;
     width: 100%;
     outline: none;
 }
@@ -497,7 +497,7 @@ body {
 }
 
 .btn-save {
-    background: var(--md-sys-color-primary, #4F46E5);
+    background: #000000;
     color: white;
 }
 
@@ -536,11 +536,37 @@ body {
 
 .history-total {
     font-weight: 700;
-    color: var(--md-sys-color-primary, #4F46E5);
+    color: #1A1A1A;
 }
 
 .loading {
     text-align: center;
     color: #9CA3AF;
     padding: 20px;
+}
+
+/* Pie Chart in Health Card */
+.health-chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 220px;
+    margin: 0 auto 16px auto;
+}
+
+.health-total-subtext {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.health-total-label {
+    font-size: 12px;
+    color: #9CA3AF;
+    display: block;
+}
+
+.health-total-value {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1A1A1A;
+    display: block;
 }

@@ -2,7 +2,7 @@
 
 /* Base */
 body {
-    background-color: #F8FAFC;
+    background-color: var(--md-sys-color-background, #F7F7F7);
     padding-bottom: 80px;
 }
 
@@ -25,7 +25,7 @@ body {
     font-size: 24px;
     font-weight: 700;
     margin: 0;
-    color: #1F2937;
+    color: #1A1A1A;
 }
 
 .user-info {
@@ -96,7 +96,7 @@ body {
 
 /* Gradient Summary Card */
 .summary-card {
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    background: linear-gradient(135deg, #1A1A1A 0%, #3D3D3D 100%);
     padding: 20px;
     border-radius: 20px;
     margin-bottom: 20px;
@@ -171,7 +171,7 @@ body {
 .list-item-value {
     font-size: 16px;
     font-weight: 700;
-    color: var(--md-sys-color-primary, #4F46E5);
+    color: #1A1A1A;
 }
 
 /* Form Controls */
@@ -209,18 +209,18 @@ body {
 .btn-primary {
     width: 100%;
     padding: 16px;
-    background: var(--md-sys-color-primary, #4F46E5);
+    background: #000000;
     color: white;
     border: none;
     border-radius: 14px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.2s, transform 0.2s;
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .btn-primary:hover {
-    background: #4338CA;
+    background: #333333;
     transform: translateY(-1px);
 }
 
@@ -267,7 +267,7 @@ body {
 }
 
 .pill.active {
-    background: var(--md-sys-color-primary, #4F46E5);
+    background: #000000;
     color: white;
 }
 

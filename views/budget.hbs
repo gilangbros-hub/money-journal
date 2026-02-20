@@ -40,23 +40,16 @@
         </div>
         {{/unless}}
 
-        <!-- Financial Health Summary -->
+        <!-- Financial Health Summary — Pie Chart -->
         <div class="health-card" id="healthCard">
-            <div class="health-header">
-                <span class="health-emoji" id="healthEmoji">🟢</span>
-                <div class="health-info">
-                    <span class="health-label" id="healthLabel">On Track</span>
-                    <span class="health-percentage" id="healthPercentage">0% used</span>
-                </div>
+            <div class="health-chart-container">
+                <canvas id="budgetPieChart"></canvas>
             </div>
-            <div class="health-progress">
-                <div class="health-bar" id="healthBar" style="width: 0%"></div>
+            <div class="health-total-subtext">
+                <span class="health-total-label">Total Budget</span>
+                <span class="health-total-value" id="totalBudgetDisplay">Rp 0</span>
             </div>
-            <div class="health-details">
-                <div class="health-stat">
-                    <span class="stat-label">Budget</span>
-                    <span class="stat-value" id="totalBudgetDisplay">Rp 0</span>
-                </div>
+            <div class="health-details" style="margin-top: 12px;">
                 <div class="health-stat">
                     <span class="stat-label">Spent</span>
                     <span class="stat-value spent" id="totalSpentDisplay">Rp 0</span>
@@ -119,6 +112,7 @@
 
     {{> navbar}}
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/common.js"></script>
     <script src="/js/budget.js"></script>
 </body>

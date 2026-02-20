@@ -89,10 +89,10 @@ function renderComparison(comparison) {
 // Global chart instance
 let spendingChart = null;
 
-// Chart color palette
+// Chart color palette — Greyscale B&W
 const chartColors = [
-    '#4F46E5', '#7C3AED', '#EC4899', '#EF4444', '#F59E0B',
-    '#10B981', '#06B6D4', '#8B5CF6', '#F97316', '#84CC16'
+    '#1A1A1A', '#3D3D3D', '#5A5A5A', '#7A7A7A', '#9A9A9A',
+    '#B5B5B5', '#D0D0D0', '#444444', '#888888', '#CCCCCC'
 ];
 
 function renderSpendingChart() {
@@ -312,7 +312,7 @@ function renderTransactionList(transactions, isFullList) {
             // Handle formatCurrency difference
             const formattedAmount = t.formattedAmount || `Rp ${Number(t.amount).toLocaleString('id-ID')}`;
             const icon = typeEmojis[t.type] || '📦';
-            const paidByLabel = t.paidBy && t.paidBy !== 'Self' ? `<span style="font-size: 10px; background: #EEF2FF; color: #4F46E5; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.paidBy}</span>` : '';
+            const paidByLabel = t.paidBy && t.paidBy !== 'Self' ? `<span style="font-size: 10px; background: #F0F0F0; color: #1A1A1A; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.paidBy}</span>` : '';
 
             return `
                 <div class="trans-item-mini" onclick="openOptions('${t._id}', '${t.ngapain ? t.ngapain.replace(/'/g, "\\'") : ""}', ${t.amount})">

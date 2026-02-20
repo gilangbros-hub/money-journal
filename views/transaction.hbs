@@ -12,7 +12,8 @@
     <div class="main-container">
         <!-- Header -->
         <header class="app-header">
-            <h1 class="page-title">📝 Add Transaction</h1>
+            <h1 class="page-title">📝 Add Transaction <span class="streak-badge" id="streakBadge"
+                    style="display:none;"></span></h1>
             <div class="user-info" onclick="toggleMenu()">
                 <span class="username">{{username}}</span>
                 <span class="avatar">{{avatar}}</span>
@@ -101,16 +102,8 @@
 
     <div id="message"></div>
     <script src="/js/common.js"></script>
+    <script src="/js/confetti.js"></script>
     <script src="/js/transaction.js"></script>
-    <script>
-        window.addEventListener('load', () => {
-            if (!document.getElementById('transactionId').value) {
-                const now = new Date();
-                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                document.getElementById('date').value = now.toISOString().slice(0, 16);
-            }
-        });
-    </script>
 
     {{> navbar isTransaction=true}}
 </body>

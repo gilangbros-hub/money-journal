@@ -1,68 +1,71 @@
 :root {
-  /* Material Design 3 Color Tokens (Indigo Seed) */
-  --md-sys-color-primary: #4F46E5;
+  /* Monochrome B&W Color Tokens */
+  --md-sys-color-primary: #000000;
   --md-sys-color-on-primary: #FFFFFF;
-  --md-sys-color-primary-container: #E0E0FF;
-  --md-sys-color-on-primary-container: #00006E;
-  
-  --md-sys-color-secondary: #5C5D72;
+  --md-sys-color-primary-container: #F0F0F0;
+  --md-sys-color-on-primary-container: #1A1A1A;
+
+  --md-sys-color-secondary: #555555;
   --md-sys-color-on-secondary: #FFFFFF;
-  --md-sys-color-secondary-container: #E1E0F9;
-  --md-sys-color-on-secondary-container: #191A2C;
-  
-  --md-sys-color-tertiary: #78536B;
+  --md-sys-color-secondary-container: #EBEBEB;
+  --md-sys-color-on-secondary-container: #1A1A1A;
+
+  --md-sys-color-tertiary: #777777;
   --md-sys-color-on-tertiary: #FFFFFF;
-  --md-sys-color-tertiary-container: #FFD8EE;
-  --md-sys-color-on-tertiary-container: #2E1126;
-  
+  --md-sys-color-tertiary-container: #F5F5F5;
+  --md-sys-color-on-tertiary-container: #2A2A2A;
+
   --md-sys-color-error: #BA1A1A;
   --md-sys-color-on-error: #FFFFFF;
   --md-sys-color-error-container: #FFDAD6;
   --md-sys-color-on-error-container: #410002;
-  
-  --md-sys-color-background: #FDFBFF;
-  --md-sys-color-on-background: #1B1B1F;
-  
-  --md-sys-color-surface: #FDFBFF;
-  --md-sys-color-on-surface: #1B1B1F;
-  --md-sys-color-surface-variant: #E3E1EC;
-  --md-sys-color-on-surface-variant: #46464F;
-  
-  --md-sys-color-outline: #767680;
-  --md-sys-color-outline-variant: #C6C5D0;
 
-  /* Typography */
-  --md-sys-typescale-display-large-font: 'Roboto', sans-serif;
+  --md-sys-color-background: #F7F7F7;
+  --md-sys-color-on-background: #1A1A1A;
+
+  --md-sys-color-surface: #FFFFFF;
+  --md-sys-color-on-surface: #1A1A1A;
+  --md-sys-color-surface-variant: #EEEEEE;
+  --md-sys-color-on-surface-variant: #444444;
+
+  --md-sys-color-outline: #D1D1D1;
+  --md-sys-color-outline-variant: #E0E0E0;
+
+  /* Typography — Inter (Apple HIG) */
+  --md-sys-typescale-display-large-font: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
   --md-sys-typescale-display-large-size: 57px;
-  --md-sys-typescale-headline-medium-font: 'Roboto', sans-serif;
+  --md-sys-typescale-headline-medium-font: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
   --md-sys-typescale-headline-medium-size: 28px;
-  --md-sys-typescale-body-large-font: 'Roboto', sans-serif;
+  --md-sys-typescale-body-large-font: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
   --md-sys-typescale-body-large-size: 16px;
-  --md-sys-typescale-label-large-font: 'Roboto', sans-serif;
+  --md-sys-typescale-label-large-font: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
   --md-sys-typescale-label-large-size: 14px;
   --md-sys-typescale-label-large-weight: 500;
 
-  /* Shape */
-  --md-sys-shape-corner-small: 8px;
-  --md-sys-shape-corner-medium: 12px;
-  --md-sys-shape-corner-large: 16px;
+  /* Shape — Apple-style continuous curves */
+  --md-sys-shape-corner-small: 10px;
+  --md-sys-shape-corner-medium: 14px;
+  --md-sys-shape-corner-large: 18px;
   --md-sys-shape-corner-extra-large: 28px;
   --md-sys-shape-corner-full: 9999px;
 
   /* Elevation */
-  --md-sys-elevation-level-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
-  --md-sys-elevation-level-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+  --md-sys-elevation-level-1: 0px 1px 3px 1px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.16);
+  --md-sys-elevation-level-2: 0px 2px 6px 2px rgba(0, 0, 0, 0.08), 0px 1px 2px 0px rgba(0, 0, 0, 0.16);
 }
 
 body {
   margin: 0;
   font-family: var(--md-sys-typescale-body-large-font);
   font-size: var(--md-sys-typescale-body-large-size);
-  background-color: #F6F7FB; /* Slight off-white for app background */
+  background-color: var(--md-sys-color-background);
   color: var(--md-sys-color-on-background);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
 /* Material Symbols */
@@ -79,6 +82,7 @@ body {
   word-wrap: normal;
   direction: ltr;
   -webkit-font-feature-settings: 'liga';
+  font-feature-settings: 'liga';
   -webkit-font-smoothing: antialiased;
 }
 
@@ -154,7 +158,8 @@ body {
   outline: none;
   border-color: var(--md-sys-color-primary);
   border-width: 2px;
-  padding: 15px; /* Adjust for border width increase */
+  padding: 15px;
+  /* Adjust for border width increase */
 }
 
 .md-text-field label {
@@ -169,10 +174,10 @@ body {
 }
 
 /* Floating Label Logic */
-.md-text-field input:focus ~ label,
-.md-text-field input:not(:placeholder-shown) ~ label,
-.md-text-field select:focus ~ label,
-.md-text-field select:not([value=""]) ~ label {
+.md-text-field input:focus~label,
+.md-text-field input:not(:placeholder-shown)~label,
+.md-text-field select:focus~label,
+.md-text-field select:not([value=""])~label {
   top: -8px;
   font-size: 12px;
   color: var(--md-sys-color-primary);
@@ -183,16 +188,16 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 44px;
   padding: 0 24px;
-  border-radius: var(--md-sys-shape-corner-full);
+  border-radius: var(--md-sys-shape-corner-medium);
   font-family: var(--md-sys-typescale-label-large-font);
   font-size: var(--md-sys-typescale-label-large-size);
-  font-weight: var(--md-sys-typescale-label-large-weight);
+  font-weight: 600;
   cursor: pointer;
   border: none;
   gap: 8px;
-  transition: background-image 0.2s, box-shadow 0.2s;
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   text-decoration: none;
 }
 
@@ -230,14 +235,16 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: var(--md-sys-elevation-level-1); /* Small shadow for separation */
+  box-shadow: var(--md-sys-elevation-level-1);
+  /* Small shadow for separation */
   position: sticky;
   top: 0;
   z-index: 1000;
 }
 
 .app-bar-title {
-  font-family: var(--md-sys-typescale-headline-medium-font); /* Using headline small really */
+  font-family: var(--md-sys-typescale-headline-medium-font);
+  /* Using headline small really */
   font-size: 22px;
   margin: 0;
 }
@@ -316,15 +323,15 @@ body {
   width: 56px;
   height: 56px;
   border-radius: 16px;
-  background-color: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
+  background-color: #000000;
+  color: #FFFFFF;
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: var(--md-sys-elevation-level-2);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
   border: none;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   text-decoration: none;
 }
 
@@ -333,13 +340,34 @@ body {
 }
 
 /* Utilities */
-.text-center { text-align: center; }
-.mt-4 { margin-top: 24px; }
-.mb-4 { margin-bottom: 24px; }
-.d-flex { display: flex; }
-.gap-2 { gap: 8px; }
-.align-center { align-items: center; }
-.justify-between { justify-content: space-between; }
+.text-center {
+  text-align: center;
+}
+
+.mt-4 {
+  margin-top: 24px;
+}
+
+.mb-4 {
+  margin-bottom: 24px;
+}
+
+.d-flex {
+  display: flex;
+}
+
+.gap-2 {
+  gap: 8px;
+}
+
+.align-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
 .text-button {
   background: none;
   border: none;
@@ -352,32 +380,33 @@ body {
 #message {
   visibility: hidden;
   min-width: 250px;
-  background-color: #333;
+  background-color: #1A1A1A;
   color: #fff;
   text-align: center;
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 14px;
+  padding: 16px 24px;
   position: fixed;
   z-index: 9999;
   left: 50%;
   bottom: 30px;
   transform: translateX(-50%);
   font-size: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   opacity: 0;
-  transition: opacity 0.3s, bottom 0.3s;
+  transition: opacity 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94), bottom 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 #message.show {
   visibility: visible;
   opacity: 1;
-  bottom: 50px;
+  bottom: 100px;
 }
 
 #message.success {
-  background-color: #065F46; /* Green */
+  background-color: #1A1A1A;
 }
 
 #message.error {
-  background-color: #991B1B; /* Red */
+  background-color: #991B1B;
 }

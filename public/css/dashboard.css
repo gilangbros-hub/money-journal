@@ -1,14 +1,14 @@
 :root {
-    --primary-gradient: linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%);
+    --primary-gradient: linear-gradient(135deg, #1A1A1A 0%, #3D3D3D 100%);
     --card-bg: #ffffff;
-    --text-primary: #1F2937;
+    --text-primary: #1A1A1A;
     --text-secondary: #6B7280;
-    --bg-color: #F3F4F6;
+    --bg-color: #F7F7F7;
 }
 
 body {
     background-color: var(--bg-color);
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
 }
 
 .main-container {
@@ -47,7 +47,7 @@ body {
     border-radius: 24px;
     padding: 24px;
     color: white;
-    box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
     margin-bottom: 32px;
     position: relative;
     overflow: hidden;
@@ -169,7 +169,7 @@ body {
 
 .legend-value {
     font-weight: 700;
-    color: #4F46E5;
+    color: #1A1A1A;
 }
 
 /* Category List */

@@ -3,6 +3,7 @@
 let currentMonth, currentYear;
 let canEdit = false;
 let selectedPocket = null;
+let budgetPieChart = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize with current month
@@ -59,7 +60,7 @@ function renderBudgets(data) {
     const list = document.getElementById('budgetList');
     const isEditable = data.canEdit;
 
-    // Render Health Summary
+    // Render Health Summary with Pie Chart
     renderHealthSummary(data);
 
     if (data.pockets.length === 0) {
@@ -94,17 +95,73 @@ function renderBudgets(data) {
 }
 
 function renderHealthSummary(data) {
-    // Update health emoji and label
-    document.getElementById('healthEmoji').textContent = data.health.emoji;
-    document.getElementById('healthLabel').textContent = data.health.label;
-    document.getElementById('healthPercentage').textContent = `${data.overallPercentage}% used`;
+    // Greyscale color palette for pie chart
+    const chartColors = [
+        '#1A1A1A', '#3D3D3D', '#5A5A5A', '#7A7A7A',
+        '#9A9A9A', '#B5B5B5', '#D0D0D0'
+    ];
 
-    // Update health progress bar
-    const healthBar = document.getElementById('healthBar');
-    healthBar.style.width = `${Math.min(data.overallPercentage, 100)}%`;
-    healthBar.className = `health-bar ${data.health.status}`;
+    // Build chart data from pockets
+    const pocketsWithBudget = data.pockets.filter(p => p.budget > 0);
+    const labels = pocketsWithBudget.map(p => `${p.icon} ${p.pocket}`);
+    const values = pocketsWithBudget.map(p => p.budget);
+    const colors = pocketsWithBudget.map((_, i) => chartColors[i % chartColors.length]);
 
-    // Update totals
+    // Create/update pie chart
+    const ctx = document.getElementById('budgetPieChart');
+    if (ctx) {
+        if (budgetPieChart) {
+            budgetPieChart.destroy();
+        }
+
+        if (pocketsWithBudget.length > 0) {
+            budgetPieChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors,
+                        borderWidth: 2,
+                        borderColor: '#FFFFFF',
+                        hoverBorderWidth: 3,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    cutout: '60%',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: '#1A1A1A',
+                            titleFont: { family: 'Inter', weight: '600', size: 13 },
+                            bodyFont: { family: 'Inter', size: 12 },
+                            cornerRadius: 10,
+                            padding: 12,
+                            callbacks: {
+                                label: function (context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = Math.round((context.parsed / total) * 100);
+                                    return ` Rp ${context.parsed.toLocaleString('id-ID')} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        animateRotate: true,
+                        duration: 800,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+    }
+
+    // Update total budget display
     document.getElementById('totalBudgetDisplay').textContent = data.formattedTotal;
     document.getElementById('totalSpentDisplay').textContent = data.formattedSpent;
     document.getElementById('totalRemainingDisplay').textContent =

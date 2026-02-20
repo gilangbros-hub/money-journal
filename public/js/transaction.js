@@ -1,10 +1,68 @@
 // showToast is now provided by common.js
 
+// Streak management (localStorage)
+function getStreak() {
+    const data = JSON.parse(localStorage.getItem('moneyJournalStreak') || '{"count":0,"lastDate":""}');
+    const today = new Date().toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    if (data.lastDate === today) {
+        return data; // Already logged today
+    } else if (data.lastDate === yesterday) {
+        return { count: data.count, lastDate: data.lastDate }; // Streak alive but not yet bumped today
+    } else {
+        return { count: 0, lastDate: data.lastDate }; // Streak broken
+    }
+}
+
+function bumpStreak() {
+    const today = new Date().toISOString().slice(0, 10);
+    const current = getStreak();
+
+    if (current.lastDate === today) {
+        return current.count; // Already bumped today
+    }
+
+    const newCount = current.count + 1;
+    localStorage.setItem('moneyJournalStreak', JSON.stringify({ count: newCount, lastDate: today }));
+    return newCount;
+}
+
+function displayStreak() {
+    const streak = getStreak();
+    const badge = document.getElementById('streakBadge');
+    if (badge && streak.count > 0) {
+        badge.textContent = `🔥 ${streak.count}d`;
+        badge.style.display = 'inline-flex';
+    }
+}
+
+// Motivational messages with personality
+const celebrationMessages = [
+    { emoji: '🎉', text: 'Great job tracking!' },
+    { emoji: '💪', text: 'Discipline = Freedom!' },
+    { emoji: '🔥', text: 'You\'re on fire!' },
+    { emoji: '✨', text: 'Every Rupiah counts!' },
+    { emoji: '🏆', text: 'Champion move!' },
+    { emoji: '📊', text: 'Data is power!' },
+    { emoji: '🚀', text: 'Finances on track!' },
+    { emoji: '💎', text: 'Smart money move!' }
+];
+
+function getRandomMessage(streakCount) {
+    const msg = celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)];
+    const streakText = streakCount > 1 ? ` | 🔥 ${streakCount}-day streak!` : '';
+    return `${msg.emoji} ${msg.text}${streakText}`;
+}
+
 // Check if editing mode (URL has edit parameter)
 const urlParams = new URLSearchParams(window.location.search);
 const editId = urlParams.get('edit');
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Display current streak
+    displayStreak();
+
     // Set default date if not editing
     if (!editId) {
         const dateInput = document.getElementById('date');
@@ -13,6 +71,27 @@ document.addEventListener('DOMContentLoaded', function () {
         dateInput.value = now.toISOString().slice(0, 16);
     } else {
         loadTransactionForEdit(editId);
+    }
+
+    // Add press animation to submit button
+    const submitBtn = document.getElementById('submitBtn');
+    if (submitBtn) {
+        submitBtn.addEventListener('mousedown', () => {
+            submitBtn.style.transform = 'scale(0.96)';
+        });
+        submitBtn.addEventListener('mouseup', () => {
+            submitBtn.style.transform = 'scale(1)';
+        });
+        submitBtn.addEventListener('mouseleave', () => {
+            submitBtn.style.transform = 'scale(1)';
+        });
+        // Touch events for mobile
+        submitBtn.addEventListener('touchstart', () => {
+            submitBtn.style.transform = 'scale(0.96)';
+        }, { passive: true });
+        submitBtn.addEventListener('touchend', () => {
+            submitBtn.style.transform = 'scale(1)';
+        }, { passive: true });
     }
 });
 
@@ -23,7 +102,7 @@ async function loadTransactionForEdit(id) {
         const transaction = await response.json();
 
         // Update UI for Edit Mode
-        document.querySelector('.app-bar-title').textContent = 'Edit Transaction';
+        document.querySelector('.page-title').textContent = '✏️ Edit Transaction';
         document.getElementById('submitBtn').innerHTML = 'Update Transaction';
         document.getElementById('transactionId').value = transaction._id;
 
@@ -99,13 +178,21 @@ document.getElementById('transactionForm').addEventListener('submit', async func
         const result = await response.json();
 
         if (response.ok && result.success) {
-            const username = document.getElementById('currentUsername').value;
-            showToast(`Input berhasil! Makaci yaa ${username}!`, 'success');
+            // 🎮 Gamification: Bump streak + confetti + celebration message
+            const streakCount = bumpStreak();
+            const message = getRandomMessage(streakCount);
 
-            // Redirect to transactions page after a short delay
+            // Launch confetti
+            if (typeof launchConfetti === 'function') {
+                launchConfetti(2500);
+            }
+
+            showToast(message, 'success', 3000);
+
+            // Redirect to transactions page after celebration
             setTimeout(() => {
                 window.location.href = '/transactions';
-            }, 1000);
+            }, 1800);
         } else {
             showToast(result.message || 'Error saving transaction', 'error');
         }

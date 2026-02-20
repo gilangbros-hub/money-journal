@@ -1,27 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     {{> head}}
     <title>Welcome - Money Journal</title>
     <style>
         body {
-            background-color: #ffffff;
+            background-color: #000000;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             overflow: hidden;
+            flex-direction: column;
         }
+
         .welcome-text {
-            font-family: 'Roboto', sans-serif;
-            font-weight: 500; /* Semibold */
+            font-family: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
+            font-weight: 700;
             font-size: 32px;
-            color: var(--md-sys-color-on-background);
+            color: #FFFFFF;
             opacity: 0;
             transform: translateY(10px);
             animation: fadeIn 0.8s ease forwards;
+            text-align: center;
         }
+
+        .streak-text {
+            font-family: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
+            font-weight: 500;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.8s 0.4s ease forwards;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .motivation-text {
+            font-family: 'Inter', -apple-system, BlinkMacSysFont, sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.4);
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeIn 0.8s 0.7s ease forwards;
+            margin-top: 16px;
+            text-align: center;
+        }
+
         @keyframes fadeIn {
             to {
                 opacity: 1;
@@ -30,16 +59,52 @@
         }
     </style>
 </head>
+
 <body>
     <div class="welcome-text">
-        Hi! {{username}}
+        Hi! {{username}} 👋
     </div>
+    <div class="streak-text" id="streakDisplay"></div>
+    <div class="motivation-text" id="motivationDisplay"></div>
 
     <script>
-        // Wait 3 seconds then redirect to the transaction page
+        // Show streak info
+        const streakData = JSON.parse(localStorage.getItem('moneyJournalStreak') || '{"count":0,"lastDate":""}');
+        const today = new Date().toISOString().slice(0, 10);
+        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+        let streakCount = 0;
+        if (streakData.lastDate === today || streakData.lastDate === yesterday) {
+            streakCount = streakData.count;
+        }
+
+        const streakEl = document.getElementById('streakDisplay');
+        const motivationEl = document.getElementById('motivationDisplay');
+
+        if (streakCount > 0) {
+            streakEl.textContent = `🔥 ${streakCount}-day tracking streak`;
+
+            const motivations = {
+                low: ['Keep it going!', 'Building a habit 💪', 'Every day counts!'],
+                mid: ['You\'re unstoppable!', 'Consistency is key 🔑', 'Financial ninja! 🥷'],
+                high: ['Legendary discipline! 👑', 'Money master! 💎', 'Absolute beast mode! 🏆']
+            };
+
+            let pool = motivations.low;
+            if (streakCount >= 14) pool = motivations.high;
+            else if (streakCount >= 5) pool = motivations.mid;
+
+            motivationEl.textContent = pool[Math.floor(Math.random() * pool.length)];
+        } else {
+            streakEl.textContent = 'Let\'s track your spending today!';
+            motivationEl.textContent = 'Start your streak 🚀';
+        }
+
+        // Redirect after delay
         setTimeout(() => {
             window.location.href = '/transaction';
         }, 3000);
     </script>
 </body>
+
 </html>

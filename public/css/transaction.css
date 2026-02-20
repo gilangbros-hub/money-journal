@@ -56,9 +56,9 @@ body {
 }
 
 .option-input:checked+.icon-btn {
-    background-color: #EEF2FF;
-    border-color: var(--md-sys-color-primary);
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.12);
+    background-color: #F5F5F5;
+    border-color: #000000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
 }
 
@@ -111,10 +111,10 @@ body {
 
 /* Amount Field Special Styling */
 .amount-card {
-    background: #F5F3FF;
+    background: #F5F5F5;
     padding: 20px;
     border-radius: 20px;
-    border: 1px solid #DDD6FE;
+    border: 1px solid #E0E0E0;
 }
 
 .amount-wrapper {
@@ -125,7 +125,7 @@ body {
 
 .amount-prefix {
     font-weight: 800;
-    color: var(--md-sys-color-primary);
+    color: #000000;
     font-size: 24px;
     margin-right: 8px;
 }
@@ -135,7 +135,7 @@ body {
     border: none !important;
     font-size: 32px !important;
     font-weight: 800;
-    color: var(--md-sys-color-primary) !important;
+    color: #000000 !important;
     padding: 0 !important;
     height: auto !important;
     width: 100%;
@@ -150,16 +150,14 @@ body {
 .sticky-footer {
     position: fixed;
     bottom: 80px;
-    /* Above navbar */
     left: 50%;
     transform: translateX(-50%);
     width: calc(100% - 40px);
     max-width: 460px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 16px 20px;
-    border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
     z-index: 100;
 }
 
@@ -170,18 +168,50 @@ body {
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.02em;
-    background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+    background: linear-gradient(135deg, #000000 0%, #333333 100%);
     border: none;
     color: white;
     cursor: pointer;
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .submit-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 .submit-btn:active {
-    transform: translateY(0);
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Streak Badge */
+.streak-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #1A1A1A;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+/* Button press animation */
+@keyframes btnPress {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(0.95);
+    }
+
+    100% {
+        transform: scale(1);
+    }
 }
