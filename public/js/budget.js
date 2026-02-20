@@ -95,10 +95,18 @@ function renderBudgets(data) {
 }
 
 function renderHealthSummary(data) {
-    // Greyscale color palette for pie chart
+    // Distinct color palette — auto-assigned per pocket
     const chartColors = [
-        '#1A1A1A', '#3D3D3D', '#5A5A5A', '#7A7A7A',
-        '#9A9A9A', '#B5B5B5', '#D0D0D0'
+        '#FF6B6B', // coral red
+        '#4ECDC4', // teal
+        '#45B7D1', // sky blue
+        '#96CEB4', // sage green
+        '#FFEAA7', // soft yellow
+        '#DDA0DD', // plum
+        '#98D8C8', // mint
+        '#F7DC6F', // golden
+        '#BB8FCE', // lavender
+        '#85C1E9', // light blue
     ];
 
     // Build chart data from pockets
