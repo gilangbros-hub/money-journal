@@ -4,52 +4,241 @@
 <head>
     {{> head}}
     <title>Money Journal - Login</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F0F0F5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Dark curved header */
+        .auth-header {
+            background: #1A1A2E;
+            width: 100%;
+            max-width: 480px;
+            padding: 56px 32px 64px;
+            text-align: center;
+            border-radius: 0 0 40px 40px;
+            flex-shrink: 0;
+        }
+
+        .auth-header img {
+            width: 72px;
+            height: 72px;
+            object-fit: contain;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .auth-header h1 {
+            color: #FFFFFF;
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .auth-header p {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        /* White form card */
+        .auth-card {
+            background: #FFFFFF;
+            width: calc(100% - 40px);
+            max-width: 440px;
+            border-radius: 24px;
+            padding: 28px 24px 32px;
+            margin-top: -28px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+        }
+
+        .auth-card h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1A1A2E;
+            margin-bottom: 20px;
+        }
+
+        /* Form fields */
+        .field-group {
+            margin-bottom: 16px;
+        }
+
+        .field-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #6B7280;
+            margin-bottom: 6px;
+        }
+
+        .field-group .input-wrap {
+            position: relative;
+        }
+
+        .field-group input {
+            width: 100%;
+            padding: 14px 44px 14px 16px;
+            background: #F3F4F6;
+            border: 1.5px solid transparent;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            color: #1A1A2E;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .field-group input:focus {
+            border-color: #1A1A2E;
+            background: #FFFFFF;
+        }
+
+        .toggle-pw {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #9CA3AF;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Alert messages */
+        .alert {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .alert-error {
+            background: #FEE2E2;
+            color: #B91C1C;
+        }
+
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        /* Primary button */
+        .btn-primary {
+            width: 100%;
+            height: 52px;
+            background: #1A1A2E;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.2s, transform 0.15s;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.88;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* Bottom link */
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #6B7280;
+        }
+
+        .auth-footer a {
+            color: #1A1A2E;
+            font-weight: 700;
+            text-decoration: none;
+        }
+    </style>
 </head>
 
 <body>
-    <div class="center-container">
-        <div class="md-card" style="width: 100%; max-width: 400px;">
-            <div class="md-card-header text-center">
-                <img src="/images/logo.png" alt="Money Journal Logo" style="width: 120px; margin-bottom: 16px;">
-                <p class="md-subhead">Sheilla & Gilang</p>
 
-                {{#if error}}
-                <div
-                    style="background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); padding: 8px; border-radius: 4px; margin-top: 16px; font-size: 14px;">
-                    {{error}}
-                </div>
-                {{/if}}
+    <!-- Dark Header -->
+    <div class="auth-header">
+        <img src="/images/logo.png" alt="Money Journal Logo">
+        <h1>Welcome Back</h1>
+        <p>Sign in to your account</p>
+    </div>
 
-                {{#if success}}
-                <div
-                    style="background-color: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); padding: 8px; border-radius: 4px; margin-top: 16px; font-size: 14px;">
-                    {{success}}
+    <!-- Form Card -->
+    <div class="auth-card">
+        <h2>Sign In</h2>
+
+        {{#if error}}
+        <div class="alert alert-error">{{error}}</div>
+        {{/if}}
+
+        {{#if success}}
+        <div class="alert alert-success">{{success}}</div>
+        {{/if}}
+
+        <form method="POST" action="/auth/login">
+            <div class="field-group">
+                <label for="username">Username</label>
+                <div class="input-wrap">
+                    <input type="text" id="username" name="username" placeholder="your_username" required
+                        autocomplete="username">
                 </div>
-                {{/if}}
             </div>
 
-            <form method="POST" action="/auth/login">
-                <div class="md-text-field">
-                    <input type="text" id="username" name="username" placeholder=" " required>
-                    <label for="username">Username</label>
+            <div class="field-group">
+                <label for="password">Password</label>
+                <div class="input-wrap">
+                    <input type="password" id="password" name="password" placeholder="••••••••" required
+                        autocomplete="current-password">
+                    <button type="button" class="toggle-pw" onclick="togglePw('password', this)"
+                        aria-label="Toggle password">
+                        <span class="material-symbols-outlined" style="font-size:20px;">visibility_off</span>
+                    </button>
                 </div>
-
-                <div class="md-text-field">
-                    <input type="password" id="password" name="password" placeholder=" " required>
-                    <label for="password">Password</label>
-                </div>
-
-                <button type="submit" class="md-btn filled md-btn-block">
-                    Login
-                </button>
-            </form>
-
-            <div class="text-center mt-4">
-                <p class="md-subhead">Don't have an account?</p>
-                <a href="/register" class="md-btn text">Create Account</a>
             </div>
+
+            <button type="submit" class="btn-primary">Sign In</button>
+        </form>
+
+        <div class="auth-footer">
+            I'm a new user. <a href="/register">Register</a>
         </div>
     </div>
+
+    <script>
+        function togglePw(id, btn) {
+            const input = document.getElementById(id);
+            const icon = btn.querySelector('span');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility';
+            } else {
+                input.type = 'password';
+                icon.textContent = 'visibility_off';
+            }
+        }
+    </script>
 </body>
 
 </html>
