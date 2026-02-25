@@ -89,10 +89,10 @@ function renderComparison(comparison) {
 // Global chart instance
 let spendingChart = null;
 
-// Chart color palette — Greyscale B&W
+// Chart color palette — Vibrant & Colorful
 const chartColors = [
-    '#1A1A1A', '#3D3D3D', '#5A5A5A', '#7A7A7A', '#9A9A9A',
-    '#B5B5B5', '#D0D0D0', '#444444', '#888888', '#CCCCCC'
+    '#FF6B6B', '#845EC2', '#00C9A7', '#FFB347', '#4ECDC4',
+    '#FF8E53', '#4EA8DE', '#FF6F91', '#FFC75F', '#67C6A0'
 ];
 
 function renderSpendingChart() {
@@ -189,7 +189,8 @@ function renderCategoryList() {
         </div>
     `;
 
-    categoryList.innerHTML = allCard + categories.map(cat => {
+    categoryList.innerHTML = allCard + categories.map((cat, i) => {
+        const barColor = chartColors[i % chartColors.length];
         return `
             <div class="category-item" onclick="filterByCategory('${cat.category}')" style="cursor: pointer;">
                 <div class="cat-icon">${cat.icon}</div>
@@ -199,7 +200,7 @@ function renderCategoryList() {
                         <span class="cat-amount">${cat.formattedTotal}</span>
                     </div>
                     <div class="progress-track">
-                        <div class="progress-fill" style="width: ${cat.percentage < 5 ? 5 : cat.percentage}%; background: var(--primary-gradient);"></div>
+                        <div class="progress-fill" style="width: ${cat.percentage < 5 ? 5 : cat.percentage}%; background: ${barColor};"></div>
                     </div>
                 </div>
             </div>
