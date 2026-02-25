@@ -41,6 +41,10 @@ exports.postLogin = async (req, res) => {
             return res.redirect('/login?error=Invalid username or password');
         }
 
+        if (!user.isActive) {
+            return res.redirect('/login?error=Account is not active yet. Please wait for admin approval.');
+        }
+
         req.session.userId = user._id;
         req.session.username = user.username;
         req.session.avatar = user.avatar || '👤'; // Cache avatar

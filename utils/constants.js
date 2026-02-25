@@ -1,25 +1,26 @@
 const TRANSACTION_TYPES = {
-    'Eat': '🍽️', 
-    'Snack': '🍿', 
-    'Groceries': '🛒', 
+    'Eat': '🍽️',
+    'Snack': '🍿',
+    'Groceries': '🛒',
     'Laundry': '🧺',
-    'Bensin': '⛽', 
-    'Flazz': '💳', 
-    'Home Appliance': '🏠', 
+    'Bensin': '⛽',
+    'Flazz': '💳',
+    'Home Appliance': '🏠',
     'Jumat Berkah': '🤲',
-    'Uang Sampah': '🗑️', 
-    'Uang Keamanan': '👮', 
-    'Medicine': '💊', 
+    'Uang Sampah': '🗑️',
+    'Uang Keamanan': '👮',
+    'Medicine': '💊',
     'Others': '📦'
 };
 
 const POCKETS = {
-    'Kwintals': '💰', 
-    'Groceries': '🥦', 
+    'Kwintals': '💰',
+    'Groceries': '🥦',
     'Weekday Transport': '🚌',
-    'Weekend Transport': '🚗', 
-    'Investasi': '📈', 
-    'Dana Darurat': '🆘', 
+    'Weekend Transport': '🚗',
+    'Investasi': '📈',
+    'Bandung': '⛰️',
+    'Sedeqah': '🤲',
     'IPL': '🏘️'
 };
 

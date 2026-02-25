@@ -27,6 +27,10 @@ const userSchema = new mongoose.Schema({
         enum: ['Husband', 'Wife', 'Self'],
         default: 'Self'
     },
+    isActive: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
