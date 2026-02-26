@@ -2,7 +2,7 @@
 
 /* Base */
 body {
-    background-color: var(--md-sys-color-background, #F7F7F7);
+    background-color: var(--md-sys-color-background, #FFF5F5);
     padding-bottom: 80px;
 }
 
@@ -25,7 +25,7 @@ body {
     font-size: 24px;
     font-weight: 700;
     margin: 0;
-    color: #1A1A1A;
+    color: #2D2B55;
 }
 
 .user-info {
@@ -96,7 +96,7 @@ body {
 
 /* Gradient Summary Card */
 .summary-card {
-    background: linear-gradient(135deg, #1A1A1A 0%, #3D3D3D 100%);
+    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 30%, #FE6B8B 60%, #845EC2 100%);
     padding: 20px;
     border-radius: 20px;
     margin-bottom: 20px;
@@ -126,7 +126,7 @@ body {
 .section-title {
     font-size: 18px;
     font-weight: 700;
-    color: #1F2937;
+    color: #2D2B55;
     margin: 0;
 }
 
@@ -171,7 +171,7 @@ body {
 .list-item-value {
     font-size: 16px;
     font-weight: 700;
-    color: #1A1A1A;
+    color: #2D2B55;
 }
 
 /* Form Controls */
@@ -209,7 +209,7 @@ body {
 .btn-primary {
     width: 100%;
     padding: 16px;
-    background: #000000;
+    background: linear-gradient(135deg, #FF6B6B 0%, #845EC2 100%);
     color: white;
     border: none;
     border-radius: 14px;
@@ -217,10 +217,11 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 0 4px 14px rgba(255, 107, 107, 0.3);
 }
 
 .btn-primary:hover {
-    background: #333333;
+    opacity: 0.9;
     transform: translateY(-1px);
 }
 
@@ -267,7 +268,7 @@ body {
 }
 
 .pill.active {
-    background: #000000;
+    background: linear-gradient(135deg, #FF6B6B 0%, #845EC2 100%);
     color: white;
 }
 

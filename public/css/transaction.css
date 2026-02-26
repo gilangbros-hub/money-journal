@@ -1,8 +1,8 @@
 /* Transaction Form Styles */
 /* Modern Compact & Spaced Styles */
 body {
-    background-color: #ffffff;
-    color: #1F2937;
+    background-color: #FFF5F5;
+    color: #2D2B55;
 }
 
 .main-container {
@@ -56,9 +56,9 @@ body {
 }
 
 .option-input:checked+.icon-btn {
-    background-color: #F5F5F5;
-    border-color: #000000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #F3E8FF;
+    border-color: #845EC2;
+    box-shadow: 0 4px 12px rgba(132, 94, 194, 0.15);
     transform: translateY(-2px);
 }
 
@@ -125,7 +125,7 @@ body {
 
 .amount-prefix {
     font-weight: 800;
-    color: #000000;
+    color: #845EC2;
     font-size: 24px;
     margin-right: 8px;
 }
@@ -135,7 +135,7 @@ body {
     border: none !important;
     font-size: 32px !important;
     font-weight: 800;
-    color: #000000 !important;
+    color: #2D2B55 !important;
     padding: 0 !important;
     height: auto !important;
     width: 100%;
@@ -168,12 +168,12 @@ body {
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.02em;
-    background: linear-gradient(135deg, #000000 0%, #333333 100%);
+    background: linear-gradient(135deg, #FF6B6B 0%, #845EC2 100%);
     border: none;
     color: white;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 16px rgba(255, 107, 107, 0.35);
 }
 
 .submit-btn:hover {
@@ -191,7 +191,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #1A1A1A;
+    background: linear-gradient(135deg, #FF6B6B 0%, #FFB347 100%);
     color: white;
     padding: 4px 12px;
     border-radius: 20px;
