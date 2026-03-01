@@ -19,4 +19,9 @@ router.post('/auth/register', authLimiter, authController.postRegister);
 router.post('/auth/login', authLimiter, authController.postLogin);
 router.get('/logout', authController.logout);
 
+// Mobile API Auth
+router.post('/api/auth/login', authLimiter, authController.apiLogin);
+router.post('/api/auth/logout', authController.apiLogout);
+router.get('/api/auth/me', authController.getMe);
+
 module.exports = router;
