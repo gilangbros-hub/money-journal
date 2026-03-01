@@ -77,9 +77,8 @@ exports.getAllTransactions = async (req, res) => {
 
         if (month) {
             const [year, monthNum] = month.split('-');
-            const startDate = new Date(year, monthNum - 1, 1);
-            const endDate = new Date(year, monthNum, 0, 23, 59, 59);
-            filter.date = { $gte: startDate, $lte: endDate };
+            filter.budgetMonth = parseInt(monthNum);
+            filter.budgetYear = parseInt(year);
         }
 
         if (by && by !== 'all') filter.by = by;
@@ -164,22 +163,17 @@ exports.getDashboardSummary = async (req, res) => {
             currentMonth = now.getMonth() + 1;
         }
 
-        // Current month date range
-        const startDate = new Date(currentYear, currentMonth - 1, 1);
-        const endDate = new Date(currentYear, currentMonth, 0, 23, 59, 59);
+        // Budget month filter
+        const filter = { budgetMonth: currentMonth, budgetYear: currentYear };
 
-        // Last month date range
+        // Last month budget filter
         let lastMonthYear = currentYear;
         let lastMonth = currentMonth - 1;
         if (lastMonth === 0) {
             lastMonth = 12;
             lastMonthYear--;
         }
-        const lastMonthStart = new Date(lastMonthYear, lastMonth - 1, 1);
-        const lastMonthEnd = new Date(lastMonthYear, lastMonth, 0, 23, 59, 59);
-
-        const filter = { date: { $gte: startDate, $lte: endDate } };
-        const lastMonthFilter = { date: { $gte: lastMonthStart, $lte: lastMonthEnd } };
+        const lastMonthFilter = { budgetMonth: lastMonth, budgetYear: lastMonthYear };
 
         // Parallel Execution
         const [transactions, recentTransactions, lastMonthTransactions, budgets] = await Promise.all([
@@ -210,13 +204,9 @@ exports.getDashboardSummary = async (req, res) => {
             hasLastMonth: lastMonthTotal > 0
         };
 
-        // Calculate spending per pocket for budget alerts (use budgetMonth, not date)
-        const budgetTransactions = await Transaction.find({
-            budgetMonth: currentMonth,
-            budgetYear: currentYear
-        });
+        // Calculate spending per pocket for budget alerts
         const pocketSpending = {};
-        budgetTransactions.forEach(t => {
+        transactions.forEach(t => {
             pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
         });
 
