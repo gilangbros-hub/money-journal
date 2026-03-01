@@ -4,11 +4,29 @@ All notable changes to the **Money Journal** app are documented here, from the f
 
 ---
 
+## [2026-03-01]
+
+### Fixed
+- Transaction form submission error caused by line-break characters in pocket/type values (`Weekend\nTransport`, `Uang\nSampah`)
+- Added defensive `.trim()` on type and pocket fields in transaction controller
+
+### Commits
+| Hash | Description |
+|------|-------------|
+| `269c44c` | fix: resolve line-break bug in transaction form pocket/type values |
+
+---
+
 ## [2026-02-25]
 
 ### Added
 - `Bandung` and `Sedeqah` pocket sources
 - `isActive` flag on user registration — new accounts must be manually activated in MongoDB before login
+- `CHANGELOG.md` documenting all commits from first to latest
+
+### Changed
+- Redesigned dashboard from B&W to vibrant colorful theme (coral-to-violet gradient)
+- Unified colorful design language across all pages (login, register, transaction, budget, navbar)
 
 ### Fixed
 - Hardcoded pocket sources in the transaction form template now reflect the updated list
@@ -16,6 +34,9 @@ All notable changes to the **Money Journal** app are documented here, from the f
 ### Commits
 | Hash | Description |
 |------|-------------|
+| `0fe7811` | style: unify colorful design language across all pages |
+| `5761b47` | style: redesign dashboard from B&W to vibrant colorful theme |
+| `3a165a7` | docs: add CHANGELOG.md documenting all commits |
 | `9dd3ea2` | fix: update hardcoded pocket sources in transaction form |
 | `27425e4` | feat: add missing pockets and user isActive flag |
 
