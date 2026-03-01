@@ -30,7 +30,7 @@ hbs.registerPartials(path.join(__dirname, 'views/partials'));
 
 // Register Helpers
 hbs.registerHelper('split', function (string) {
-    return string.split(',');
+    return string.split(',').map(item => item.trim().replace(/\s+/g, ' '));
 });
 
 const { TRANSACTION_TYPES, POCKETS } = require('./utils/constants');
