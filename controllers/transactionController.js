@@ -24,11 +24,11 @@ exports.createTransaction = async (req, res) => {
         const { date, type, pocket, ngapain, amount, paidBy } = req.body;
         const transaction = new Transaction({
             date: new Date(date),
-            type,
-            pocket,
+            type: type ? type.trim() : type,
+            pocket: pocket ? pocket.trim() : pocket,
             ngapain,
             by: req.session.userId,
-            paidBy: paidBy || req.session.role || 'Self', // Default to session role or 'Self'
+            paidBy: paidBy || req.session.role || 'Self',
             amount: parseFloat(amount)
         });
 
