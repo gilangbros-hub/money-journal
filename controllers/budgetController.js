@@ -51,10 +51,10 @@ exports.getBudgets = async (req, res) => {
         const startDate = new Date(targetYear, targetMonth - 1, 1);
         const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
 
-        // Fetch budgets and transactions in parallel
+        // Fetch budgets and transactions (by budget month, not date range)
         const [budgets, transactions] = await Promise.all([
             PocketBudget.find({ month: targetMonth, year: targetYear }).sort({ pocket: 1 }),
-            Transaction.find({ date: { $gte: startDate, $lte: endDate } })
+            Transaction.find({ budgetMonth: targetMonth, budgetYear: targetYear })
         ]);
 
         // Calculate spending per pocket

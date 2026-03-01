@@ -21,15 +21,18 @@ exports.getTransactionsPage = (req, res) => {
 
 exports.createTransaction = async (req, res) => {
     try {
-        const { date, type, pocket, ngapain, amount, paidBy } = req.body;
+        const { date, type, pocket, ngapain, amount, paidBy, budgetMonth, budgetYear } = req.body;
+        const txDate = new Date(date);
         const transaction = new Transaction({
-            date: new Date(date),
+            date: txDate,
             type: type ? type.trim() : type,
             pocket: pocket ? pocket.trim() : pocket,
             ngapain,
             by: req.session.userId,
             paidBy: paidBy || req.session.role || 'Self',
-            amount: parseFloat(amount)
+            amount: parseFloat(amount),
+            budgetMonth: budgetMonth ? parseInt(budgetMonth) : txDate.getMonth() + 1,
+            budgetYear: budgetYear ? parseInt(budgetYear) : txDate.getFullYear()
         });
 
         await transaction.save();
@@ -110,13 +113,16 @@ exports.getTransaction = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
     try {
-        const { date, type, pocket, ngapain, amount } = req.body;
+        const { date, type, pocket, ngapain, amount, budgetMonth, budgetYear } = req.body;
+        const txDate = new Date(date);
         await Transaction.findByIdAndUpdate(req.params.id, {
-            date: new Date(date),
+            date: txDate,
             type,
             pocket,
             ngapain,
-            amount: parseFloat(amount)
+            amount: parseFloat(amount),
+            budgetMonth: budgetMonth ? parseInt(budgetMonth) : txDate.getMonth() + 1,
+            budgetYear: budgetYear ? parseInt(budgetYear) : txDate.getFullYear()
         });
         res.json({ success: true });
     } catch (error) {
@@ -204,9 +210,13 @@ exports.getDashboardSummary = async (req, res) => {
             hasLastMonth: lastMonthTotal > 0
         };
 
-        // Calculate spending per pocket for budget alerts
+        // Calculate spending per pocket for budget alerts (use budgetMonth, not date)
+        const budgetTransactions = await Transaction.find({
+            budgetMonth: currentMonth,
+            budgetYear: currentYear
+        });
         const pocketSpending = {};
-        transactions.forEach(t => {
+        budgetTransactions.forEach(t => {
             pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
         });
 

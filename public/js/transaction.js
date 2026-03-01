@@ -55,6 +55,33 @@ function getRandomMessage(streakCount) {
     return `${msg.emoji} ${msg.text}${streakText}`;
 }
 
+// Budget Month select population (current ±1 months only)
+function populateBudgetMonthSelect(preselect) {
+    const select = document.getElementById('budgetMonth');
+    select.innerHTML = '';
+    const now = new Date();
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    // Generate 3 options: prev month, current month, next month
+    for (let offset = -1; offset <= 1; offset++) {
+        const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+        const m = d.getMonth() + 1;
+        const y = d.getFullYear();
+        const val = `${y}-${String(m).padStart(2, '0')}`;
+        const label = `${monthNames[m - 1]} ${y}`;
+        const option = document.createElement('option');
+        option.value = val;
+        option.textContent = label;
+        if (preselect) {
+            option.selected = val === preselect;
+        } else {
+            option.selected = offset === 0; // default to current month
+        }
+        select.appendChild(option);
+    }
+}
+
 // Check if editing mode (URL has edit parameter)
 const urlParams = new URLSearchParams(window.location.search);
 const editId = urlParams.get('edit');
@@ -63,13 +90,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // Display current streak
     displayStreak();
 
-    // Set default date if not editing
+    // Set default date and budget month if not editing
     if (!editId) {
         const dateInput = document.getElementById('date');
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         dateInput.value = now.toISOString().slice(0, 16);
+        populateBudgetMonthSelect();
     } else {
+        populateBudgetMonthSelect(); // populate first, edit load will re-select
         loadTransactionForEdit(editId);
     }
 
@@ -125,6 +154,12 @@ async function loadTransactionForEdit(id) {
         document.getElementById('ngapain').value = transaction.ngapain;
         document.getElementById('amount').value = transaction.amount;
 
+        // Budget Month
+        if (transaction.budgetMonth && transaction.budgetYear) {
+            const preselect = `${transaction.budgetYear}-${String(transaction.budgetMonth).padStart(2, '0')}`;
+            populateBudgetMonthSelect(preselect);
+        }
+
     } catch (error) {
         console.error('Error loading transaction:', error);
         showToast('Error loading transaction data', 'error');
@@ -157,12 +192,18 @@ document.getElementById('transactionForm').addEventListener('submit', async func
     const transactionId = document.getElementById('transactionId').value;
     const isEdit = !!transactionId;
 
+    // Parse budget month
+    const budgetMonthVal = document.getElementById('budgetMonth').value;
+    const [bYear, bMonth] = budgetMonthVal.split('-');
+
     const formData = {
         date: document.getElementById('date').value,
         type: typeChecked.value,
         pocket: pocketChecked.value,
         ngapain: document.getElementById('ngapain').value,
-        amount: amountValue
+        amount: amountValue,
+        budgetMonth: parseInt(bMonth),
+        budgetYear: parseInt(bYear)
     };
 
     try {
