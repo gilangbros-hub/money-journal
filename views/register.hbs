@@ -6,60 +6,66 @@
     <title>Money Journal - Register</title>
 </head>
 
-<body class="flex flex-col items-center min-h-screen">
+<body class="flex flex-col justify-center items-center min-h-screen bg-bg p-4 sm:p-8">
 
-    <!-- Dark Header -->
-    <div class="auth-header-bg relative">
-        <a href="/login" class="absolute top-4 left-5 w-9 h-9 bg-white/10 border-none rounded-full flex items-center justify-center cursor-pointer text-white no-underline hover:bg-white/20" aria-label="Go back">
-            <span class="material-symbols-outlined" style="font-size:20px;">arrow_back_ios</span>
+    <div class="w-full max-w-[400px] animate-fade-in relative pt-12 sm:pt-0">
+        <!-- Back Button Mobile Only (absolute on mobile) -->
+        <a href="/login" class="absolute top-0 left-0 w-10 h-10 bg-bg-secondary border border-border/50 rounded-full flex items-center justify-center cursor-pointer text-text-muted no-underline hover:text-primary hover:border-primary transition-all sm:-left-3 sm:-top-3" aria-label="Go back">
+            <span class="material-symbols-outlined" style="font-size:20px;">arrow_back_ios_new</span>
         </a>
-        <img src="/images/logo.png" alt="Money Journal Logo" class="w-[72px] h-[72px] object-contain rounded-2xl mb-5">
-        <h1 class="text-white text-[26px] font-bold mb-1.5">Let's Start</h1>
-        <p class="text-white/55 text-sm">Create an account</p>
-    </div>
 
-    <!-- Form Card -->
-    <div class="auth-card">
-        <h2 class="text-[22px] font-bold text-text-primary mb-5">Sign Up</h2>
-
-        {{#if error}}
-        <div class="bg-coral/20 text-coral-light p-2.5 px-3.5 rounded-[10px] text-[13px] mb-4 border border-coral/30">{{error}}</div>
-        {{/if}}
-
-        <form method="POST" action="/auth/register">
-            <div class="field-group">
-                <label for="username">Username</label>
-                <div class="relative">
-                    <input type="text" id="username" name="username" placeholder="your_username" required
-                        autocomplete="username">
-                </div>
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-bg-secondary border border-border/50 mb-6 shadow-glow-primary transition-transform hover:scale-105">
+                <img src="/images/logo.png" alt="Money Journal Logo" class="w-10 h-10 object-contain rounded-xl">
             </div>
+            <h1 class="text-[26px] font-bold text-text-primary mb-2">Let's Start</h1>
+            <p class="text-[15px] text-text-secondary">Create an account</p>
+        </div>
 
-            <div class="field-group">
-                <label for="email">Email Address</label>
-                <div class="relative">
-                    <input type="email" id="email" name="email" placeholder="you@email.com" required
-                        autocomplete="email">
+        <!-- Form Card -->
+        <div class="bg-bg-secondary border border-border/50 rounded-3xl shadow-card p-6 sm:p-8">
+            <h2 class="text-xl font-bold text-text-primary mb-6">Sign Up</h2>
+
+            {{#if error}}
+            <div class="bg-coral/10 text-coral p-3 rounded-xl text-sm mb-5 border border-coral/20 font-medium">{{error}}</div>
+            {{/if}}
+
+            <form method="POST" action="/auth/register">
+                <div class="field-group mb-5">
+                    <label for="username" class="!text-sm !mb-2">Username</label>
+                    <div class="relative">
+                        <input type="text" id="username" name="username" placeholder="your_username" required
+                            autocomplete="username" class="!py-3.5 !rounded-2xl">
+                    </div>
                 </div>
-            </div>
 
-            <div class="field-group">
-                <label for="password">Password</label>
-                <div class="relative">
-                    <input type="password" id="password" name="password" placeholder="••••••••" required
-                        autocomplete="new-password">
-                    <button type="button" class="absolute right-3.5 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-text-muted flex items-center" onclick="togglePw('password', this)"
-                        aria-label="Toggle password">
-                        <span class="material-symbols-outlined" style="font-size:20px;">visibility_off</span>
-                    </button>
+                <div class="field-group mb-5">
+                    <label for="email" class="!text-sm !mb-2">Email Address</label>
+                    <div class="relative">
+                        <input type="email" id="email" name="email" placeholder="you@email.com" required
+                            autocomplete="email" class="!py-3.5 !rounded-2xl">
+                    </div>
                 </div>
+
+                <div class="field-group mb-6">
+                    <label for="password" class="!text-sm !mb-2">Password</label>
+                    <div class="relative">
+                        <input type="password" id="password" name="password" placeholder="••••••••" required
+                            autocomplete="new-password" class="!py-3.5 !rounded-2xl">
+                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-text-muted hover:text-text-primary flex items-center transition-colors" onclick="togglePw('password', this)"
+                            aria-label="Toggle password">
+                            <span class="material-symbols-outlined" style="font-size:20px;">visibility_off</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-neon h-14 w-full text-[15px]">Create Account</button>
+            </form>
+
+            <div class="text-center mt-6 text-[14px] text-text-secondary">
+                Already have an account? <a href="/login" class="text-primary font-bold no-underline hover:text-primary-light transition-colors">Sign In</a>
             </div>
-
-            <button type="submit" class="btn-neon mt-2 h-[52px]">Create Account</button>
-        </form>
-
-        <div class="text-center mt-5 text-sm text-text-secondary">
-            Already have an account? <a href="/login" class="text-primary font-bold no-underline hover:text-primary-light">Sign In</a>
         </div>
     </div>
 

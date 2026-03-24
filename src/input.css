@@ -346,17 +346,6 @@
   }
 
   /* --- Auth pages --- */
-  .auth-header-bg {
-    @apply w-full max-w-[480px] text-center;
-    background: linear-gradient(135deg, #7C3AED 0%, #FF4D6D 50%, #F59E0B 100%);
-    padding: 56px 32px 64px;
-    border-radius: 0 0 40px 40px;
-  }
-
-  .auth-card {
-    @apply bg-bg-secondary w-[calc(100%-40px)] max-w-[440px] rounded-3xl px-6 py-7 -mt-7 border border-border;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  }
 
   .field-group {
     @apply mb-4;
