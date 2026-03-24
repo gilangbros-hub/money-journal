@@ -1,0 +1,380 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   BASE LAYER — Global resets & defaults
+   ============================================ */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    @apply bg-bg text-text-primary font-sans antialiased;
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0F172A;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+  }
+
+  /* Input defaults */
+  input, select, textarea {
+    @apply font-sans;
+  }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+
+  /* Material Symbols */
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ============================================
+   COMPONENT LAYER — Reusable patterns
+   ============================================ */
+@layer components {
+  /* --- Layout --- */
+  .page-container {
+    @apply max-w-[500px] mx-auto px-5 pb-24 pt-4;
+  }
+
+  /* --- App Header --- */
+  .app-header {
+    @apply flex justify-between items-center mb-5 relative;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold text-text-primary m-0;
+  }
+
+  .user-info {
+    @apply flex items-center gap-2 cursor-pointer;
+  }
+
+  .user-menu {
+    @apply hidden absolute right-0 top-[45px] bg-bg-secondary border border-border rounded-xl p-2 shadow-card w-[140px] z-[1000];
+  }
+
+  .user-menu a {
+    @apply block py-2.5 px-3 no-underline text-text-secondary text-sm rounded-lg;
+  }
+
+  .user-menu a:hover {
+    @apply bg-bg-tertiary;
+  }
+
+  .user-menu a.logout {
+    @apply text-coral;
+  }
+
+  /* --- Cards --- */
+  .card-dark {
+    @apply bg-bg-secondary rounded-2xl p-4 shadow-card border border-border;
+  }
+
+  .card-dark-hover {
+    @apply card-dark transition-all duration-200 hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  /* --- Summary / Hero Card --- */
+  .hero-card {
+    @apply bg-gradient-hero rounded-3xl p-6 text-white relative overflow-hidden mb-6;
+    box-shadow: 0 10px 30px -5px rgba(124, 58, 237, 0.35);
+  }
+
+  .hero-card::after {
+    content: '';
+    @apply absolute -top-1/2 -right-[20%] w-[200px] h-[200px] rounded-full;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .hero-card::before {
+    content: '';
+    @apply absolute -bottom-[30%] -left-[10%] w-[150px] h-[150px] rounded-full;
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  /* --- Section Header --- */
+  .section-header {
+    @apply flex justify-between items-center mb-4;
+  }
+
+  .section-title {
+    @apply text-lg font-bold text-text-primary m-0;
+  }
+
+  /* --- Buttons --- */
+  .btn-neon {
+    @apply w-full py-4 bg-gradient-cta text-white border-none rounded-2xl text-base font-bold cursor-pointer transition-all duration-200 shadow-glow-primary;
+  }
+
+  .btn-neon:hover {
+    @apply opacity-90 -translate-y-0.5;
+  }
+
+  .btn-neon:active {
+    @apply scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply w-full py-3.5 bg-bg-secondary border border-border rounded-xl text-[15px] font-semibold text-text-secondary cursor-pointer flex items-center justify-center gap-2 transition-colors duration-200;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-bg-tertiary;
+  }
+
+  /* --- Form Controls --- */
+  .input-dark {
+    @apply w-full py-3.5 px-4 bg-bg-secondary border border-border rounded-xl text-base text-text-primary outline-none transition-all duration-200;
+  }
+
+  .input-dark:focus {
+    @apply border-primary shadow-glow-primary;
+  }
+
+  .input-dark::placeholder {
+    @apply text-text-muted;
+  }
+
+  /* --- Filter Pills --- */
+  .filter-pill {
+    @apply flex-shrink-0 py-2 px-4 rounded-full border-[1.5px] border-border bg-bg-secondary text-[13px] font-semibold text-text-secondary cursor-pointer transition-all duration-200 whitespace-nowrap;
+  }
+
+  .filter-pill:hover {
+    @apply border-primary text-primary;
+  }
+
+  .filter-pill.active {
+    @apply bg-gradient-cta text-white border-transparent shadow-glow-primary;
+  }
+
+  /* --- Transaction Item --- */
+  .trans-item {
+    @apply flex items-center p-3.5 bg-bg-secondary rounded-2xl shadow-card cursor-pointer transition-all duration-200 border border-border/50;
+  }
+
+  .trans-item:hover {
+    @apply -translate-y-0.5 shadow-card-hover;
+  }
+
+  .trans-item:active {
+    @apply scale-[0.98];
+  }
+
+  .trans-icon {
+    @apply w-[42px] h-[42px] rounded-xl flex items-center justify-center text-lg mr-3 flex-shrink-0;
+    background: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(6,182,212,0.15) 100%);
+  }
+
+  /* --- Modal --- */
+  .modal-overlay {
+    @apply hidden fixed inset-0 bg-bg-overlay backdrop-blur-sm z-[2000] items-center justify-center p-5;
+  }
+
+  .modal-overlay.show {
+    @apply flex;
+  }
+
+  .modal-card {
+    @apply bg-bg-secondary p-6 rounded-3xl w-full max-w-[340px] text-center border border-border;
+  }
+
+  .modal-card h3 {
+    @apply m-0 mb-5 text-xl text-text-primary font-bold;
+  }
+
+  .modal-actions {
+    @apply flex gap-3;
+  }
+
+  .btn-modal-cancel {
+    @apply flex-1 py-3 rounded-xl bg-bg-tertiary text-text-secondary text-[15px] font-semibold cursor-pointer border-none;
+  }
+
+  .btn-modal-danger {
+    @apply flex-1 py-3 rounded-xl bg-coral text-white text-[15px] font-semibold cursor-pointer border-none;
+  }
+
+  .btn-modal-save {
+    @apply flex-1 py-3 rounded-xl bg-gradient-cta text-white text-[15px] font-semibold cursor-pointer border-none;
+  }
+
+  /* --- Toast / Snackbar --- */
+  .toast {
+    @apply invisible min-w-[250px] text-center rounded-2xl py-4 px-6 fixed z-[9999] left-1/2 bottom-[30px] -translate-x-1/2 text-sm font-medium opacity-0 transition-all duration-300;
+    background: linear-gradient(135deg, #7C3AED 0%, #06B6D4 100%);
+    color: white;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  .toast.show {
+    @apply visible opacity-100 bottom-[100px];
+  }
+
+  .toast.success {
+    background: linear-gradient(135deg, #22C55E 0%, #06B6D4 100%);
+  }
+
+  .toast.error {
+    @apply bg-coral-dark;
+  }
+
+  /* --- Progress Bar --- */
+  .progress-track {
+    @apply w-full h-1.5 bg-bg-tertiary rounded-full overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* --- Option Grid (Transaction Form) --- */
+  .option-grid {
+    @apply grid grid-cols-3 gap-2.5;
+  }
+
+  .icon-btn {
+    @apply flex flex-col items-center justify-center py-3 px-2 bg-bg-secondary border-[1.5px] border-border rounded-2xl cursor-pointer transition-all duration-200 min-h-[85px];
+  }
+
+  .option-input {
+    @apply hidden;
+  }
+
+  .option-input:checked + .icon-btn {
+    @apply bg-primary/15 border-primary shadow-glow-primary -translate-y-0.5;
+  }
+
+  /* --- Category Card --- */
+  .category-item {
+    @apply bg-bg-secondary p-4 rounded-2xl flex items-center gap-4 shadow-card cursor-pointer transition-transform duration-200 border border-border/50;
+  }
+
+  .category-item:active {
+    @apply scale-[0.98];
+  }
+
+  .cat-icon {
+    @apply w-12 h-12 rounded-[14px] flex items-center justify-center text-xl;
+    background: linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(6,182,212,0.15) 100%);
+  }
+
+  /* --- Chart --- */
+  .chart-card {
+    @apply bg-bg-secondary rounded-2xl p-5 mb-6 shadow-card border border-border/50;
+  }
+
+  .legend-item {
+    @apply flex items-center gap-2 text-xs py-1.5 px-2 bg-bg-tertiary rounded-lg;
+  }
+
+  /* --- Bottom Navbar --- */
+  .bottom-navbar {
+    @apply fixed bottom-0 left-0 right-0 bg-bg-secondary flex justify-around py-2 pb-3 border-t border-border z-[1000];
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .nav-item {
+    @apply flex flex-col items-center no-underline text-text-muted py-1 px-4 rounded-xl transition-all duration-200;
+  }
+
+  .nav-item.active {
+    @apply text-primary;
+  }
+
+  .nav-item:hover {
+    @apply bg-bg-tertiary;
+  }
+
+  /* --- Loading Shimmer --- */
+  .loading-placeholder {
+    @apply h-[70px] rounded-2xl;
+    background: linear-gradient(90deg, #1E293B 25%, #273449 50%, #1E293B 75%);
+    background-size: 400px 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: 200px 0; }
+  }
+
+  /* --- Empty State --- */
+  .empty-state {
+    @apply text-center py-16 px-5 text-text-muted;
+  }
+
+  /* --- Date Group Header --- */
+  .date-group-header {
+    @apply text-[13px] font-bold text-primary py-2 mt-2 border-b border-primary/20 tracking-wide;
+  }
+
+  /* --- Auth pages --- */
+  .auth-header-bg {
+    @apply w-full max-w-[480px] text-center;
+    background: linear-gradient(135deg, #7C3AED 0%, #FF4D6D 50%, #F59E0B 100%);
+    padding: 56px 32px 64px;
+    border-radius: 0 0 40px 40px;
+  }
+
+  .auth-card {
+    @apply bg-bg-secondary w-[calc(100%-40px)] max-w-[440px] rounded-3xl px-6 py-7 -mt-7 border border-border;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .field-group {
+    @apply mb-4;
+  }
+
+  .field-group label {
+    @apply block text-[13px] font-medium text-text-secondary mb-1.5;
+  }
+
+  .field-group input {
+    @apply w-full py-3.5 px-4 pr-11 bg-bg-tertiary border-[1.5px] border-transparent rounded-xl text-[15px] font-sans text-text-primary outline-none transition-colors duration-200;
+  }
+
+  .field-group input:focus {
+    @apply border-primary bg-bg-secondary;
+  }
+
+  .field-group input::placeholder {
+    @apply text-text-muted;
+  }
+}

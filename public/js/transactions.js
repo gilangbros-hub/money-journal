@@ -1,7 +1,7 @@
 let dashboardData = null;
 let currentMonth = new Date().toISOString().slice(0, 7);
 
-// Emoji Mappings (Keep existing ones)
+// Emoji Mappings
 const typeEmojis = {
     'Eat': '🍽️', 'Snack': '🍿', 'Groceries': '🛒', 'Laundry': '🧺',
     'Bensin': '⛽', 'Flazz': '💳', 'Home Appliance': '🏠', 'Jumat Berkah': '🤲',
@@ -49,7 +49,6 @@ function updateDashboardUI() {
     // 4. Render Categories
     renderCategoryList();
 
-
     // 5. Render Recent History (Default view)
     renderTransactionList(dashboardData.recent, false);
 
@@ -64,7 +63,7 @@ function updateDashboardUI() {
     if (header) {
         header.textContent = 'Recent Transactions';
         if (header.nextElementSibling) {
-            header.nextElementSibling.style.display = 'flex'; // Show Export + View All buttons
+            header.nextElementSibling.style.display = 'flex';
         }
     }
 }
@@ -84,21 +83,21 @@ function renderComparison(comparison) {
     if (comparison.increased) {
         icon.textContent = '📈';
         value.textContent = `▲ +${comparison.difference} (${comparison.percentChange}% more)`;
-        value.className = 'comparison-value increased';
+        value.className = 'text-base font-bold text-coral';
     } else {
         icon.textContent = '📉';
         value.textContent = `▼ -${comparison.difference} (${comparison.percentChange}% less)`;
-        value.className = 'comparison-value decreased';
+        value.className = 'text-base font-bold text-lime';
     }
 }
 
 // Global chart instance
 let spendingChart = null;
 
-// Chart color palette — Vibrant & Colorful
+// Chart color palette — Neon
 const chartColors = [
-    '#FF6B6B', '#845EC2', '#00C9A7', '#FFB347', '#4ECDC4',
-    '#FF8E53', '#4EA8DE', '#FF6F91', '#FFC75F', '#67C6A0'
+    '#FF4D6D', '#7C3AED', '#22C55E', '#F59E0B', '#06B6D4',
+    '#F97316', '#3B82F6', '#EC4899', '#FBBF24', '#14B8A6'
 ];
 
 function renderSpendingChart() {
@@ -108,23 +107,20 @@ function renderSpendingChart() {
 
     if (!categories || categories.length === 0) {
         canvas.parentElement.style.display = 'none';
-        legendContainer.innerHTML = '<p style="text-align:center; color:#9CA3AF;">No data yet</p>';
+        legendContainer.innerHTML = '<p class="text-center text-text-muted">No data yet</p>';
         return;
     }
 
     canvas.parentElement.style.display = 'block';
 
-    // Prepare data - API returns 'category' and 'total', not 'type' and 'amount'
     const labels = categories.map(c => c.category);
     const data = categories.map(c => c.total);
     const percentages = categories.map(c => c.percentage || 0);
 
-    // Destroy previous chart if exists
     if (spendingChart) {
         spendingChart.destroy();
     }
 
-    // Create pie chart
     spendingChart = new Chart(canvas, {
         type: 'doughnut',
         data: {
@@ -133,7 +129,7 @@ function renderSpendingChart() {
                 data: data,
                 backgroundColor: chartColors.slice(0, labels.length),
                 borderWidth: 2,
-                borderColor: '#ffffff'
+                borderColor: '#1E293B'
             }]
         },
         options: {
@@ -141,9 +137,14 @@ function renderSpendingChart() {
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: false // We'll use custom legend
+                    display: false
                 },
                 tooltip: {
+                    backgroundColor: '#1E293B',
+                    titleColor: '#F8FAFC',
+                    bodyColor: '#94A3B8',
+                    borderColor: '#334155',
+                    borderWidth: 1,
                     callbacks: {
                         label: function (context) {
                             const value = context.raw;
@@ -157,12 +158,11 @@ function renderSpendingChart() {
         }
     });
 
-    // Render custom legend
     legendContainer.innerHTML = categories.map((cat, i) => `
         <div class="legend-item">
-            <span class="legend-color" style="background: ${chartColors[i % chartColors.length]}"></span>
-            <span class="legend-label">${cat.icon || typeEmojis[cat.category] || '📦'} ${cat.category}</span>
-            <span class="legend-value">${cat.percentage}%</span>
+            <span class="w-2.5 h-2.5 rounded flex-shrink-0" style="background: ${chartColors[i % chartColors.length]}"></span>
+            <span class="flex-1 text-text-secondary font-medium whitespace-nowrap overflow-hidden text-ellipsis">${cat.icon || typeEmojis[cat.category] || '📦'} ${cat.category}</span>
+            <span class="font-bold text-text-primary">${cat.percentage}%</span>
         </div>
     `).join('');
 }
@@ -178,18 +178,17 @@ function renderCategoryList() {
     const { categories, total } = dashboardData;
 
     if (categories.length === 0) {
-        categoryList.innerHTML = '<p class="text-center" style="color:#9CA3AF; margin-top:20px;">No spending this month yet!</p>';
+        categoryList.innerHTML = '<p class="text-center text-text-muted mt-5">No spending this month yet!</p>';
         return;
     }
 
-    // Add 'All' / Total Card at the top
     const allCard = `
-        <div class="category-item" onclick="resetFilter()" style="cursor: pointer; margin-bottom: 12px; border: 1px solid #E5E7EB; background: #F9FAFB;">
+        <div class="category-item border border-border" onclick="resetFilter()" style="cursor: pointer;">
             <div class="cat-icon">♾️</div>
-            <div class="cat-details">
-                <div class="cat-header">
-                    <span class="cat-name">Show All</span>
-                    <span class="cat-amount">${total.formatted}</span>
+            <div class="flex-1">
+                <div class="flex justify-between mb-1.5">
+                    <span class="font-semibold text-[15px] text-text-primary">Show All</span>
+                    <span class="font-bold text-[15px] text-text-primary">${total.formatted}</span>
                 </div>
             </div>
         </div>
@@ -200,10 +199,10 @@ function renderCategoryList() {
         return `
             <div class="category-item" onclick="filterByCategory('${cat.category}')" style="cursor: pointer;">
                 <div class="cat-icon">${cat.icon}</div>
-                <div class="cat-details">
-                    <div class="cat-header">
-                        <span class="cat-name">${cat.category}</span>
-                        <span class="cat-amount">${cat.formattedTotal}</span>
+                <div class="flex-1">
+                    <div class="flex justify-between mb-1.5">
+                        <span class="font-semibold text-[15px] text-text-primary">${cat.category}</span>
+                        <span class="font-bold text-[15px] text-text-primary">${cat.formattedTotal}</span>
                     </div>
                     <div class="progress-track">
                         <div class="progress-fill" style="width: ${cat.percentage < 5 ? 5 : cat.percentage}%; background: ${barColor};"></div>
@@ -215,62 +214,39 @@ function renderCategoryList() {
 }
 
 function resetFilter() {
-    // Reset Header
     const header = document.getElementById('recentTransactionsHeader');
     if (header) {
         header.textContent = 'Recent Transactions';
         if (header.nextElementSibling) {
-            header.nextElementSibling.style.display = 'block'; // Show Export button
+            header.nextElementSibling.style.display = 'flex';
         }
     }
-
-    // Restore original recent list or fetch all?
-    // dashboardData.recent only contains the last 5. 
-    // To "Show All" for the month, we should probably fetch the full list for the month.
-    // Or just revert to 'dashboardData.recent' which is the default view (top 5).
-    // The user said "REVERT TO SHOW ALL TRANSACTIONS".
-    // Usually "Recent Transactions" implies the dashboard view (last 5).
-    // IF they want *ALL* transactions for the month, that's a different query.
-    // BUT, the initial load is `fetchDashboardData` which sets `dashboardData.recent`.
-    // Let's revert to the initial state (Recent 5) as that's what "revert" usually means in this context,
-    // OR we trigger a fetch for month's all transactions.
-    // Given the dashboard nature, reverting to the initial state is safer UI behavior.
-
-    // HOWEVER, if I filter by category, I see ALL transactions for that category in that month.
-    // So "Show All" might imply showing ALL transactions for that month.
-    // Let's fetch all for the month.
-
     fetchAllTransactionsForMonth();
 }
 
 async function fetchAllTransactionsForMonth() {
     const list = document.getElementById('historyList');
-    list.innerHTML = '<p class="text-center" style="padding: 20px; color: #6B7280;">Loading all...</p>';
+    list.innerHTML = '<p class="text-center py-5 text-text-muted">Loading all...</p>';
 
     try {
         const response = await fetch(`/api/transactions?month=${currentMonth}`);
         const transactions = await response.json();
 
-        // Update Header
         const header = document.getElementById('recentTransactionsHeader');
         if (header) header.textContent = 'All Transactions';
 
         renderTransactionList(transactions, true);
     } catch (e) {
         console.error(e);
-        // Fallback to recent
         renderTransactionList(dashboardData.recent, false);
     }
 }
 
 async function filterByCategory(category) {
-    // Update UI to show loading state if needed
     const list = document.getElementById('historyList');
-    list.innerHTML = '<p class="text-center" style="padding: 20px; color: #6B7280;">Loading...</p>';
+    list.innerHTML = '<p class="text-center py-5 text-text-muted">Loading...</p>';
 
     try {
-        // Fetch full list for this category
-        console.log(`Fetching transactions for category: ${category}`);
         const response = await fetch(`/api/transactions?month=${currentMonth}&type=${category}`);
 
         if (!response.ok) {
@@ -278,28 +254,24 @@ async function filterByCategory(category) {
         }
 
         const transactions = await response.json();
-        console.log('Received transactions:', transactions);
 
-        // Update Header
         const header = document.getElementById('recentTransactionsHeader');
         if (header) {
             header.textContent = `${category} Transactions`;
             if (header.nextElementSibling) {
-                header.nextElementSibling.style.display = 'none'; // Hide Export button for filtered view
+                header.nextElementSibling.style.display = 'none';
             }
         }
 
-        // Render sorted by date
         if (Array.isArray(transactions)) {
             renderTransactionList(transactions, true);
         } else {
-            console.error('Expected array but got:', transactions);
             throw new Error('Invalid data format received from API');
         }
 
     } catch (error) {
         console.error('Error fetching category transactions:', error);
-        list.innerHTML = `<p class="text-center" style="color: red;">Error loading data: ${error.message}</p>`;
+        list.innerHTML = `<p class="text-center text-coral">Error loading data: ${error.message}</p>`;
     }
 }
 
@@ -307,7 +279,7 @@ function renderTransactionList(transactions, isFullList) {
     const list = document.getElementById('historyList');
 
     if (transactions.length === 0) {
-        list.innerHTML = '<p class="text-center" style="padding: 20px; color: #9CA3AF;">No transactions found.</p>';
+        list.innerHTML = '<p class="text-center py-5 text-text-muted">No transactions found.</p>';
         return;
     }
 
@@ -316,22 +288,21 @@ function renderTransactionList(transactions, isFullList) {
             const date = new Date(t.date);
             const dateStr = isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 
-            // Handle formatCurrency difference
             const formattedAmount = t.formattedAmount || `Rp ${Number(t.amount).toLocaleString('id-ID')}`;
             const icon = typeEmojis[t.type] || '📦';
-            const paidByLabel = t.paidBy && t.paidBy !== 'Self' ? `<span style="font-size: 10px; background: #F0F0F0; color: #1A1A1A; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.paidBy}</span>` : '';
+            const paidByLabel = t.paidBy && t.paidBy !== 'Self' ? `<span class="text-[10px] bg-bg-tertiary text-text-secondary py-0.5 px-1.5 rounded ml-1.5">${t.paidBy}</span>` : '';
 
             return `
-                <div class="trans-item-mini" onclick="openOptions('${t._id}', '${t.ngapain ? t.ngapain.replace(/'/g, "\\'") : ""}', ${t.amount})">
-                    <div class="trans-icon-mini">${icon}</div>
-                    <div class="trans-info">
-                        <div class="trans-title">
+                <div class="trans-item" onclick="openOptions('${t._id}', '${t.ngapain ? t.ngapain.replace(/'/g, "\\'") : ""}', ${t.amount})">
+                    <div class="trans-icon">${icon}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm text-text-primary mb-0.5 flex items-center gap-1.5 flex-wrap">
                             ${t.ngapain || 'No Description'}
                             ${paidByLabel}
                         </div>
-                        <div class="trans-date">${dateStr} • ${t.pocket || 'Unknown'}</div>
+                        <div class="text-xs text-text-muted">${dateStr} • ${t.pocket || 'Unknown'}</div>
                     </div>
-                    <div class="trans-amount">- ${formattedAmount}</div>
+                    <div class="font-bold text-sm text-coral whitespace-nowrap ml-2">- ${formattedAmount}</div>
                 </div>
             `;
         } catch (err) {
@@ -341,12 +312,11 @@ function renderTransactionList(transactions, isFullList) {
     }).join('');
 }
 
-// Delete Logic (Keep existing)
+// Delete Logic
 let deleteId = null;
 function openOptions(id, note, amount) {
     deleteId = id;
     const modal = document.getElementById('deleteModal');
-    // Simple formatting for the modal
     const formatted = typeof amount === 'number' ? `Rp ${amount.toLocaleString('id-ID')}` : amount;
     document.getElementById('deleteDetails').innerText = `${note} - ${formatted}`;
     modal.classList.add('show');
@@ -362,16 +332,13 @@ async function confirmDelete() {
         const response = await fetch(`/api/transaction/${deleteId}`, { method: 'DELETE' });
         if (response.ok) {
             closeDeleteModal();
-            fetchDashboardData(); // Refresh everything
+            fetchDashboardData();
         }
     } catch (error) {
         console.error(error);
     }
 }
 
-// Export specific for the current view? Or just global? 
-// The user didn't ask to change export, so I'll keep it simple or remove if it conflicts.
-// I'll keep the function but it will need to fetch data since 'currentTransactions' is gone.
 async function exportToCSV() {
     try {
         const response = await fetch(`/api/transactions?month=${currentMonth}`);

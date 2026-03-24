@@ -3,21 +3,19 @@
 
 <head>
     {{> head}}
-    <title>Dashboard</title>
-    <link rel="stylesheet" href="/css/app.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
+    <title>📊 Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 
 <body>
-    <div class="main-container">
+    <div class="page-container">
         <!-- Header -->
         <header class="app-header">
             <h1 class="page-title">📊 Dashboard</h1>
             <div class="user-info" onclick="toggleMenu()">
-                <span class="username">{{username}}</span>
-                <span class="avatar">{{avatar}}</span>
+                <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
             </div>
             <div id="userMenu" class="user-menu">
                 <a href="/profile">Edit Profile</a>
@@ -26,18 +24,18 @@
         </header>
 
         <!-- Summary Card -->
-        <div class="summary-card">
-            <input type="month" id="monthFilter" class="month-selector">
-            <div class="total-spent-label">Total Expenses</div>
-            <h1 class="total-spent-amount" id="totalAmount">Rp 0</h1>
+        <div class="hero-card">
+            <input type="month" id="monthFilter" class="bg-white/20 border-none text-white py-1 px-3 rounded-full text-sm font-medium cursor-pointer backdrop-blur mb-4 inline-block focus:outline-none focus:bg-white/30" style="-webkit-appearance: none;">
+            <div class="text-sm opacity-90 mb-1">Total Expenses</div>
+            <h1 class="text-rupiah-lg m-0 tracking-tight" id="totalAmount">Rp 0</h1>
         </div>
 
         <!-- Monthly Comparison Card -->
-        <div id="comparisonCard" class="comparison-card" style="display: none;">
-            <div class="comparison-icon" id="comparisonIcon">📊</div>
-            <div class="comparison-text">
-                <span class="comparison-label">vs Last Month</span>
-                <span class="comparison-value" id="comparisonValue">-</span>
+        <div id="comparisonCard" class="bg-bg-secondary rounded-2xl p-4 flex items-center gap-3 mb-5 shadow-card border border-border/50" style="display: none;">
+            <div class="text-[32px]" id="comparisonIcon">📊</div>
+            <div class="flex flex-col">
+                <span class="text-xs text-text-secondary mb-0.5">vs Last Month</span>
+                <span class="text-base font-bold" id="comparisonValue">-</span>
             </div>
         </div>
 
@@ -46,10 +44,10 @@
             <div class="section-header">
                 <h2 class="section-title">Spending Breakdown</h2>
             </div>
-            <div class="chart-container">
+            <div class="h-[200px] relative">
                 <canvas id="spendingChart"></canvas>
             </div>
-            <div id="chartLegend" class="chart-legend">
+            <div id="chartLegend" class="grid grid-cols-2 gap-2 mt-4">
                 <!-- Injected by JS -->
             </div>
         </div>
@@ -58,37 +56,35 @@
         <div class="section-header">
             <h2 class="section-title">By Category</h2>
         </div>
-        <div class="category-list" id="categoryList">
+        <div class="flex flex-col gap-4 mb-8" id="categoryList">
             <!-- Injected by JS -->
-            <p style="text-align:center; color:#9CA3AF;">Loading categories...</p>
+            <p class="text-center text-text-muted">Loading categories...</p>
         </div>
 
         <!-- Recent Transactions -->
         <div class="section-header">
             <h2 class="section-title" id="recentTransactionsHeader">Recent Transactions</h2>
-            <div style="display: flex; gap: 16px; align-items: center;">
-                <a href="/all-transactions" id="viewAllLink" class="md-btn text"
-                    style="min-width:auto; padding:0; color: #845EC2; font-size: 14px; text-decoration: none; font-weight: 600;">View All</a>
-                <button onclick="exportToCSV()" class="md-btn text"
-                    style="min-width:auto; padding:0; color: #10B981; font-size: 14px;">Export</button>
+            <div class="flex gap-4 items-center">
+                <a href="/all-transactions" id="viewAllLink" class="text-sm font-semibold text-primary no-underline hover:text-primary-light transition-colors">View All</a>
+                <button onclick="exportToCSV()" class="text-sm font-semibold text-lime bg-transparent border-none cursor-pointer hover:text-lime-light transition-colors">Export</button>
             </div>
         </div>
 
-        <div class="transaction-list-mini" id="historyList">
+        <div class="flex flex-col gap-3" id="historyList">
             <!-- Injected by JS -->
         </div>
 
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="text-5xl mb-4">🗑️</div>
             <h3>Delete this?</h3>
-            <p id="deleteDetails" style="color: #6B7280; margin-bottom: 20px;"></p>
+            <p id="deleteDetails" class="text-text-secondary mb-5"></p>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-save" style="background: #EF4444;" onclick="confirmDelete()">Delete</button>
+                <button class="btn-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-modal-danger" onclick="confirmDelete()">Delete</button>
             </div>
         </div>
     </div>
@@ -96,7 +92,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/js/common.js"></script>
     <script src="/js/transactions.js"></script>
-
 
     {{> navbar isDashboard=true}}
 </body>

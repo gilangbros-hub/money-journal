@@ -4,22 +4,19 @@
 <head>
     {{> head}}
     <title>All Transactions</title>
-    <link rel="stylesheet" href="/css/app.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
-    <link rel="stylesheet" href="/css/allTransactions.css">
 </head>
 
 <body>
-    <div class="main-container">
+    <div class="page-container">
         <!-- Header -->
         <header class="app-header">
-            <div class="header-left">
-                <a href="/transactions" class="back-btn" id="backBtn">←</a>
+            <div class="flex items-center gap-3">
+                <a href="/transactions" class="text-[22px] no-underline text-text-primary w-9 h-9 flex items-center justify-center rounded-[10px] bg-bg-secondary shadow-card transition-all duration-200 hover:bg-bg-tertiary hover:-translate-x-0.5" id="backBtn">←</a>
                 <h1 class="page-title">All Transactions</h1>
             </div>
             <div class="user-info" onclick="toggleMenu()">
-                <span class="username">{{username}}</span>
-                <span class="avatar">{{avatar}}</span>
+                <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
             </div>
             <div id="userMenu" class="user-menu">
                 <a href="/profile">Edit Profile</a>
@@ -28,45 +25,45 @@
         </header>
 
         <!-- Month Picker -->
-        <div class="month-picker-bar">
-            <input type="month" id="monthFilter" class="month-selector-alt">
+        <div class="mb-4">
+            <input type="month" id="monthFilter" class="input-dark w-full font-semibold">
         </div>
 
         <!-- Type Filter Pills -->
-        <div class="filter-bar">
-            <div class="filter-pills" id="filterPills">
+        <div class="mb-4 overflow-hidden">
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="filterPills">
                 <button class="filter-pill active" data-type="all">All</button>
                 <!-- Injected by JS -->
             </div>
         </div>
 
         <!-- Sort Control -->
-        <div class="sort-bar">
-            <div class="summary-info" id="summaryInfo">
-                <span class="summary-count">0 transactions</span>
-                <span class="summary-total">Rp 0</span>
+        <div class="flex justify-between items-center mb-4 p-3 bg-bg-secondary rounded-[14px] shadow-card border border-border/50">
+            <div class="flex flex-col gap-0.5" id="summaryInfo">
+                <span class="text-[13px] font-semibold text-text-secondary">0 transactions</span>
+                <span class="text-base font-extrabold text-text-primary">Rp 0</span>
             </div>
-            <button class="sort-btn" id="sortBtn" title="Toggle sort order">
-                <span class="sort-icon">↓</span> Newest
+            <button class="flex items-center gap-1 py-2 px-3.5 border-[1.5px] border-border rounded-xl bg-bg-secondary text-[13px] font-semibold text-text-secondary cursor-pointer transition-all duration-200 hover:border-primary hover:text-primary" id="sortBtn" title="Toggle sort order">
+                <span class="text-sm transition-transform duration-300">↓</span> Newest
             </button>
         </div>
 
         <!-- Transaction List -->
-        <div class="transaction-list-full" id="transactionList">
-            <p style="text-align:center; color:#9CA3AF; padding: 40px 0;">Loading transactions...</p>
+        <div class="flex flex-col gap-2.5 pb-5" id="transactionList">
+            <p class="text-center text-text-muted py-10">Loading transactions...</p>
         </div>
 
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="text-5xl mb-4">🗑️</div>
             <h3>Delete this?</h3>
-            <p id="deleteDetails" style="color: #6B7280; margin-bottom: 20px;"></p>
+            <p id="deleteDetails" class="text-text-secondary mb-5"></p>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-save" style="background: #EF4444;" onclick="confirmDelete()">Delete</button>
+                <button class="btn-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-modal-danger" onclick="confirmDelete()">Delete</button>
             </div>
         </div>
     </div>

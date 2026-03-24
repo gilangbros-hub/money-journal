@@ -11,7 +11,7 @@ function toggleMenu() {
 // Close menu when clicking outside
 document.addEventListener('click', function (event) {
     const menu = document.getElementById('userMenu');
-    const trigger = document.querySelector('.dropdown, .user-avatar');
+    const trigger = document.querySelector('.user-info');
     if (menu && trigger && !trigger.contains(event.target) && !menu.contains(event.target)) {
         menu.style.display = 'none';
     }
@@ -24,7 +24,7 @@ function showToast(text, type = 'success', duration = 2500) {
     if (!messageDiv) return;
 
     clearTimeout(toastTimer);
-    messageDiv.className = '';
+    messageDiv.className = 'toast';
     messageDiv.classList.add(type === 'success' ? 'success' : 'error');
     messageDiv.innerText = text;
     messageDiv.classList.add('show');

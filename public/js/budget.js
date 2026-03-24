@@ -64,31 +64,34 @@ function renderBudgets(data) {
     renderHealthSummary(data);
 
     if (data.pockets.length === 0) {
-        list.innerHTML = '<p class="loading">No pockets configured</p>';
+        list.innerHTML = '<p class="text-center text-text-muted py-5">No pockets configured</p>';
         return;
     }
 
+    const statusColor = (s) => s === 'danger' ? 'text-coral' : s === 'warning' ? 'text-amber' : 'text-lime';
+    const barColor = (s) => s === 'danger' ? 'bg-coral' : s === 'warning' ? 'bg-amber' : 'bg-lime';
+
     list.innerHTML = data.pockets.map(pocket => `
-        <div class="budget-item ${isEditable ? '' : 'readonly'}" 
+        <div class="bg-bg-secondary p-4 rounded-2xl flex items-center justify-between shadow-card border border-border/50 ${isEditable ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200' : ''}" 
              onclick="${isEditable ? `openEditModal('${pocket.pocket}', '${pocket.icon}', ${pocket.budget})` : ''}">
-            <div class="pocket-left">
-                <div class="pocket-info">
-                    <span class="pocket-icon">${pocket.icon}</span>
-                    <span class="pocket-name">${pocket.pocket}</span>
+            <div class="flex-1">
+                <div class="flex items-center gap-2.5 mb-2">
+                    <span class="text-2xl">${pocket.icon}</span>
+                    <span class="text-sm font-semibold text-text-primary">${pocket.pocket}</span>
                 </div>
-                <div class="pocket-progress">
-                    <div class="pocket-bar ${pocket.status}" style="width: ${Math.min(pocket.percentage, 100)}%"></div>
+                <div class="progress-track">
+                    <div class="progress-fill ${barColor(pocket.status)}" style="width: ${Math.min(pocket.percentage, 100)}%"></div>
                 </div>
-                <div class="pocket-stats">
-                    <span class="pocket-spent">${pocket.formattedSpent} spent</span>
-                    <span class="pocket-remaining ${pocket.isOver ? 'over' : ''}">${pocket.isOver ? '-' : ''}${pocket.formattedRemaining} left</span>
+                <div class="flex justify-between text-[11px] mt-1.5">
+                    <span class="text-text-muted">${pocket.formattedSpent} spent</span>
+                    <span class="${pocket.isOver ? 'text-coral' : 'text-lime'}">${pocket.isOver ? '-' : ''}${pocket.formattedRemaining} left</span>
                 </div>
             </div>
-            <div class="pocket-right">
-                <span class="budget-amount ${pocket.budget === 0 ? 'zero' : ''}">
+            <div class="text-right min-w-[80px] ml-3">
+                <span class="text-base font-bold ${pocket.budget === 0 ? 'text-text-muted' : 'text-text-primary'} block">
                     ${pocket.budget === 0 ? 'Rp 0' : pocket.formattedBudget}
                 </span>
-                <span class="budget-percentage ${pocket.status}">${pocket.percentage}%</span>
+                <span class="text-xs font-bold ${statusColor(pocket.status)} block mt-1">${pocket.percentage}%</span>
             </div>
         </div>
     `).join('');
@@ -97,16 +100,8 @@ function renderBudgets(data) {
 function renderHealthSummary(data) {
     // Distinct color palette — auto-assigned per pocket
     const chartColors = [
-        '#FF6B6B', // coral red
-        '#4ECDC4', // teal
-        '#45B7D1', // sky blue
-        '#96CEB4', // sage green
-        '#FFEAA7', // soft yellow
-        '#DDA0DD', // plum
-        '#98D8C8', // mint
-        '#F7DC6F', // golden
-        '#BB8FCE', // lavender
-        '#85C1E9', // light blue
+        '#FF4D6D', '#7C3AED', '#22C55E', '#F59E0B', '#06B6D4',
+        '#F97316', '#3B82F6', '#EC4899', '#FBBF24', '#14B8A6'
     ];
 
     // Build chart data from pockets
@@ -131,7 +126,7 @@ function renderHealthSummary(data) {
                         data: values,
                         backgroundColor: colors,
                         borderWidth: 2,
-                        borderColor: '#FFFFFF',
+                        borderColor: '#1E293B',
                         hoverBorderWidth: 3,
                         hoverOffset: 6
                     }]
@@ -145,9 +140,13 @@ function renderHealthSummary(data) {
                             display: false
                         },
                         tooltip: {
-                            backgroundColor: '#1A1A1A',
-                            titleFont: { family: 'Inter', weight: '600', size: 13 },
-                            bodyFont: { family: 'Inter', size: 12 },
+                            backgroundColor: '#1E293B',
+                            titleColor: '#F8FAFC',
+                            bodyColor: '#94A3B8',
+                            borderColor: '#334155',
+                            borderWidth: 1,
+                            titleFont: { family: 'Plus Jakarta Sans', weight: '600', size: 13 },
+                            bodyFont: { family: 'Plus Jakarta Sans', size: 12 },
                             cornerRadius: 10,
                             padding: 12,
                             callbacks: {
@@ -178,9 +177,9 @@ function renderHealthSummary(data) {
     // Update remaining color based on status
     const remainingEl = document.getElementById('totalRemainingDisplay');
     if (data.isOverBudget) {
-        remainingEl.style.color = '#EF4444';
+        remainingEl.className = 'text-sm font-bold text-coral';
     } else {
-        remainingEl.style.color = '#10B981';
+        remainingEl.className = 'text-sm font-bold text-lime';
     }
 }
 
@@ -236,7 +235,7 @@ async function saveBudget() {
 
 async function showHistory() {
     document.getElementById('historyModal').classList.add('show');
-    document.getElementById('historyList').innerHTML = '<p class="loading">Loading...</p>';
+    document.getElementById('historyList').innerHTML = '<p class="text-center text-text-muted py-5">Loading...</p>';
 
     try {
         const response = await fetch('/api/budget/history');
@@ -244,16 +243,16 @@ async function showHistory() {
 
         if (result.success && result.data.length > 0) {
             document.getElementById('historyList').innerHTML = result.data.map(item => `
-                <div class="history-item" onclick="goToMonth(${item.month}, ${item.year})">
-                    <span class="history-month">${item.monthLabel}</span>
-                    <span class="history-total">${item.formattedTotal}</span>
+                <div class="flex justify-between p-3.5 border-b border-border cursor-pointer hover:bg-bg-tertiary transition-colors" onclick="goToMonth(${item.month}, ${item.year})">
+                    <span class="font-semibold text-text-primary">${item.monthLabel}</span>
+                    <span class="font-bold text-text-primary">${item.formattedTotal}</span>
                 </div>
             `).join('');
         } else {
-            document.getElementById('historyList').innerHTML = '<p class="loading">No history yet</p>';
+            document.getElementById('historyList').innerHTML = '<p class="text-center text-text-muted py-5">No history yet</p>';
         }
     } catch (error) {
-        document.getElementById('historyList').innerHTML = '<p class="loading">Error loading</p>';
+        document.getElementById('historyList').innerHTML = '<p class="text-center text-coral py-5">Error loading</p>';
     }
 }
 

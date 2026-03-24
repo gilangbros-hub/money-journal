@@ -1,6 +1,7 @@
 {
     "version": 2,
     "name": "money-journal",
+    "buildCommand": "npm run build:css",
     "builds": [
         {
             "src": "app.js",

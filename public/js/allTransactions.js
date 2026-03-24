@@ -12,32 +12,25 @@ let allTransactions = [];
 let filteredTransactions = [];
 let currentMonth = '';
 let currentType = 'all';
-let sortDesc = true; // true = newest first
+let sortDesc = true;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Read month from URL query param or default to current month
     const params = new URLSearchParams(window.location.search);
     currentMonth = params.get('month') || new Date().toISOString().slice(0, 7);
 
     const monthFilter = document.getElementById('monthFilter');
     monthFilter.value = currentMonth;
 
-    // Update back button to pass month back to dashboard
     const backBtn = document.getElementById('backBtn');
     if (backBtn) {
         backBtn.href = '/transactions';
     }
 
-    // Build filter pills
     buildFilterPills();
-
-    // Fetch data
     fetchTransactions();
 
-    // Listeners
     monthFilter.addEventListener('change', (e) => {
         currentMonth = e.target.value;
-        // Update URL without reload
         const url = new URL(window.location);
         url.searchParams.set('month', currentMonth);
         window.history.replaceState({}, '', url);
@@ -47,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function buildFilterPills() {
     const container = document.getElementById('filterPills');
-    // "All" pill is already in HTML, add type pills
     allTypes.forEach(type => {
         const btn = document.createElement('button');
         btn.className = 'filter-pill';
@@ -57,32 +49,24 @@ function buildFilterPills() {
         container.appendChild(btn);
     });
 
-    // Attach click to the existing "All" pill
     container.querySelector('[data-type="all"]').addEventListener('click', () => selectType('all'));
-
-    // Sort button
     document.getElementById('sortBtn').addEventListener('click', toggleSort);
 }
 
 function selectType(type) {
     currentType = type;
-
-    // Update active pill
     document.querySelectorAll('.filter-pill').forEach(pill => {
         pill.classList.toggle('active', pill.dataset.type === type);
     });
-
     applyFilterAndRender();
 }
 
 function toggleSort() {
     sortDesc = !sortDesc;
     const btn = document.getElementById('sortBtn');
-    btn.classList.toggle('asc', !sortDesc);
     btn.innerHTML = sortDesc
-        ? '<span class="sort-icon">↓</span> Newest'
-        : '<span class="sort-icon">↑</span> Oldest';
-
+        ? '<span class="text-sm transition-transform duration-300">↓</span> Newest'
+        : '<span class="text-sm transition-transform duration-300 rotate-180">↑</span> Oldest';
     applyFilterAndRender();
 }
 
@@ -96,29 +80,24 @@ async function fetchTransactions() {
         applyFilterAndRender();
     } catch (error) {
         console.error('Error fetching transactions:', error);
-        list.innerHTML = '<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-text">Failed to load transactions</div></div>';
+        list.innerHTML = '<div class="empty-state"><div class="text-5xl mb-3">❌</div><div class="text-[15px] font-medium">Failed to load transactions</div></div>';
     }
 }
 
 function applyFilterAndRender() {
-    // Filter by type
     if (currentType === 'all') {
         filteredTransactions = [...allTransactions];
     } else {
         filteredTransactions = allTransactions.filter(t => t.type === currentType);
     }
 
-    // Sort
     filteredTransactions.sort((a, b) => {
         const dateA = new Date(a.date).getTime();
         const dateB = new Date(b.date).getTime();
         return sortDesc ? dateB - dateA : dateA - dateB;
     });
 
-    // Update summary
     updateSummary();
-
-    // Render
     renderTransactions();
 }
 
@@ -126,8 +105,11 @@ function updateSummary() {
     const count = filteredTransactions.length;
     const total = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-    document.querySelector('.summary-count').textContent = `${count} transaction${count !== 1 ? 's' : ''}`;
-    document.querySelector('.summary-total').textContent = formatRupiah(total);
+    const summaryInfo = document.getElementById('summaryInfo');
+    summaryInfo.innerHTML = `
+        <span class="text-[13px] font-semibold text-text-secondary">${count} transaction${count !== 1 ? 's' : ''}</span>
+        <span class="text-base font-extrabold text-text-primary">${formatRupiah(total)}</span>
+    `;
 }
 
 function formatRupiah(num) {
@@ -140,14 +122,13 @@ function renderTransactions() {
     if (filteredTransactions.length === 0) {
         list.innerHTML = `
             <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
-                <div class="empty-state-text">No transactions found</div>
+                <div class="text-5xl mb-3">📭</div>
+                <div class="text-[15px] font-medium">No transactions found</div>
             </div>
         `;
         return;
     }
 
-    // Group transactions by date
     const groups = {};
     filteredTransactions.forEach(t => {
         const date = new Date(t.date);
@@ -156,7 +137,6 @@ function renderTransactions() {
         groups[key].push(t);
     });
 
-    // Build HTML with date headers
     let html = '';
     const sortedKeys = Object.keys(groups).sort((a, b) => sortDesc ? b.localeCompare(a) : a.localeCompare(b));
 
@@ -174,21 +154,21 @@ function renderTransactions() {
             const icon = typeEmojis[t.type] || '📦';
             const formattedAmount = t.formattedAmount || formatRupiah(t.amount);
             const paidByBadge = t.paidBy && t.paidBy !== 'Self'
-                ? `<span class="paid-by-badge">${t.paidBy}</span>`
+                ? `<span class="text-[10px] bg-bg-tertiary text-text-secondary py-0.5 px-1.5 rounded">${t.paidBy}</span>`
                 : '';
             const safeNote = (t.ngapain || '').replace(/'/g, "\\'");
 
             html += `
-                <div class="trans-card" onclick="openOptions('${t._id}', '${safeNote}', ${t.amount})">
-                    <div class="trans-card-icon">${icon}</div>
-                    <div class="trans-card-info">
-                        <div class="trans-card-title">
+                <div class="trans-item" onclick="openOptions('${t._id}', '${safeNote}', ${t.amount})">
+                    <div class="trans-icon">${icon}</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-sm text-text-primary mb-0.5 flex items-center gap-1.5 flex-wrap">
                             ${t.ngapain || 'No Description'}
                             ${paidByBadge}
                         </div>
-                        <div class="trans-card-meta">${t.type} • ${t.pocket || 'Unknown'}</div>
+                        <div class="text-xs text-text-muted">${t.type} • ${t.pocket || 'Unknown'}</div>
                     </div>
-                    <div class="trans-card-amount">- ${formattedAmount}</div>
+                    <div class="font-bold text-sm text-coral whitespace-nowrap ml-2">- ${formattedAmount}</div>
                 </div>
             `;
         });
@@ -218,7 +198,7 @@ async function confirmDelete() {
         const response = await fetch(`/api/transaction/${deleteId}`, { method: 'DELETE' });
         if (response.ok) {
             closeDeleteModal();
-            fetchTransactions(); // Refresh
+            fetchTransactions();
         }
     } catch (error) {
         console.error(error);

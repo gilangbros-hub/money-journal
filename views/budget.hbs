@@ -4,17 +4,16 @@
 <head>
     {{> head}}
     <title>Pocket Budget</title>
-    <link rel="stylesheet" href="/css/budget.css">
 </head>
 
 <body>
-    <div class="main-container">
+    <div class="page-container">
         <!-- Header -->
-        <header class="budget-header">
+        <header class="app-header">
             <h1 class="page-title">💰 Pocket Budget</h1>
             <div class="user-info" onclick="toggleMenu()">
-                <span class="username">{{username}}</span>
-                <span class="avatar">{{avatar}}</span>
+                <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
             </div>
             <div id="userMenu" class="user-menu">
                 <a href="/profile">Edit Profile</a>
@@ -23,40 +22,40 @@
         </header>
 
         <!-- Month Selector -->
-        <div class="month-selector">
-            <button class="month-nav" id="prevMonth">
+        <div class="flex items-center justify-center gap-4 mb-5 bg-bg-secondary p-3 rounded-2xl shadow-card border border-border/50">
+            <button class="bg-bg-tertiary border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-border text-text-secondary" id="prevMonth">
                 <span class="material-symbols-outlined">chevron_left</span>
             </button>
-            <div class="current-month" id="currentMonth">Februari 2026</div>
-            <button class="month-nav" id="nextMonth">
+            <div class="text-lg font-bold text-text-primary min-w-[160px] text-center" id="currentMonth">Februari 2026</div>
+            <button class="bg-bg-tertiary border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-border text-text-secondary" id="nextMonth">
                 <span class="material-symbols-outlined">chevron_right</span>
             </button>
         </div>
 
         <!-- Role Notice -->
         {{#unless canEdit}}
-        <div class="role-notice">
+        <div class="bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2 border border-amber/30">
             <span>👁️</span> View-only mode. Only Wife can edit budgets.
         </div>
         {{/unless}}
 
         <!-- Financial Health Summary — Pie Chart -->
-        <div class="health-card" id="healthCard">
-            <div class="health-chart-container">
+        <div class="bg-bg-secondary rounded-2xl p-5 mb-6 shadow-card border border-border/50" id="healthCard">
+            <div class="relative w-full max-w-[220px] mx-auto mb-4">
                 <canvas id="budgetPieChart"></canvas>
             </div>
-            <div class="health-total-subtext">
-                <span class="health-total-label">Total Budget</span>
-                <span class="health-total-value" id="totalBudgetDisplay">Rp 0</span>
+            <div class="text-center mt-2">
+                <span class="text-xs text-text-secondary block">Total Budget</span>
+                <span class="text-[22px] font-extrabold text-text-primary block" id="totalBudgetDisplay">Rp 0</span>
             </div>
-            <div class="health-details" style="margin-top: 12px;">
-                <div class="health-stat">
-                    <span class="stat-label">Spent</span>
-                    <span class="stat-value spent" id="totalSpentDisplay">Rp 0</span>
+            <div class="flex justify-between mt-3">
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-text-muted mb-1">Spent</span>
+                    <span class="text-sm font-bold text-coral" id="totalSpentDisplay">Rp 0</span>
                 </div>
-                <div class="health-stat">
-                    <span class="stat-label">Remaining</span>
-                    <span class="stat-value remaining" id="totalRemainingDisplay">Rp 0</span>
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-text-muted mb-1">Remaining</span>
+                    <span class="text-sm font-bold text-lime" id="totalRemainingDisplay">Rp 0</span>
                 </div>
             </div>
         </div>
@@ -65,42 +64,42 @@
         <div class="section-header">
             <h2 class="section-title">Pocket Breakdown</h2>
         </div>
-        <div class="budget-list" id="budgetList">
-            <p class="loading">Loading budgets...</p>
+        <div class="flex flex-col gap-2.5 mb-4" id="budgetList">
+            <p class="text-center text-text-muted py-5">Loading budgets...</p>
         </div>
 
-
         <!-- History Button -->
-        <button class="history-btn" onclick="showHistory()">
+        <button class="btn-ghost" onclick="showHistory()">
             <span class="material-symbols-outlined">history</span>
             View History
         </button>
     </div>
 
     <!-- Edit Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
+    <div id="editModal" class="modal-overlay">
+        <div class="modal-card">
             <h3>Edit Budget</h3>
-            <div class="modal-pocket" id="modalPocket">💰 Pocket Name</div>
-            <div class="amount-input-wrapper">
-                <span class="currency-prefix">Rp</span>
-                <input type="number" id="budgetInput" placeholder="0" min="0">
+            <div class="text-lg font-semibold mb-5 text-text-secondary" id="modalPocket">💰 Pocket Name</div>
+            <div class="flex items-center bg-bg-tertiary rounded-2xl p-4 mb-6">
+                <span class="text-xl font-bold text-text-primary mr-2">Rp</span>
+                <input type="number" id="budgetInput" placeholder="0" min="0"
+                    class="border-none bg-transparent text-2xl font-bold text-text-primary w-full outline-none">
             </div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
-                <button class="btn-save" onclick="saveBudget()">Save</button>
+                <button class="btn-modal-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-modal-save" onclick="saveBudget()">Save</button>
             </div>
         </div>
     </div>
 
     <!-- History Modal -->
-    <div id="historyModal" class="modal">
-        <div class="modal-content history-content">
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal-card max-h-[70vh] overflow-y-auto" style="max-width: 380px;">
             <h3>Budget History</h3>
-            <div id="historyList" class="history-list">
-                <p class="loading">Loading...</p>
+            <div id="historyList" class="text-left">
+                <p class="text-center text-text-muted py-5">Loading...</p>
             </div>
-            <button class="btn-close" onclick="closeHistoryModal()">Close</button>
+            <button class="btn-modal-cancel w-full mt-4" onclick="closeHistoryModal()">Close</button>
         </div>
     </div>
 
@@ -108,9 +107,9 @@
     <input type="hidden" id="canEdit" value="{{canEdit}}">
     <input type="hidden" id="userRole" value="{{role}}">
 
-    <div id="message"></div>
+    <div id="message" class="toast"></div>
 
-    {{> navbar}}
+    {{> navbar isBudget=true}}
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/common.js"></script>

@@ -4,19 +4,16 @@
 <head>
     {{> head}}
     <title>Add Transaction</title>
-    <link rel="stylesheet" href="/css/app.css">
-    <link rel="stylesheet" href="/css/transaction.css">
 </head>
 
 <body>
-    <div class="main-container">
+    <div class="page-container" style="padding-bottom: 160px;">
         <!-- Header -->
         <header class="app-header">
-            <h1 class="page-title">📝 Add Transaction <span class="streak-badge" id="streakBadge"
-                    style="display:none;"></span></h1>
+            <h1 class="page-title">📝 Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
             <div class="user-info" onclick="toggleMenu()">
-                <span class="username">{{username}}</span>
-                <span class="avatar">{{avatar}}</span>
+                <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
             </div>
             <div id="userMenu" class="user-menu">
                 <a href="/profile">Edit Profile</a>
@@ -29,8 +26,8 @@
             <input type="hidden" id="transactionId" name="transactionId">
 
             <!-- 1. Expense Type -->
-            <div class="form-section">
-                <div class="section-label"><span>🏷️</span> Expense Type</div>
+            <div class="mb-7">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🏷️</span> Expense Type</div>
                 <div class="option-grid">
                     {{!-- prettier-ignore --}}
                     {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang
@@ -38,8 +35,8 @@
                     <label>
                         <input type="radio" name="type" value="{{this}}" class="option-input" required>
                         <div class="icon-btn">
-                            <span class="emoji-icon">{{getEmoji this}}</span>
-                            <span class="label-text">{{this}}</span>
+                            <span class="text-[28px] mb-1.5">{{getEmoji this}}</span>
+                            <span class="text-[11px] font-semibold text-center text-text-secondary">{{this}}</span>
                         </div>
                     </label>
                     {{/each}}
@@ -47,29 +44,26 @@
             </div>
 
             <!-- 2. Notes -->
-            <div class="form-section">
-                <div class="section-label"><span>📝</span> Description</div>
-                <div class="md-text-field">
-                    <input type="text" id="ngapain" name="ngapain" placeholder=" " required>
-                    <label for="ngapain">What did you buy?</label>
-                </div>
+            <div class="mb-7">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>📝</span> Description</div>
+                <input type="text" id="ngapain" name="ngapain" placeholder="What did you buy?" required class="input-dark">
             </div>
 
             <!-- 3. Amount -->
-            <div class="form-section">
-                <div class="section-label"><span>💵</span> Amount</div>
-                <div class="amount-card">
-                    <div class="amount-wrapper">
-                        <span class="amount-prefix">Rp</span>
-                        <input type="number" id="amount" name="amount" class="amount-input-styled" placeholder="0"
-                            required>
+            <div class="mb-7">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>💵</span> Amount</div>
+                <div class="bg-bg-secondary p-5 rounded-2xl border border-border">
+                    <div class="relative flex items-center">
+                        <span class="font-extrabold text-primary text-2xl mr-2">Rp</span>
+                        <input type="number" id="amount" name="amount" placeholder="0" required
+                            class="bg-transparent border-none text-[32px] font-extrabold text-text-primary p-0 h-auto w-full focus:outline-none focus:ring-0">
                     </div>
                 </div>
             </div>
 
             <!-- 4. Pocket -->
-            <div class="form-section">
-                <div class="section-label"><span>👛</span> Pocket Source</div>
+            <div class="mb-7">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>👛</span> Pocket Source</div>
                 <div class="option-grid">
                     {{!-- prettier-ignore --}}
                     {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend
@@ -77,8 +71,8 @@
                     <label>
                         <input type="radio" name="pocket" value="{{this}}" class="option-input" required>
                         <div class="icon-btn">
-                            <span class="emoji-icon">{{getPocketEmoji this}}</span>
-                            <span class="label-text">{{this}}</span>
+                            <span class="text-[28px] mb-1.5">{{getPocketEmoji this}}</span>
+                            <span class="text-[11px] font-semibold text-center text-text-secondary">{{this}}</span>
                         </div>
                     </label>
                     {{/each}}
@@ -86,32 +80,29 @@
             </div>
 
             <!-- 5. Budget Month -->
-            <div class="form-section">
-                <div class="section-label"><span>🗓️</span> Budget Month</div>
-                <div class="md-text-field">
-                    <select id="budgetMonth" name="budgetMonth" class="budget-month-select" required>
-                    </select>
-                </div>
+            <div class="mb-7">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🗓️</span> Budget Month</div>
+                <select id="budgetMonth" name="budgetMonth" class="input-dark appearance-none cursor-pointer font-semibold" required
+                    style="background-image: url(&quot;data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e&quot;); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px; padding-right: 40px;">
+                </select>
             </div>
 
             <!-- 6. Date Time -->
-            <div class="form-section">
-                <div class="section-label"><span>📅</span> Date & Time</div>
-                <div class="md-text-field">
-                    <input type="datetime-local" id="date" name="date" required>
-                </div>
+            <div class="mb-7">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>📅</span> Date & Time</div>
+                <input type="datetime-local" id="date" name="date" required class="input-dark">
             </div>
 
             <!-- Sticky Submit Button -->
-            <div class="sticky-footer">
-                <button type="submit" class="md-btn filled md-btn-block submit-btn" id="submitBtn">
+            <div class="fixed bottom-20 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-w-[460px] z-[100]">
+                <button type="submit" class="btn-neon w-full h-14" id="submitBtn">
                     Save Transaction
                 </button>
             </div>
         </form>
     </div>
 
-    <div id="message"></div>
+    <div id="message" class="toast"></div>
     <script src="/js/common.js"></script>
     <script src="/js/confetti.js"></script>
     <script src="/js/transaction.js"></script>
