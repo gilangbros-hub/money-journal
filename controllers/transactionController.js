@@ -19,6 +19,13 @@ exports.getTransactionsPage = (req, res) => {
     });
 };
 
+exports.getAllTransactionsPage = (req, res) => {
+    res.render('allTransactions', {
+        username: req.session.username,
+        avatar: req.session.avatar || '👤'
+    });
+};
+
 exports.createTransaction = async (req, res) => {
     try {
         const { date, type, pocket, ngapain, amount, paidBy, budgetMonth, budgetYear } = req.body;

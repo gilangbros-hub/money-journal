@@ -66,8 +66,12 @@
         <!-- Recent Transactions -->
         <div class="section-header">
             <h2 class="section-title" id="recentTransactionsHeader">Recent Transactions</h2>
-            <button onclick="exportToCSV()" class="md-btn text"
-                style="min-width:auto; padding:0; color: #10B981; font-size: 14px;">Export</button>
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <a href="/all-transactions" id="viewAllLink" class="md-btn text"
+                    style="min-width:auto; padding:0; color: #845EC2; font-size: 14px; text-decoration: none; font-weight: 600;">View All</a>
+                <button onclick="exportToCSV()" class="md-btn text"
+                    style="min-width:auto; padding:0; color: #10B981; font-size: 14px;">Export</button>
+            </div>
         </div>
 
         <div class="transaction-list-mini" id="historyList">

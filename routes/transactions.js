@@ -15,6 +15,7 @@ router.use(isAuthenticated);
 
 router.get('/transaction', transactionController.getTransactionPage);
 router.get('/transactions', transactionController.getTransactionsPage);
+router.get('/all-transactions', transactionController.getAllTransactionsPage);
 
 router.post('/api/transaction', transactionController.createTransaction);// API
 router.get('/api/dashboard/summary', transactionController.getDashboardSummary);

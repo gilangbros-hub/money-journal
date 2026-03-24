@@ -53,12 +53,18 @@ function updateDashboardUI() {
     // 5. Render Recent History (Default view)
     renderTransactionList(dashboardData.recent, false);
 
+    // 6. Update View All link with current month
+    const viewAllLink = document.getElementById('viewAllLink');
+    if (viewAllLink) {
+        viewAllLink.href = `/all-transactions?month=${currentMonth}`;
+    }
+
     // Reset Header
     const header = document.getElementById('recentTransactionsHeader');
     if (header) {
         header.textContent = 'Recent Transactions';
         if (header.nextElementSibling) {
-            header.nextElementSibling.style.display = 'block'; // Show Export button
+            header.nextElementSibling.style.display = 'flex'; // Show Export + View All buttons
         }
     }
 }

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{> head}}
+    <title>All Transactions</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/allTransactions.css">
+</head>
+
+<body>
+    <div class="main-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <a href="/transactions" class="back-btn" id="backBtn">←</a>
+                <h1 class="page-title">All Transactions</h1>
+            </div>
+            <div class="user-info" onclick="toggleMenu()">
+                <span class="username">{{username}}</span>
+                <span class="avatar">{{avatar}}</span>
+            </div>
+            <div id="userMenu" class="user-menu">
+                <a href="/profile">Edit Profile</a>
+                <a href="/logout" class="logout">Logout</a>
+            </div>
+        </header>
+
+        <!-- Month Picker -->
+        <div class="month-picker-bar">
+            <input type="month" id="monthFilter" class="month-selector-alt">
+        </div>
+
+        <!-- Type Filter Pills -->
+        <div class="filter-bar">
+            <div class="filter-pills" id="filterPills">
+                <button class="filter-pill active" data-type="all">All</button>
+                <!-- Injected by JS -->
+            </div>
+        </div>
+
+        <!-- Sort Control -->
+        <div class="sort-bar">
+            <div class="summary-info" id="summaryInfo">
+                <span class="summary-count">0 transactions</span>
+                <span class="summary-total">Rp 0</span>
+            </div>
+            <button class="sort-btn" id="sortBtn" title="Toggle sort order">
+                <span class="sort-icon">↓</span> Newest
+            </button>
+        </div>
+
+        <!-- Transaction List -->
+        <div class="transaction-list-full" id="transactionList">
+            <p style="text-align:center; color:#9CA3AF; padding: 40px 0;">Loading transactions...</p>
+        </div>
+
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+            <h3>Delete this?</h3>
+            <p id="deleteDetails" style="color: #6B7280; margin-bottom: 20px;"></p>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-save" style="background: #EF4444;" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/common.js"></script>
+    <script src="/js/allTransactions.js"></script>
+
+    {{> navbar}}
+</body>
+
+</html>
