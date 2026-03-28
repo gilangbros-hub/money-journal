@@ -89,7 +89,7 @@ exports.createTransaction = async (req, res) => {
 
 exports.getAllTransactions = async (req, res) => {
     try {
-        const { month, by, type } = req.query;
+        const { month, by, type, pocket } = req.query;
         let filter = {};
 
         if (month) {
@@ -100,6 +100,7 @@ exports.getAllTransactions = async (req, res) => {
 
         if (by && by !== 'all') filter.by = by;
         if (type && type !== 'all') filter.type = type;
+        if (pocket && pocket !== 'all') filter.pocket = pocket.trim();
 
         const transactions = await Transaction.find(filter)
             .populate('by', 'username')

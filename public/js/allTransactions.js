@@ -8,10 +8,19 @@ const typeEmojis = {
 
 const allTypes = Object.keys(typeEmojis);
 
+const pocketIcons = {
+    'Kwintals': '💰', 'Groceries': '🥦', 'Weekday Transport': '🚌',
+    'Weekend Transport': '🚗', 'Investasi': '📈', 'Bandung': '⛰️',
+    'Sedeqah': '🤲', 'IPL': '🏘️'
+};
+
+const allPockets = Object.keys(pocketIcons);
+
 let allTransactions = [];
 let filteredTransactions = [];
 let currentMonth = '';
 let currentType = 'all';
+let currentPocket = 'all';
 let sortDesc = true;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -27,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     buildFilterPills();
+    buildPocketFilterPills();
     fetchTransactions();
 
     monthFilter.addEventListener('change', (e) => {
@@ -53,10 +63,34 @@ function buildFilterPills() {
     document.getElementById('sortBtn').addEventListener('click', toggleSort);
 }
 
+function buildPocketFilterPills() {
+    const container = document.getElementById('pocketFilterPills');
+    if (!container) return;
+
+    allPockets.forEach(pocket => {
+        const btn = document.createElement('button');
+        btn.className = 'filter-pill';
+        btn.dataset.pocket = pocket;
+        btn.textContent = `${pocketIcons[pocket]} ${pocket}`;
+        btn.addEventListener('click', () => selectPocket(pocket));
+        container.appendChild(btn);
+    });
+
+    container.querySelector('[data-pocket="all"]').addEventListener('click', () => selectPocket('all'));
+}
+
 function selectType(type) {
     currentType = type;
-    document.querySelectorAll('.filter-pill').forEach(pill => {
+    document.querySelectorAll('#filterPills .filter-pill').forEach(pill => {
         pill.classList.toggle('active', pill.dataset.type === type);
+    });
+    applyFilterAndRender();
+}
+
+function selectPocket(pocket) {
+    currentPocket = pocket;
+    document.querySelectorAll('#pocketFilterPills .filter-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.pocket === pocket);
     });
     applyFilterAndRender();
 }
@@ -85,11 +119,11 @@ async function fetchTransactions() {
 }
 
 function applyFilterAndRender() {
-    if (currentType === 'all') {
-        filteredTransactions = [...allTransactions];
-    } else {
-        filteredTransactions = allTransactions.filter(t => t.type === currentType);
-    }
+    filteredTransactions = allTransactions.filter(t => {
+        const typeMatch = currentType === 'all' || t.type === currentType;
+        const pocketMatch = currentPocket === 'all' || t.pocket === currentPocket;
+        return typeMatch && pocketMatch;
+    });
 
     filteredTransactions.sort((a, b) => {
         const dateA = new Date(a.date).getTime();
