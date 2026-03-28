@@ -72,12 +72,13 @@ function renderBudgets(data) {
     const barColor = (s) => s === 'danger' ? 'bg-coral' : s === 'warning' ? 'bg-amber' : 'bg-lime';
 
     list.innerHTML = data.pockets.map(pocket => `
-        <div class="bg-bg-secondary p-4 rounded-2xl flex items-center justify-between shadow-card border border-border/50 ${isEditable ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200' : ''}" 
-             onclick="${isEditable ? `openEditModal('${pocket.pocket}', '${pocket.icon}', ${pocket.budget})` : ''}">
+        <div class="bg-bg-secondary p-4 rounded-2xl flex items-center justify-between shadow-card border border-border/50 ${pocket.closed ? 'opacity-50' : ''} ${isEditable && !pocket.closed ? 'cursor-pointer hover:-translate-y-0.5 hover:shadow-card-hover transition-all duration-200' : ''}" 
+             onclick="${isEditable && !pocket.closed ? `openEditModal('${pocket.pocket}', '${pocket.icon}', ${pocket.budget})` : ''}">
             <div class="flex-1">
                 <div class="flex items-center gap-2.5 mb-2">
                     <span class="text-2xl">${pocket.icon}</span>
                     <span class="text-sm font-semibold text-text-primary">${pocket.pocket}</span>
+                    ${pocket.closed ? '<span class="text-xs bg-coral/20 text-coral px-2 py-0.5 rounded-full font-bold">🔒 Closed</span>' : ''}
                 </div>
                 <div class="progress-track">
                     <div class="progress-fill ${barColor(pocket.status)}" style="width: ${Math.min(pocket.percentage, 100)}%"></div>
@@ -92,6 +93,12 @@ function renderBudgets(data) {
                     ${pocket.budget === 0 ? 'Rp 0' : pocket.formattedBudget}
                 </span>
                 <span class="text-xs font-bold ${statusColor(pocket.status)} block mt-1">${pocket.percentage}%</span>
+                ${isEditable && pocket._id ? `
+                    <button class="text-[10px] font-bold mt-1.5 px-2 py-1 rounded-lg border transition-colors ${pocket.closed ? 'text-lime border-lime/30 hover:bg-lime/10' : 'text-coral border-coral/30 hover:bg-coral/10'}" 
+                        onclick="event.stopPropagation(); toggleClose('${pocket._id}', ${pocket.closed})">
+                        ${pocket.closed ? '🔓 Reopen' : '🔒 Close'}
+                    </button>
+                ` : ''}
             </div>
         </div>
     `).join('');
@@ -276,3 +283,24 @@ document.addEventListener('click', (e) => {
     if (e.target === editModal) closeModal();
     if (e.target === historyModal) closeHistoryModal();
 });
+
+// Toggle close/reopen a budget pocket
+async function toggleClose(budgetId, currentlyClosed) {
+    const action = currentlyClosed ? 'reopen' : 'close';
+    if (!confirm(`Are you sure you want to ${action} this budget pocket?`)) return;
+
+    try {
+        const response = await fetch(`/api/budget/${budgetId}/toggle-close`, { method: 'PATCH' });
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(result.message, 'success');
+            loadBudgets();
+        } else {
+            showToast(result.message || 'Error', 'error');
+        }
+    } catch (error) {
+        console.error('Toggle close error:', error);
+        showToast('Network error', 'error');
+    }
+}

@@ -92,6 +92,7 @@ exports.getBudgets = async (req, res) => {
                 percentage,
                 status,
                 isOver: remaining < 0,
+                closed: budgetMap[pocket]?.closed || false,
                 _id: budgetMap[pocket]?._id || null
             };
         });
@@ -243,5 +244,31 @@ exports.deleteBudget = async (req, res) => {
     } catch (error) {
         console.error('Delete budget error:', error);
         res.status(500).json({ success: false, message: 'Error deleting budget' });
+    }
+};
+
+// PATCH /api/budget/:id/toggle-close - Toggle closed state (Wife only)
+exports.toggleBudgetClosed = async (req, res) => {
+    try {
+        if (req.session.role !== 'Wife') {
+            return res.status(403).json({ success: false, message: 'Only Wife can close/reopen budgets' });
+        }
+
+        const budget = await PocketBudget.findById(req.params.id);
+        if (!budget) {
+            return res.status(404).json({ success: false, message: 'Budget not found' });
+        }
+
+        budget.closed = !budget.closed;
+        await budget.save();
+
+        res.json({
+            success: true,
+            message: budget.closed ? 'Budget closed' : 'Budget reopened',
+            closed: budget.closed
+        });
+    } catch (error) {
+        console.error('Toggle budget close error:', error);
+        res.status(500).json({ success: false, message: 'Error toggling budget' });
     }
 };

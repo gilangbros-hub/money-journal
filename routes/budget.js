@@ -20,6 +20,7 @@ router.get('/budget', budgetController.getBudgetPage);
 router.get('/api/budget', budgetController.getBudgets);
 router.get('/api/budget/history', budgetController.getBudgetHistory);
 router.post('/api/budget', budgetController.saveBudget);
+router.patch('/api/budget/:id/toggle-close', budgetController.toggleBudgetClosed);
 router.delete('/api/budget/:id', budgetController.deleteBudget);
 
 module.exports = router;

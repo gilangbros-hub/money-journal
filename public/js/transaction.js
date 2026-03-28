@@ -230,10 +230,10 @@ document.getElementById('transactionForm').addEventListener('submit', async func
 
             showToast(message, 'success', 3000);
 
-            // Redirect to transactions page after celebration
-            setTimeout(() => {
-                window.location.href = '/transactions';
-            }, 1800);
+            // Show success modal instead of auto-redirect
+            document.getElementById('successEmoji').textContent = msg.emoji;
+            document.getElementById('successMessage').textContent = `${msg.text}${streakCount > 1 ? ` | 🔥 ${streakCount}-day streak!` : ''}`;
+            document.getElementById('successModal').classList.add('show');
         } else {
             showToast(result.message || 'Error saving transaction', 'error');
         }
@@ -243,3 +243,87 @@ document.getElementById('transactionForm').addEventListener('submit', async func
         showToast('Network error occurred', 'error');
     }
 });
+
+// Add Another: reset form and close modal
+function addAnother() {
+    document.getElementById('successModal').classList.remove('show');
+    document.getElementById('transactionForm').reset();
+
+    // Re-set date to now
+    const dateInput = document.getElementById('date');
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    dateInput.value = now.toISOString().slice(0, 16);
+
+    // Re-populate budget month
+    populateBudgetMonthSelect();
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Close success modal on outside click
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('successModal');
+    if (e.target === modal) {
+        modal.classList.remove('show');
+    }
+});
+
+// Fetch closed pockets and disable them in the UI
+async function loadClosedPockets() {
+    try {
+        const budgetMonthVal = document.getElementById('budgetMonth').value;
+        if (!budgetMonthVal) return;
+
+        const response = await fetch(`/api/budget?month=${budgetMonthVal}`);
+        const result = await response.json();
+
+        if (result.success && result.data.pockets) {
+            result.data.pockets.forEach(p => {
+                if (p.closed) {
+                    const radio = document.querySelector(`input[name="pocket"][value="${p.pocket}"]`);
+                    if (radio) {
+                        radio.disabled = true;
+                        const iconBtn = radio.nextElementSibling;
+                        if (iconBtn) {
+                            iconBtn.style.opacity = '0.35';
+                            iconBtn.style.pointerEvents = 'none';
+                            iconBtn.title = 'This pocket is closed for this month';
+                            // Add lock badge
+                            const badge = document.createElement('span');
+                            badge.className = 'absolute top-1 right-1 text-[10px]';
+                            badge.textContent = '🔒';
+                            iconBtn.style.position = 'relative';
+                            iconBtn.appendChild(badge);
+                        }
+                    }
+                }
+            });
+        }
+    } catch (err) {
+        console.error('Error loading closed pockets:', err);
+    }
+}
+
+// Load closed pockets after budget month is populated
+setTimeout(() => loadClosedPockets(), 300);
+
+// Re-check when budget month changes
+const budgetSelect = document.getElementById('budgetMonth');
+if (budgetSelect) {
+    budgetSelect.addEventListener('change', () => {
+        // Reset all pocket states before re-checking
+        document.querySelectorAll('input[name="pocket"]').forEach(r => {
+            r.disabled = false;
+            const btn = r.nextElementSibling;
+            if (btn) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+                const lock = btn.querySelector('.absolute');
+                if (lock) lock.remove();
+            }
+        });
+        loadClosedPockets();
+    });
+}

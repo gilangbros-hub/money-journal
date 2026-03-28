@@ -102,6 +102,19 @@
         </form>
     </div>
 
+    <!-- Success Modal -->
+    <div id="successModal" class="modal-overlay">
+        <div class="modal-card text-center">
+            <div class="text-5xl mb-4" id="successEmoji">🎉</div>
+            <h3 class="text-xl font-bold text-text-primary mb-2">Transaction Saved!</h3>
+            <p class="text-sm text-text-secondary mb-6" id="successMessage">Great job tracking your expenses!</p>
+            <div class="flex flex-col gap-3">
+                <button class="btn-neon w-full h-12" onclick="addAnother()">➕ Add Another Transaction</button>
+                <button class="btn-ghost w-full h-12" onclick="window.location.href='/transactions'">🏠 Go to Transactions</button>
+            </div>
+        </div>
+    </div>
+
     <div id="message" class="toast"></div>
     <script src="/js/common.js"></script>
     <script src="/js/confetti.js"></script>

@@ -22,6 +22,10 @@ const pocketBudgetSchema = new mongoose.Schema({
         required: true,
         min: 0
     },
+    closed: {
+        type: Boolean,
+        default: false
+    },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
