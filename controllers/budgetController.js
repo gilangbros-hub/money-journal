@@ -1,4 +1,5 @@
 const PocketBudget = require('../models/pocketBudget');
+const ClosedMonth = require('../models/closedMonth');
 const { POCKETS } = require('../utils/constants');
 const { formatCurrency } = require('../utils/formatters');
 
@@ -51,11 +52,14 @@ exports.getBudgets = async (req, res) => {
         const startDate = new Date(targetYear, targetMonth - 1, 1);
         const endDate = new Date(targetYear, targetMonth, 0, 23, 59, 59);
 
-        // Fetch budgets and transactions (by budget month, not date range)
-        const [budgets, transactions] = await Promise.all([
+        // Fetch budgets, transactions, and closed status
+        const [budgets, transactions, closedDoc] = await Promise.all([
             PocketBudget.find({ month: targetMonth, year: targetYear }).sort({ pocket: 1 }),
-            Transaction.find({ budgetMonth: targetMonth, budgetYear: targetYear })
+            Transaction.find({ budgetMonth: targetMonth, budgetYear: targetYear }),
+            ClosedMonth.findOne({ month: targetMonth, year: targetYear })
         ]);
+
+        const isClosed = !!closedDoc;
 
         // Calculate spending per pocket
         const pocketSpending = {};
@@ -92,7 +96,6 @@ exports.getBudgets = async (req, res) => {
                 percentage,
                 status,
                 isOver: remaining < 0,
-                closed: budgetMap[pocket]?.closed || false,
                 _id: budgetMap[pocket]?._id || null
             };
         });
@@ -122,7 +125,8 @@ exports.getBudgets = async (req, res) => {
             data: {
                 month: targetMonth,
                 year: targetYear,
-                canEdit: req.session.role === 'Wife' && isEditableMonth(targetMonth, targetYear),
+                isClosed,
+                canEdit: req.session.role === 'Wife' && isEditableMonth(targetMonth, targetYear) && !isClosed,
                 pockets: result,
                 totalBudget,
                 formattedTotal: formatCurrency(totalBudget),
@@ -184,6 +188,15 @@ exports.saveBudget = async (req, res) => {
         }
 
         const { pocket, month, year, budget } = req.body;
+
+        // Check if month is closed
+        const closedDoc = await ClosedMonth.findOne({ month, year });
+        if (closedDoc) {
+            return res.status(400).json({
+                success: false,
+                message: 'This month is closed. Reopen it first to edit budgets.'
+            });
+        }
 
         // Month validation
         if (!isEditableMonth(month, year)) {
@@ -247,28 +260,46 @@ exports.deleteBudget = async (req, res) => {
     }
 };
 
-// PATCH /api/budget/:id/toggle-close - Toggle closed state (Wife only)
-exports.toggleBudgetClosed = async (req, res) => {
+// POST /api/budget/toggle-month-close - Toggle closed state for entire month (Wife only)
+exports.toggleMonthClosed = async (req, res) => {
     try {
         if (req.session.role !== 'Wife') {
-            return res.status(403).json({ success: false, message: 'Only Wife can close/reopen budgets' });
+            return res.status(403).json({ success: false, message: 'Only Wife can close/reopen budget months' });
         }
 
-        const budget = await PocketBudget.findById(req.params.id);
-        if (!budget) {
-            return res.status(404).json({ success: false, message: 'Budget not found' });
+        const { month, year } = req.body;
+        if (!month || !year) {
+            return res.status(400).json({ success: false, message: 'Month and year are required' });
         }
 
-        budget.closed = !budget.closed;
-        await budget.save();
+        const existing = await ClosedMonth.findOne({ month: parseInt(month), year: parseInt(year) });
 
-        res.json({
-            success: true,
-            message: budget.closed ? 'Budget closed' : 'Budget reopened',
-            closed: budget.closed
-        });
+        if (existing) {
+            // Reopen
+            await ClosedMonth.deleteOne({ _id: existing._id });
+            res.json({ success: true, message: 'Month reopened', isClosed: false });
+        } else {
+            // Close
+            await ClosedMonth.create({ month: parseInt(month), year: parseInt(year), closedBy: req.session.userId });
+            res.json({ success: true, message: 'Month closed', isClosed: true });
+        }
     } catch (error) {
-        console.error('Toggle budget close error:', error);
-        res.status(500).json({ success: false, message: 'Error toggling budget' });
+        console.error('Toggle month close error:', error);
+        res.status(500).json({ success: false, message: 'Error toggling month' });
+    }
+};
+
+// GET /api/budget/closed-months - Get all closed months
+exports.getClosedMonths = async (req, res) => {
+    try {
+        const closedMonths = await ClosedMonth.find().sort({ year: -1, month: -1 });
+        const result = closedMonths.map(c => ({
+            month: c.month,
+            year: c.year,
+            key: `${c.year}-${String(c.month).padStart(2, '0')}`
+        }));
+        res.json({ success: true, data: result });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching closed months' });
     }
 };

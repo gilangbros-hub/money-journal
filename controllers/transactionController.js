@@ -31,13 +31,13 @@ exports.createTransaction = async (req, res) => {
         const { date, type, pocket, ngapain, amount, paidBy, budgetMonth, budgetYear } = req.body;
         const txDate = new Date(date);
 
-        // Check if the pocket's budget is closed for the target month
-        const PocketBudget = require('../models/pocketBudget');
+        // Check if the target month is closed
+        const ClosedMonth = require('../models/closedMonth');
         const targetMonth = budgetMonth ? parseInt(budgetMonth) : txDate.getMonth() + 1;
         const targetYear = budgetYear ? parseInt(budgetYear) : txDate.getFullYear();
-        const existingBudget = await PocketBudget.findOne({ pocket: pocket?.trim(), month: targetMonth, year: targetYear });
-        if (existingBudget && existingBudget.closed) {
-            return res.status(400).json({ success: false, message: `Budget for "${pocket}" is closed for this month. Choose another pocket.` });
+        const closedDoc = await ClosedMonth.findOne({ month: targetMonth, year: targetYear });
+        if (closedDoc) {
+            return res.status(400).json({ success: false, message: `Budget for this month is closed. You cannot add transactions to a closed month.` });
         }
 
         const transaction = new Transaction({

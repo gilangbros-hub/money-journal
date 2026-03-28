@@ -270,60 +270,34 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Fetch closed pockets and disable them in the UI
-async function loadClosedPockets() {
+// Fetch closed months and disable them in the budget month selector
+async function loadClosedMonths() {
     try {
-        const budgetMonthVal = document.getElementById('budgetMonth').value;
-        if (!budgetMonthVal) return;
-
-        const response = await fetch(`/api/budget?month=${budgetMonthVal}`);
+        const response = await fetch('/api/budget/closed-months');
         const result = await response.json();
 
-        if (result.success && result.data.pockets) {
-            result.data.pockets.forEach(p => {
-                if (p.closed) {
-                    const radio = document.querySelector(`input[name="pocket"][value="${p.pocket}"]`);
-                    if (radio) {
-                        radio.disabled = true;
-                        const iconBtn = radio.nextElementSibling;
-                        if (iconBtn) {
-                            iconBtn.style.opacity = '0.35';
-                            iconBtn.style.pointerEvents = 'none';
-                            iconBtn.title = 'This pocket is closed for this month';
-                            // Add lock badge
-                            const badge = document.createElement('span');
-                            badge.className = 'absolute top-1 right-1 text-[10px]';
-                            badge.textContent = '🔒';
-                            iconBtn.style.position = 'relative';
-                            iconBtn.appendChild(badge);
+        if (result.success && result.data) {
+            const closedKeys = result.data.map(c => c.key);
+            const budgetSelect = document.getElementById('budgetMonth');
+            if (budgetSelect) {
+                Array.from(budgetSelect.options).forEach(option => {
+                    if (closedKeys.includes(option.value)) {
+                        option.disabled = true;
+                        option.textContent = option.textContent.replace(' 🔒', '') + ' 🔒';
+                        // If this was the selected option, deselect it
+                        if (option.selected) {
+                            // Select the first non-disabled option
+                            const firstOpen = Array.from(budgetSelect.options).find(o => !o.disabled);
+                            if (firstOpen) firstOpen.selected = true;
                         }
                     }
-                }
-            });
+                });
+            }
         }
     } catch (err) {
-        console.error('Error loading closed pockets:', err);
+        console.error('Error loading closed months:', err);
     }
 }
 
-// Load closed pockets after budget month is populated
-setTimeout(() => loadClosedPockets(), 300);
-
-// Re-check when budget month changes
-const budgetSelect = document.getElementById('budgetMonth');
-if (budgetSelect) {
-    budgetSelect.addEventListener('change', () => {
-        // Reset all pocket states before re-checking
-        document.querySelectorAll('input[name="pocket"]').forEach(r => {
-            r.disabled = false;
-            const btn = r.nextElementSibling;
-            if (btn) {
-                btn.style.opacity = '1';
-                btn.style.pointerEvents = 'auto';
-                const lock = btn.querySelector('.absolute');
-                if (lock) lock.remove();
-            }
-        });
-        loadClosedPockets();
-    });
-}
+// Load closed months after budget month is populated
+setTimeout(() => loadClosedMonths(), 300);
