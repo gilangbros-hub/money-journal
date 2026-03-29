@@ -106,6 +106,7 @@
 | 11 | `ed52ff8` | feat: add pocket (budget type) filter to AllTransactionsScreen |
 | 12 | `06b48ef` | fix: FAB to bottom-right, save button inline in scroll view |
 | 13 | `3b4acb0` | fix: FAB truly floating bottom-right with glow, larger size |
+| 14 | `72e50b6` | fix: FAB position above tab bar with natural size |
 
 ---
 
