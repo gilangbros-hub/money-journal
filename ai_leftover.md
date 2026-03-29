@@ -111,6 +111,7 @@
 9. ✅ Pocket (budget type) filter on All Transactions (web + mobile)
 10. ✅ Email notifications via Resend on new transactions
 11. ✅ Export to Excel/CSV on history page
+12. ✅ Integrated new custom `Money Journal` logo for the app icon, splash screen, and the mobile Login UI.
 
 ### Known Issues / Potential Improvements
 - OTA updates may not always apply immediately on older APK builds; user sometimes needs a new APK.
