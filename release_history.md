@@ -108,6 +108,7 @@
 | 13 | `3b4acb0` | fix: FAB truly floating bottom-right with glow, larger size |
 | 14 | `72e50b6` | fix: FAB position above tab bar with natural size |
 | 15 | `a0c88b8` | feat: use new Money Journal logo for app icon and login screen |
+| 16 | `f05a277` | feat: redesign mobile add transaction screen |
 
 ---
 

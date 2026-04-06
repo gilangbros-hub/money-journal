@@ -1,6 +1,6 @@
-# AI Leftover — Money Journal Development Context
+# AI Leftover - Money Journal Development Context
 
-> **Last Updated**: 2026-03-29
+> **Last Updated**: 2026-04-06
 > **Purpose**: Provide full context so any AI can continue development from where we left off.
 
 ---
@@ -56,7 +56,7 @@
 | File | Purpose |
 |------|---------|
 | `src/screens/DashboardScreen.js` | Dashboard with spending summary, pie chart, recent transactions |
-| `src/screens/AddTransactionScreen.js` | Add transaction form with closed-month awareness |
+| `src/screens/AddTransactionScreen.js` | Add transaction form with closed-month awareness and the new amount-first layout |
 | `src/screens/AllTransactionsScreen.js` | All transactions with type + pocket filtering |
 | `src/screens/BudgetScreen.js` | Budget tracker with month-level close/reopen |
 | `src/screens/ProfileScreen.js` | Profile + logout |
@@ -85,8 +85,8 @@
 
 ### 4. Post-Transaction Success Flow
 - After saving a transaction, a modal appears with two choices:
-  - "➕ Add Another Transaction" → resets form
-  - "🏠 Go to Dashboard" → navigates home
+  - `Add Another Transaction` -> resets form
+  - `Go to Dashboard` -> navigates home
 - This is implemented on both web (HTML modal) and mobile (React Native Modal).
 
 ### 5. Filtering System
@@ -95,27 +95,35 @@
   2. **Pocket filter**: Kwintals, Groceries, Weekday Transport, etc.
 - Backend supports both via `type` and `pocket` query params on `GET /api/transactions`.
 
+### 6. Mobile Add Transaction Direction
+- The mobile Add Transaction screen now uses an amount-first hierarchy.
+- The top section is a bold blue hero stage showing description, live-formatted amount, selected type, selected pocket, date/time, and budget month context.
+- Expense types and pockets are shown as horizontal selector rails instead of dense 3-column grids.
+- The primary save action sits in a sticky footer above the safe area for easier reach.
+
 ---
 
 ## Current State (What Was Last Done)
 
 ### Completed Features
-1. ✅ Full CRUD for transactions and budgets
-2. ✅ Dashboard with spending summary, pie chart, monthly comparison, budget alerts
-3. ✅ Tailwind CSS "Tropis Neon" dark theme across all web pages
-4. ✅ Month-level budget closure (Wife only)
-5. ✅ Closed months disabled in Add Transaction budget month picker
-6. ✅ Post-submit success modal (web + mobile)
-7. ✅ FAB (+) button at bottom-right, floating with glow
-8. ✅ Save Transaction button inline in form (not floating)
-9. ✅ Pocket (budget type) filter on All Transactions (web + mobile)
-10. ✅ Email notifications via Resend on new transactions
-11. ✅ Export to Excel/CSV on history page
-12. ✅ Integrated new custom `Money Journal` logo for the app icon, splash screen, and the mobile Login UI.
+1. Full CRUD for transactions and budgets
+2. Dashboard with spending summary, pie chart, monthly comparison, budget alerts
+3. Tailwind CSS "Tropis Neon" dark theme across all web pages
+4. Month-level budget closure (Wife only)
+5. Closed months disabled in Add Transaction budget month picker
+6. Post-submit success modal (web + mobile)
+7. FAB (+) button at bottom-right, floating with glow
+8. Save Transaction button inline in form (web) and sticky in the redesigned mobile form
+9. Pocket (budget type) filter on All Transactions (web + mobile)
+10. Email notifications via Resend on new transactions
+11. Export to Excel/CSV on history page
+12. Integrated new custom `Money Journal` logo for the app icon, splash screen, and the mobile Login UI
+13. Redesigned the mobile Add Transaction screen into an amount-first layout with a blue hero stage, horizontal selector rails, and a sticky save footer
 
 ### Known Issues / Potential Improvements
 - OTA updates may not always apply immediately on older APK builds; user sometimes needs a new APK.
 - The `cli.appVersionSource` field in `eas.json` should be configured per Expo's upcoming requirement.
+- Expo package versions currently show minor SDK mismatch warnings in `expo-doctor` (`expo`, `expo-status-bar`, `expo-updates`, `react-native`, `react-native-svg`).
 - No edit functionality for existing transactions in the mobile app (only delete).
 - No dark/light mode toggle (currently dark-only).
 
