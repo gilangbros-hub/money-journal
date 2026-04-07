@@ -1,6 +1,6 @@
 # AI Leftover - Money Journal Development Context
 
-> **Last Updated**: 2026-04-06
+> **Last Updated**: 2026-04-07
 > **Purpose**: Provide full context so any AI can continue development from where we left off.
 
 ---
@@ -55,12 +55,12 @@
 ### Mobile App
 | File | Purpose |
 |------|---------|
-| `src/screens/DashboardScreen.js` | Dashboard with spending summary, pie chart, recent transactions |
-| `src/screens/AddTransactionScreen.js` | Add transaction form with closed-month awareness and the new amount-first layout |
+| `src/screens/DashboardScreen.js` | Dashboard with compact colorful summary cards, category pulse chart, and recent transaction cards |
+| `src/screens/AddTransactionScreen.js` | Card-centric add transaction flow with inline editing, category sheet, and accordion details |
 | `src/screens/AllTransactionsScreen.js` | All transactions with type + pocket filtering |
-| `src/screens/BudgetScreen.js` | Budget tracker with month-level close/reopen |
+| `src/screens/BudgetScreen.js` | Budget tracker with colorful compact pocket cards and month status card |
 | `src/screens/ProfileScreen.js` | Profile + logout |
-| `src/navigation/MainTabNavigator.js` | Tab navigation with floating FAB (+) button |
+| `src/navigation/MainTabNavigator.js` | Tab navigation with floating dock-style taskbar and FAB (+) button |
 | `src/api/axios.js` | Axios instance with base URL and auth interceptors |
 
 ---
@@ -79,7 +79,8 @@
 - Mobile uses API endpoints at `/api/auth/login` and `/api/auth/me`.
 
 ### 3. FAB Navigation (Mobile)
-- The (+) floating action button is at **bottom-right**, 64px circle with purple glow.
+- The mobile tab bar now behaves like a rounded floating dock instead of a flat bottom strip.
+- The (+) floating action button stays at **bottom-right** and is visually tuned to match the elevated card system.
 - It is **hidden** when the user is on the Add Transaction screen.
 - The "Add" tab is excluded from the tab bar rendering.
 
@@ -95,11 +96,21 @@
   2. **Pocket filter**: Kwintals, Groceries, Weekday Transport, etc.
 - Backend supports both via `type` and `pocket` query params on `GET /api/transactions`.
 
-### 6. Mobile Add Transaction Direction
-- The mobile Add Transaction screen now uses an amount-first hierarchy.
-- The top section is a bold blue hero stage showing description, live-formatted amount, selected type, selected pocket, date/time, and budget month context.
-- Expense types and pockets are shown as horizontal selector rails instead of dense 3-column grids.
+### 6. Mobile Card System Direction
+- The mobile app is moving toward a compact, colorful, card-first design language.
+- Each major screen uses clearly differentiated section cards with softer shadows, tighter spacing, and stronger visual hierarchy.
+- Cards should feel compact and deliberate rather than like tall generic panels.
+
+### 7. Mobile Add Transaction Direction
+- The mobile Add Transaction screen now uses a card-centric interaction model.
+- The main transaction card supports inline editing for description and amount, opens a bottom sheet for category selection, and uses an accordion for timing and budget controls.
+- Expense types and pockets are embedded as chip selectors inside the main card instead of being separate page sections.
 - The primary save action sits in a sticky footer above the safe area for easier reach.
+
+### 8. Dashboard & Budget Direction
+- Dashboard now uses compact colorful cards to separate total spending, category pulse, and recent transactions.
+- Budget now uses compact colorful cards for month status, total budget summary, and each pocket allocation.
+- Visual consistency across mobile screens is now centered around rounded elevated cards, compact spacing, and restrained shadows.
 
 ---
 
@@ -119,6 +130,8 @@
 11. Export to Excel/CSV on history page
 12. Integrated new custom `Money Journal` logo for the app icon, splash screen, and the mobile Login UI
 13. Redesigned the mobile Add Transaction screen into an amount-first layout with a blue hero stage, horizontal selector rails, and a sticky save footer
+14. Refactored the mobile Add Transaction screen into a card-centric inline-editing flow with an in-screen category sheet and accordion details
+15. Unified the mobile Dashboard, Budget, and navigation taskbar around a compact colorful card system with a floating dock-style tab bar
 
 ### Known Issues / Potential Improvements
 - OTA updates may not always apply immediately on older APK builds; user sometimes needs a new APK.
