@@ -1,0 +1,977 @@
+﻿commit a0e86f51f44ae18f000e30e2784359b4c409b44e
+Author: AI Assistant <bot@example.com>
+Date:   Tue Apr 7 22:53:13 2026 +0700
+
+    style: unify mobile cards and floating nav polish
+
+diff --git a/src/navigation/MainTabNavigator.js b/src/navigation/MainTabNavigator.js
+index 8234a83..6fdf25e 100644
+--- a/src/navigation/MainTabNavigator.js
++++ b/src/navigation/MainTabNavigator.js
+@@ -39,7 +39,7 @@ function CustomTabBar({ state, descriptors, navigation }) {
+             <TouchableOpacity
+               key={route.key}
+               onPress={onPress}
+-              style={styles.tabItem}
++              style={[styles.tabItem, isFocused && styles.tabItemActive]}
+               activeOpacity={0.7}
+             >
+               <Text style={{ fontSize: 22, color, marginBottom: 6 }}>{icon}</Text>
+@@ -91,20 +91,20 @@ export default function MainTabNavigator({ setIsAuthenticated }) {
+ const styles = StyleSheet.create({
+   fab: {
+     position: 'absolute',
+-    bottom: 96,
+-    right: 20,
+-    width: 56,
+-    height: 56,
+-    borderRadius: 28,
++    bottom: 102,
++    right: 24,
++    width: 58,
++    height: 58,
++    borderRadius: 29,
+     backgroundColor: '#7C3AED',
+     justifyContent: 'center',
+     alignItems: 'center',
+     zIndex: 10,
+     elevation: 8,
+     shadowColor: '#7C3AED',
+-    shadowOffset: { width: 0, height: 4 },
+-    shadowOpacity: 0.5,
+-    shadowRadius: 8,
++    shadowOffset: { width: 0, height: 8 },
++    shadowOpacity: 0.26,
++    shadowRadius: 14,
+   },
+   fabText: {
+     color: '#FFFFFF',
+@@ -115,17 +115,31 @@ const styles = StyleSheet.create({
+   tabBar: {
+     flexDirection: 'row',
+     backgroundColor: '#1E293B',
+-    borderTopColor: '#334155',
+-    borderTopWidth: 1,
+-    paddingBottom: 16,
+-    paddingTop: 12,
+-    height: 80,
++    borderColor: 'rgba(148, 163, 184, 0.12)',
++    borderWidth: 1,
++    marginHorizontal: 16,
++    marginBottom: 18,
++    paddingBottom: 10,
++    paddingTop: 10,
++    height: 72,
+     justifyContent: 'space-around',
+     alignItems: 'center',
++    borderRadius: 28,
++    shadowColor: '#020617',
++    shadowOffset: { width: 0, height: 10 },
++    shadowOpacity: 0.18,
++    shadowRadius: 16,
++    elevation: 8,
+   },
+   tabItem: {
+     flex: 1,
+     alignItems: 'center',
+     justifyContent: 'center',
++    marginHorizontal: 6,
++    borderRadius: 22,
++    height: 52,
++  },
++  tabItemActive: {
++    backgroundColor: 'rgba(255,255,255,0.07)',
+   },
+ });
+diff --git a/src/screens/AddTransactionScreen.js b/src/screens/AddTransactionScreen.js
+index 2edaa83..d743f40 100644
+--- a/src/screens/AddTransactionScreen.js
++++ b/src/screens/AddTransactionScreen.js
+@@ -58,10 +58,10 @@ const cardShell = {
+     borderWidth: 1,
+     borderColor: 'rgba(90, 166, 255, 0.28)',
+     shadowColor: '#1677FF',
+-    shadowOpacity: 0.22,
+-    shadowRadius: 18,
+-    shadowOffset: { width: 0, height: 10 },
+-    elevation: 7,
++    shadowOpacity: 0.16,
++    shadowRadius: 14,
++    shadowOffset: { width: 0, height: 8 },
++    elevation: 5,
+ };
+ 
+ const glassPill = {
+@@ -529,9 +529,9 @@ export default function AddTransactionScreen({ navigation }) {
+                             justifyContent: 'center',
+                             shadowColor: '#7C3AED',
+                             shadowOffset: { width: 0, height: 8 },
+-                            shadowOpacity: 0.28,
+-                            shadowRadius: 16,
+-                            elevation: 8,
++                            shadowOpacity: 0.22,
++                            shadowRadius: 14,
++                            elevation: 6,
+                         }}
+                         onPress={handleSave}
+                         disabled={loading}
+diff --git a/src/screens/BudgetScreen.js b/src/screens/BudgetScreen.js
+index c950c0a..c518af5 100644
+--- a/src/screens/BudgetScreen.js
++++ b/src/screens/BudgetScreen.js
+@@ -1,8 +1,62 @@
+-import React, { useState, useEffect } from 'react';
++import React, { useEffect, useState } from 'react';
+ import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, TextInput, Modal, Alert } from 'react-native';
+ import { SafeAreaView } from 'react-native-safe-area-context';
+ import api from '../api/axios';
+ 
++const cardStyles = {
++    blue: {
++        backgroundColor: '#1256C8',
++        borderColor: 'rgba(90, 166, 255, 0.28)',
++        shadowColor: '#1677FF',
++    },
++    purple: {
++        backgroundColor: '#4C1D95',
++        borderColor: 'rgba(167, 139, 250, 0.25)',
++        shadowColor: '#7C3AED',
++    },
++    coral: {
++        backgroundColor: '#7F1D1D',
++        borderColor: 'rgba(255, 77, 109, 0.24)',
++        shadowColor: '#FF4D6D',
++    },
++    slate: {
++        backgroundColor: '#1E293B',
++        borderColor: 'rgba(148, 163, 184, 0.14)',
++        shadowColor: '#0F172A',
++    },
++};
++
++function ColorCard({ variant = 'slate', children, className = '' }) {
++    const palette = cardStyles[variant];
++    return (
++        <View
++            className={`rounded-[30px] border ${className}`}
++            style={{
++                backgroundColor: palette.backgroundColor,
++                borderColor: palette.borderColor,
++                shadowColor: palette.shadowColor,
++                shadowOpacity: 0.12,
++                shadowRadius: 12,
++                shadowOffset: { width: 0, height: 8 },
++                elevation: 4,
++            }}
++        >
++            {children}
++        </View>
++    );
++}
++
++function BudgetMetric({ label, value, isLast = false }) {
++    return (
++        <View className={`flex-1 rounded-[20px] px-4 py-4 bg-white/10 ${isLast ? '' : 'mr-3'}`}>
++            <Text className="text-white/70 text-[11px] font-semibold mb-1">{label}</Text>
++            <Text className="text-white font-bold text-[13px]" numberOfLines={1}>
++                {value}
++            </Text>
++        </View>
++    );
++}
++
+ export default function BudgetScreen() {
+     const [budgets, setBudgets] = useState([]);
+     const [summary, setSummary] = useState(null);
+@@ -11,9 +65,7 @@ export default function BudgetScreen() {
+     const [isClosed, setIsClosed] = useState(false);
+     const [isWife, setIsWife] = useState(false);
+     const [loading, setLoading] = useState(true);
+-
+     const [targetDate, setTargetDate] = useState(new Date());
+-
+     const [isEditModalVisible, setEditModalVisible] = useState(false);
+     const [editingPocket, setEditingPocket] = useState(null);
+     const [editAmount, setEditAmount] = useState('');
+@@ -23,23 +75,25 @@ export default function BudgetScreen() {
+         fetchBudgets();
+     }, [targetDate]);
+ 
++    const rp = (amount) => `Rp ${amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')}`;
++
+     const fetchBudgets = async () => {
+         setLoading(true);
+         const monthStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+         try {
+             const response = await api.get('/api/budget', { params: { month: monthStr } });
+-            if (response.data && response.data.data) {
++            if (response.data?.data) {
+                 const data = response.data.data;
+                 setBudgets(data.pockets || []);
+                 setSummary({
+                     totalBudget: data.formattedTotal || rp(data.totalBudget),
+                     totalSpent: data.formattedSpent || rp(data.totalSpent),
+-                    totalRemaining: data.formattedRemaining || rp(data.totalRemaining)
++                    totalRemaining: data.formattedRemaining || rp(data.totalRemaining),
+                 });
+                 setHealth(data.health);
+                 setCanEdit(data.canEdit);
+                 setIsClosed(data.isClosed || false);
+-                setIsWife(data.canEdit || data.isClosed); // Wife can see close/reopen even if month is closed
++                setIsWife(data.canEdit || data.isClosed);
+             }
+         } catch (error) {
+             console.error('Error fetching budgets:', error);
+@@ -60,8 +114,6 @@ export default function BudgetScreen() {
+         setTargetDate(newDate);
+     };
+ 
+-    const rp = (amount) => `Rp ${amount?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+-
+     const openEditModal = (pocketData) => {
+         if (!canEdit) return;
+         setEditingPocket(pocketData);
+@@ -77,7 +129,7 @@ export default function BudgetScreen() {
+                 pocket: editingPocket.pocket,
+                 month: targetDate.getMonth() + 1,
+                 year: targetDate.getFullYear(),
+-                budget: parseFloat(editAmount) || 0
++                budget: parseFloat(editAmount) || 0,
+             };
+             await api.post('/api/budget', payload);
+             setEditModalVisible(false);
+@@ -96,173 +148,191 @@ export default function BudgetScreen() {
+             `Are you sure you want to ${action} the entire budget for this month? ${isClosed ? 'This will allow edits again.' : 'No one will be able to edit budgets or add transactions for this month.'}`,
+             [
+                 { text: 'Cancel', style: 'cancel' },
+-                { text: 'Yes', onPress: async () => {
+-                    try {
+-                        await api.post('/api/budget/toggle-month-close', {
+-                            month: targetDate.getMonth() + 1,
+-                            year: targetDate.getFullYear()
+-                        });
+-                        fetchBudgets();
+-                    } catch (error) {
+-                        Alert.alert('Error', error.response?.data?.message || 'Failed to toggle');
+-                    }
+-                }}
++                {
++                    text: 'Yes',
++                    onPress: async () => {
++                        try {
++                            await api.post('/api/budget/toggle-month-close', {
++                                month: targetDate.getMonth() + 1,
++                                year: targetDate.getFullYear(),
++                            });
++                            fetchBudgets();
++                        } catch (error) {
++                            Alert.alert('Error', error.response?.data?.message || 'Failed to toggle');
++                        }
++                    },
++                },
+             ]
+         );
+     };
+ 
+     const monthLabel = targetDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
++    const strongestBudget = budgets.reduce((current, item) => {
++        if (!current) return item;
++        return (item.percentage || 0) > (current.percentage || 0) ? item : current;
++    }, null);
+ 
+     return (
+         <SafeAreaView className="flex-1 bg-bg" edges={['top', 'left', 'right']}>
+-            <View className="px-5 py-3 mb-2 flex-row justify-between items-center z-10 border-b border-border/50 bg-bg">
+-                <Text className="text-[20px] font-bold text-text-primary">Budget Tracker</Text>
++            <View className="px-5 py-2">
++                <Text className="text-[24px] font-bold text-text-primary">Budget Tracker</Text>
++                <Text className="text-[13px] text-text-muted mt-1">Compact cards for every pocket and state.</Text>
+             </View>
+ 
+-            {/* Month Navigation */}
+-            <View className="px-5 py-3 flex-row items-center justify-between">
+-                <TouchableOpacity onPress={handlePrevMonth} className="w-10 h-10 bg-bg-secondary rounded-xl items-center justify-center border border-border/50">
+-                    <Text className="text-text-secondary text-lg font-bold">ΓåÉ</Text>
++            <View className="px-5 py-2 flex-row items-center justify-between">
++                <TouchableOpacity onPress={handlePrevMonth} className="w-11 h-11 bg-bg-secondary rounded-2xl items-center justify-center border border-border/50">
++                    <Text className="text-text-secondary text-lg font-bold">ΓÇ╣</Text>
+                 </TouchableOpacity>
+-                <Text className="text-lg font-bold text-text-primary">{monthLabel}</Text>
+-                <TouchableOpacity onPress={handleNextMonth} className="w-10 h-10 bg-bg-secondary rounded-xl items-center justify-center border border-border/50">
+-                    <Text className="text-text-secondary text-lg font-bold">ΓåÆ</Text>
++                <View className="px-4 py-2 rounded-full bg-bg-secondary border border-border/40">
++                    <Text className="text-[14px] font-bold text-text-primary">{monthLabel}</Text>
++                </View>
++                <TouchableOpacity onPress={handleNextMonth} className="w-11 h-11 bg-bg-secondary rounded-2xl items-center justify-center border border-border/50">
++                    <Text className="text-text-secondary text-lg font-bold">ΓÇ║</Text>
+                 </TouchableOpacity>
+             </View>
+ 
+-            {!canEdit && !isClosed && (
+-                <View className="px-5 mb-2">
+-                    <View className="bg-amber/20 px-4 py-3 rounded-xl flex-row items-center border border-amber/30">
+-                        <Text className="mr-2">≡ƒæü∩╕Å</Text>
+-                        <Text className="text-amber text-sm font-medium">View-only mode. Only Wife can edit.</Text>
+-                    </View>
+-                </View>
+-            )}
+-
+-            {/* Month Close Banner */}
+-            {isClosed && (
+-                <View className="px-5 mb-2">
+-                    <View style={{ backgroundColor: 'rgba(255,77,109,0.1)', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderWidth: 1, borderColor: 'rgba(255,77,109,0.3)' }}>
+-                        <Text style={{ color: '#FF4D6D', fontWeight: '700', fontSize: 13 }}>≡ƒöÆ This month is closed</Text>
+-                        {isWife && (
+-                            <TouchableOpacity 
+-                                onPress={handleToggleMonthClose}
+-                                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(34,197,94,0.3)' }}
+-                            >
+-                                <Text style={{ color: '#22C55E', fontSize: 11, fontWeight: '700' }}>≡ƒöô Reopen</Text>
+-                            </TouchableOpacity>
+-                        )}
+-                    </View>
+-                </View>
+-            )}
+-
+-            {/* Close Month Button (Wife only, when month is open) */}
+-            {!isClosed && isWife && (
+-                <View className="px-5 mb-2" style={{ alignItems: 'flex-end' }}>
+-                    <TouchableOpacity 
+-                        onPress={handleToggleMonthClose}
+-                        style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,77,109,0.3)' }}
+-                    >
+-                        <Text style={{ color: '#FF4D6D', fontSize: 11, fontWeight: '700' }}>≡ƒöÆ Close This Month</Text>
+-                    </TouchableOpacity>
+-                </View>
+-            )}
+-
+             {loading ? (
+                 <View className="flex-1 justify-center items-center">
+                     <ActivityIndicator size="large" color="#7C3AED" />
+                 </View>
+             ) : (
+-                <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }} className="flex-1" showsVerticalScrollIndicator={false}>
+-                    
+-                    {/* Summary Card */}
++                <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100, paddingTop: 8 }} className="flex-1" showsVerticalScrollIndicator={false}>
+                     {summary && (
+-                        <View className="bg-bg-secondary rounded-3xl p-6 mb-6 mt-4 shadow-sm border border-border/50 items-center">
+-                            <Text className="text-text-muted font-medium mb-1">Total Budget</Text>
+-                            <Text className="text-text-primary text-[28px] font-extrabold mb-4">{summary.totalBudget}</Text>
+-                            <View className="flex-row justify-between w-full px-4">
+-                                <View className="items-center">
+-                                    <Text className="text-text-muted text-xs mb-1">Spent</Text>
+-                                    <Text className="text-coral font-bold">{summary.totalSpent}</Text>
+-                                </View>
+-                                <View className="items-center">
+-                                    <Text className="text-text-muted text-xs mb-1">Remaining</Text>
+-                                    <Text className="text-lime font-bold">{summary.totalRemaining}</Text>
+-                                </View>
++                        <ColorCard variant="blue" className="p-5 mb-5">
++                            <Text className="text-white/75 text-[12px] font-semibold mb-2">Total Budget</Text>
++                            <Text className="text-white text-[32px] font-extrabold tracking-tight mb-4">{summary.totalBudget}</Text>
++
++                            <View className="flex-row">
++                                <BudgetMetric label="Spent" value={summary.totalSpent} />
++                                <BudgetMetric label="Remaining" value={summary.totalRemaining} isLast />
+                             </View>
+-                        </View>
++                        </ColorCard>
+                     )}
+ 
+-                    {/* Budget Categories */}
+-                    <View className="flex-row justify-between items-center px-1 mb-4">
+-                        <Text className="text-[17px] font-bold text-text-primary">Pocket Allocations</Text>
++                    <ColorCard variant={isClosed ? 'coral' : 'purple'} className="p-5 mb-5">
++                        <View className="flex-row justify-between items-start">
++                            <View className="flex-1 pr-3">
++                                <Text className="text-white text-[17px] font-bold mb-1">
++                                    {isClosed ? 'Month Closed' : 'Month Status'}
++                                </Text>
++                                <Text className="text-white/70 text-[12px]">
++                                    {isClosed
++                                        ? 'Budgets and transactions are locked for this month.'
++                                        : canEdit
++                                            ? 'You can still edit this month budget.'
++                                            : 'View-only mode. Only Wife can edit.'}
++                                </Text>
++                            </View>
++                            {isWife ? (
++                                <TouchableOpacity
++                                    onPress={handleToggleMonthClose}
++                                    className="rounded-full px-4 py-2 border"
++                                    style={{ borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(255,255,255,0.1)' }}
++                                >
++                                    <Text className="text-white text-[11px] font-bold">
++                                        {isClosed ? 'Reopen' : 'Close Month'}
++                                    </Text>
++                                </TouchableOpacity>
++                            ) : null}
++                        </View>
++
++                        {health ? (
++                            <View className="mt-4 rounded-[22px] px-4 py-4 bg-white/10">
++                                <Text className="text-white/70 text-[11px] font-semibold mb-1">Budget Health</Text>
++                                <Text className="text-white font-bold text-[13px]">
++                                    {typeof health === 'string' ? health : JSON.stringify(health)}
++                                </Text>
++                            </View>
++                        ) : null}
++                    </ColorCard>
++
++                    <View className="flex-row justify-between items-end mb-4 px-1">
++                        <View>
++                            <Text className="text-[17px] font-bold text-text-primary">Pocket Allocations</Text>
++                            <Text className="text-[12px] text-text-muted mt-1">
++                                {strongestBudget ? `${strongestBudget.pocket} is the hottest pocket right now.` : 'No pocket budget yet.'}
++                            </Text>
++                        </View>
+                     </View>
+-                    
++
+                     {budgets.length > 0 ? (
+-                        <View className="flex-col gap-4">
+-                            {budgets.map((b, i) => {
+-                                const progress = Math.min(b.percentage || 0, 100);
+-                                const isDanger = progress >= 90;
+-                                const isWarning = progress >= 75 && progress < 90;
+-                                let barColor = 'bg-primary';
+-                                if (isWarning) barColor = 'bg-amber';
+-                                if (isDanger) barColor = 'bg-coral';
++                        budgets.map((budgetItem, index) => {
++                            const progress = Math.min(budgetItem.percentage || 0, 100);
++                            const isDanger = progress >= 90;
++                            const isWarning = progress >= 75 && progress < 90;
++                            const variant = isDanger ? 'coral' : isWarning ? 'purple' : 'slate';
++                            const progressColor = isDanger ? '#FF4D6D' : isWarning ? '#F59E0B' : '#22C55E';
+ 
+-                                return (
+-                                    <View key={b.pocket || i} className="bg-bg-secondary p-5 rounded-3xl border border-border/50">
+-                                        <View className="flex-row justify-between items-center mb-3">
+-                                            <View className="flex-row items-center">
+-                                                <Text className="text-2xl mr-3">{b.icon || '≡ƒÆ╕'}</Text>
+-                                                <Text className="text-text-primary font-bold text-[15px]">{b.pocket}</Text>
++                            return (
++                                <ColorCard
++                                    key={budgetItem.pocket || index}
++                                    variant={variant}
++                                    className={`p-5 ${index === budgets.length - 1 ? 'mb-0' : 'mb-4'}`}
++                                >
++                                    <View className="flex-row justify-between items-start mb-4">
++                                        <View className="flex-row items-center flex-1 pr-3">
++                                            <View
++                                                className="w-12 h-12 rounded-[18px] items-center justify-center mr-3"
++                                                style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}
++                                            >
++                                                <Text className="text-[22px]">{budgetItem.icon || '≡ƒÆ╕'}</Text>
++                                            </View>
++                                            <View className="flex-1">
++                                                <Text className="text-white font-bold text-[15px] mb-1">{budgetItem.pocket}</Text>
++                                                <Text className="text-white/70 text-[11px] font-medium">
++                                                    {budgetItem.formattedSpent || rp(budgetItem.spent)} spent
++                                                </Text>
+                                             </View>
+-                                            {canEdit && (
+-                                                <TouchableOpacity onPress={() => openEditModal(b)}>
+-                                                    <Text className="text-primary text-xs font-bold underline">Edit</Text>
+-                                                </TouchableOpacity>
+-                                            )}
+                                         </View>
+ 
+-                                        <View className="flex-row justify-between mb-2">
+-                                            <Text className="text-text-muted text-xs font-semibold">Spent {b.formattedSpent || rp(b.spent)}</Text>
+-                                            <Text className="text-text-primary text-xs font-bold">{progress}%</Text>
+-                                        </View>
++                                        {canEdit ? (
++                                            <TouchableOpacity
++                                                onPress={() => openEditModal(budgetItem)}
++                                                className="rounded-full px-3 py-2 border"
++                                                style={{ borderColor: 'rgba(255,255,255,0.18)', backgroundColor: 'rgba(255,255,255,0.1)' }}
++                                            >
++                                                <Text className="text-white text-[11px] font-bold">Edit</Text>
++                                            </TouchableOpacity>
++                                        ) : null}
++                                    </View>
+ 
+-                                        {/* Progress Bar */}
+-                                        <View className="w-full h-2.5 bg-bg-tertiary rounded-full overflow-hidden mb-3">
+-                                            <View className={`h-full rounded-full ${barColor}`} style={{ width: `${progress}%` }} />
+-                                        </View>
++                                    <View className="flex-row justify-between mb-2">
++                                        <Text className="text-white/70 text-[11px] font-semibold">Usage</Text>
++                                        <Text className="text-white text-[12px] font-bold">{progress}%</Text>
++                                    </View>
+ 
+-                                        <View className="flex-row justify-between items-center bg-bg p-3 rounded-2xl">
+-                                            <View>
+-                                                <Text className="text-text-muted text-[10px] uppercase font-bold tracking-wider mb-0.5">Budget</Text>
+-                                                <Text className="text-text-primary font-bold">{b.formattedBudget || rp(b.budget)}</Text>
+-                                            </View>
+-                                            <View className="items-end">
+-                                                <Text className="text-text-muted text-[10px] uppercase font-bold tracking-wider mb-0.5">Left</Text>
+-                                                <Text className={`font-bold ${b.isOver ? 'text-coral' : 'text-lime'}`}>
+-                                                    {b.formattedRemaining || rp(b.remaining)}
+-                                                </Text>
+-                                            </View>
++                                    <View className="w-full h-2.5 rounded-full overflow-hidden mb-4 bg-white/10">
++                                        <View className="h-full rounded-full" style={{ width: `${progress}%`, backgroundColor: progressColor }} />
++                                    </View>
++
++                                    <View className="flex-row">
++                                        <View className="flex-1 rounded-[20px] px-4 py-4 mr-3 bg-white/10">
++                                            <Text className="text-white/70 text-[11px] font-semibold mb-1">Budget</Text>
++                                            <Text className="text-white font-bold text-[13px]">{budgetItem.formattedBudget || rp(budgetItem.budget)}</Text>
++                                        </View>
++                                        <View className="flex-1 rounded-[20px] px-4 py-4 bg-white/10">
++                                            <Text className="text-white/70 text-[11px] font-semibold mb-1">Left</Text>
++                                            <Text className="text-white font-bold text-[13px]">{budgetItem.formattedRemaining || rp(budgetItem.remaining)}</Text>
+                                         </View>
+                                     </View>
+-                                );
+-                            })}
+-                        </View>
++                                </ColorCard>
++                            );
++                        })
+                     ) : (
+                         <Text className="text-center text-text-muted py-5">No budgets found.</Text>
+                     )}
+-
+                 </ScrollView>
+             )}
+ 
+-            {/* Edit Modal */}
+-            <Modal visible={isEditModalVisible} transparent={true} animationType="fade">
++            <Modal visible={isEditModalVisible} transparent animationType="fade">
+                 <View className="flex-1 bg-black/60 justify-center items-center px-5">
+-                    <View className="bg-bg w-full rounded-3xl p-6 border border-border/50 shadow-lg">
++                    <View className="bg-bg w-full rounded-[30px] p-6 border border-border/50 shadow-lg">
+                         <Text className="text-xl font-bold text-text-primary mb-2">Edit Budget</Text>
+-                        <Text className="text-lg font-semibold mb-5 text-text-secondary">{editingPocket?.icon} {editingPocket?.pocket}</Text>
+-                        
+-                        <View className="flex-row items-center bg-bg-secondary rounded-2xl p-4 mb-6 border border-border/50">
++                        <Text className="text-[15px] font-semibold mb-5 text-text-secondary">
++                            {editingPocket?.icon} {editingPocket?.pocket}
++                        </Text>
++
++                        <View className="flex-row items-center bg-bg-secondary rounded-[22px] p-4 mb-6 border border-border/50">
+                             <Text className="text-xl font-bold text-text-primary mr-2">Rp</Text>
+                             <TextInput
+                                 className="flex-1 text-2xl font-bold text-text-primary"
+@@ -276,22 +346,18 @@ export default function BudgetScreen() {
+                         </View>
+ 
+                         <View className="flex-row justify-between">
+-                            <TouchableOpacity 
+-                                className="flex-1 bg-bg-secondary py-4 rounded-2xl items-center mr-3 border border-border/50"
++                            <TouchableOpacity
++                                className="flex-1 bg-bg-secondary py-4 rounded-[20px] items-center mr-3 border border-border/50"
+                                 onPress={() => setEditModalVisible(false)}
+                             >
+                                 <Text className="text-text-primary font-bold">Cancel</Text>
+                             </TouchableOpacity>
+-                            <TouchableOpacity 
+-                                className="flex-1 bg-primary py-4 rounded-2xl items-center"
++                            <TouchableOpacity
++                                className="flex-1 bg-primary py-4 rounded-[20px] items-center"
+                                 onPress={handleSaveBudget}
+                                 disabled={saving}
+                             >
+-                                {saving ? (
+-                                    <ActivityIndicator color="#FFFFFF" size="small" />
+-                                ) : (
+-                                    <Text className="text-white font-bold">Save</Text>
+-                                )}
++                                {saving ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Text className="text-white font-bold">Save</Text>}
+                             </TouchableOpacity>
+                         </View>
+                     </View>
+diff --git a/src/screens/DashboardScreen.js b/src/screens/DashboardScreen.js
+index ba25c6e..b54a2a5 100644
+--- a/src/screens/DashboardScreen.js
++++ b/src/screens/DashboardScreen.js
+@@ -1,4 +1,4 @@
+-import React, { useState, useEffect } from 'react';
++import React, { useEffect, useState } from 'react';
+ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+ import { SafeAreaView } from 'react-native-safe-area-context';
+ import { PieChart } from 'react-native-gifted-charts';
+@@ -6,18 +6,89 @@ import api from '../api/axios';
+ 
+ const chartColors = ['#FF4D6D', '#7C3AED', '#22C55E', '#F59E0B', '#06B6D4', '#F97316', '#3B82F6', '#EC4899', '#FBBF24', '#14B8A6'];
+ const typeEmojis = {
+-    'Eat': '≡ƒì╜∩╕Å', 'Snack': '≡ƒì┐', 'Groceries': '≡ƒ¢Æ', 'Laundry': '≡ƒº║',
+-    'Bensin': 'Γ¢╜', 'Flazz': '≡ƒÆ│', 'Home Appliance': '≡ƒÅá', 'Jumat Berkah': '≡ƒñ▓',
+-    'Uang Sampah': '≡ƒùæ∩╕Å', 'Uang Keamanan': '≡ƒæ«', 'Medicine': '≡ƒÆè', 'Others': '≡ƒôª'
++    Eat: '≡ƒì╜∩╕Å',
++    Snack: '≡ƒì┐',
++    Groceries: '≡ƒ¢Æ',
++    Laundry: '≡ƒº║',
++    Bensin: 'Γ¢╜',
++    Flazz: '≡ƒÆ│',
++    'Home Appliance': '≡ƒÅá',
++    'Jumat Berkah': '≡ƒñ▓',
++    'Uang Sampah': '≡ƒùæ∩╕Å',
++    'Uang Keamanan': '≡ƒæ«',
++    Medicine: '≡ƒÆè',
++    Others: '≡ƒôª',
+ };
+ 
++const cardStyles = {
++    blue: {
++        backgroundColor: '#1256C8',
++        borderColor: 'rgba(90, 166, 255, 0.28)',
++        shadowColor: '#1677FF',
++    },
++    purple: {
++        backgroundColor: '#4C1D95',
++        borderColor: 'rgba(167, 139, 250, 0.25)',
++        shadowColor: '#7C3AED',
++    },
++    emerald: {
++        backgroundColor: '#14532D',
++        borderColor: 'rgba(74, 222, 128, 0.18)',
++        shadowColor: '#22C55E',
++    },
++    slate: {
++        backgroundColor: '#1E293B',
++        borderColor: 'rgba(148, 163, 184, 0.14)',
++        shadowColor: '#0F172A',
++    },
++};
++
++function ColorCard({ variant = 'slate', children, className = '' }) {
++    const palette = cardStyles[variant];
++    return (
++        <View
++            className={`rounded-[30px] border ${className}`}
++            style={{
++                backgroundColor: palette.backgroundColor,
++                borderColor: palette.borderColor,
++                shadowColor: palette.shadowColor,
++                shadowOpacity: 0.12,
++                shadowRadius: 12,
++                shadowOffset: { width: 0, height: 8 },
++                elevation: 4,
++            }}
++        >
++            {children}
++        </View>
++    );
++}
++
++function StatMiniCard({ label, value, tone, isLast = false }) {
++    const tones = {
++        coral: { bg: 'rgba(255,255,255,0.14)', text: '#FFE4EA' },
++        lime: { bg: 'rgba(255,255,255,0.14)', text: '#DCFCE7' },
++        blue: { bg: 'rgba(255,255,255,0.14)', text: '#DBEAFE' },
++    };
++    const currentTone = tones[tone] || tones.blue;
++
++    return (
++        <View
++            className={`flex-1 rounded-[22px] px-4 py-4 ${isLast ? '' : 'mr-3'}`}
++            style={{ backgroundColor: currentTone.bg }}
++        >
++            <Text className="text-white/70 text-[11px] font-semibold mb-1">{label}</Text>
++            <Text className="text-[13px] font-bold" style={{ color: currentTone.text }} numberOfLines={1}>
++                {value}
++            </Text>
++        </View>
++    );
++}
+ 
+ export default function DashboardScreen({ setIsAuthenticated, navigation }) {
+     const [data, setData] = useState(null);
+     const [loading, setLoading] = useState(true);
+     const [refreshing, setRefreshing] = useState(false);
+     const [avatar, setAvatar] = useState('≡ƒæñ');
+-
+     const [targetDate, setTargetDate] = useState(new Date());
+ 
+     useEffect(() => {
+@@ -31,7 +102,7 @@ export default function DashboardScreen({ setIsAuthenticated, navigation }) {
+     const fetchProfile = async () => {
+         try {
+             const response = await api.get('/api/auth/me');
+-            if (response.data && response.data.user) {
++            if (response.data?.user) {
+                 setAvatar(response.data.user.avatar || '≡ƒæñ');
+             }
+         } catch (error) {
+@@ -44,12 +115,12 @@ export default function DashboardScreen({ setIsAuthenticated, navigation }) {
+         try {
+             const monthStr = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}`;
+             const response = await api.get('/api/dashboard/summary', { params: { month: monthStr } });
+-            if (response.data && response.data.success) {
++            if (response.data?.success) {
+                 setData(response.data.data);
+             }
+         } catch (error) {
+             console.error('Error fetching dashboard:', error);
+-            if (error.response && error.response.status === 401) {
++            if (error.response?.status === 401) {
+                 setIsAuthenticated(false);
+             }
+         } finally {
+@@ -100,133 +171,167 @@ export default function DashboardScreen({ setIsAuthenticated, navigation }) {
+     }));
+ 
+     const monthLabel = targetDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
++    const topCategory = data.categories?.[0];
+ 
+     return (
+         <SafeAreaView className="flex-1 bg-bg" edges={['top', 'left', 'right']}>
+-            {/* Header */}
+-            <View className="px-5 py-2 mb-2 flex-row justify-between items-center z-10">
+-                <Text className="text-[22px] font-bold text-text-primary">Dashboard</Text>
++            <View className="px-5 py-2 flex-row justify-between items-center">
++                <View>
++                    <Text className="text-[24px] font-bold text-text-primary">Dashboard</Text>
++                    <Text className="text-[13px] text-text-muted mt-1">Compact cards, quick money read.</Text>
++                </View>
+                 <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+-                    <View className="w-10 h-10 bg-bg-secondary rounded-full items-center justify-center border border-border/50">
++                    <View className="w-11 h-11 bg-bg-secondary rounded-2xl items-center justify-center border border-border/50">
+                         <Text className="text-lg">{avatar}</Text>
+                     </View>
+                 </TouchableOpacity>
+             </View>
+ 
+-            {/* Month Navigation for Dashboard too */}
+-            <View className="px-5 py-2 flex-row items-center justify-between z-10">
+-                <TouchableOpacity onPress={handlePrevMonth} className="w-10 h-10 bg-bg-secondary rounded-xl items-center justify-center border border-border/50">
+-                    <Text className="text-text-secondary text-lg font-bold">ΓåÉ</Text>
++            <View className="px-5 py-2 flex-row items-center justify-between">
++                <TouchableOpacity onPress={handlePrevMonth} className="w-11 h-11 bg-bg-secondary rounded-2xl items-center justify-center border border-border/50">
++                    <Text className="text-text-secondary text-lg font-bold">ΓÇ╣</Text>
+                 </TouchableOpacity>
+-                <Text className="text-lg font-bold text-text-primary">{monthLabel}</Text>
+-                <TouchableOpacity onPress={handleNextMonth} className="w-10 h-10 bg-bg-secondary rounded-xl items-center justify-center border border-border/50">
+-                    <Text className="text-text-secondary text-lg font-bold">ΓåÆ</Text>
++                <View className="px-4 py-2 rounded-full bg-bg-secondary border border-border/40">
++                    <Text className="text-[14px] font-bold text-text-primary">{monthLabel}</Text>
++                </View>
++                <TouchableOpacity onPress={handleNextMonth} className="w-11 h-11 bg-bg-secondary rounded-2xl items-center justify-center border border-border/50">
++                    <Text className="text-text-secondary text-lg font-bold">ΓÇ║</Text>
+                 </TouchableOpacity>
+             </View>
+ 
+-            <ScrollView 
+-                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} 
+-                className="flex-1 mt-2" 
++            <ScrollView
++                contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40, paddingTop: 8 }}
++                className="flex-1"
+                 showsVerticalScrollIndicator={false}
+                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
+             >
+-                
+-                {/* Hero Card */}
+-                <View className="bg-primary rounded-3xl p-6 mb-6 shadow-sm relative overflow-hidden">
+-                    <Text className="text-white/80 font-medium mb-1">Total Spending</Text>
+-                    <Text className="text-white text-[32px] font-extrabold mb-3 tracking-tighter">{data.total.formatted}</Text>
+-                    
+-                    {data.comparison && data.comparison.hasLastMonth && (
+-                        <View className="flex-row items-center bg-white/20 self-start px-3 py-1.5 rounded-xl">
+-                            <Text className="text-white font-bold mr-1">
+-                                {data.comparison.increased ? '≡ƒôê' : '≡ƒôë'} 
+-                            </Text>
+-                            <Text className="text-white font-semibold text-xs">
+-                                {data.comparison.increased ? '+' : '-'}{data.comparison.difference} from last month
++                <ColorCard variant="blue" className="p-5 mb-5">
++                    <Text className="text-white/75 text-[12px] font-semibold mb-2">Total Spending</Text>
++                    <Text className="text-white text-[34px] font-extrabold tracking-tight mb-4">{data.total.formatted}</Text>
++
++                    <View className="flex-row">
++                        <StatMiniCard label="Transactions" value={`${data.recent?.length || 0} recent`} tone="blue" />
++                        <StatMiniCard
++                            label="Trend"
++                            value={
++                                data.comparison?.hasLastMonth
++                                    ? `${data.comparison.increased ? '+' : '-'}${data.comparison.difference}`
++                                    : 'No last month'
++                            }
++                            tone="coral"
++                            isLast
++                        />
++                    </View>
++                </ColorCard>
++
++                <ColorCard variant="purple" className="p-5 mb-5">
++                    <View className="flex-row justify-between items-start mb-4">
++                        <View>
++                            <Text className="text-white text-[17px] font-bold mb-1">Category Pulse</Text>
++                            <Text className="text-white/70 text-[12px]">
++                                {topCategory ? `${topCategory.category} leads this month` : 'No spending yet'}
+                             </Text>
+                         </View>
+-                    )}
+-                </View>
++                        <View className="rounded-full px-3 py-1.5 bg-white/10 border border-white/10">
++                            <Text className="text-white text-[11px] font-bold">{data.categories.length} groups</Text>
++                        </View>
++                    </View>
+ 
+-                {/* Chart Section */}
+-                <View className="bg-bg-secondary rounded-3xl p-5 mb-6 shadow-sm border border-border/50">
+-                    <Text className="text-[17px] font-bold text-text-primary mb-5">Categories</Text>
+-                    
+                     {data.categories.length > 0 ? (
+-                        <View className="items-center mb-6 mt-2">
+-                            <PieChart
+-                                donut
+-                                innerRadius={65}
+-                                radius={90}
+-                                data={pieData}
+-                                centerLabelComponent={() => {
+-                                    return (
++                        <>
++                            <View className="items-center mb-5 mt-1">
++                                <PieChart
++                                    donut
++                                    innerRadius={58}
++                                    radius={84}
++                                    data={pieData}
++                                    centerLabelComponent={() => (
+                                         <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+-                                            <Text style={{ color: '#94A3B8', fontSize: 11, fontWeight: '600' }}>Total</Text>
+-                                            <Text style={{ color: '#0F172A', fontSize: 22, fontWeight: '800' }}>{data.categories.length}</Text>
++                                            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700' }}>Top</Text>
++                                            <Text style={{ color: '#FFFFFF', fontSize: 18, fontWeight: '800' }}>
++                                                {topCategory ? `${topCategory.percentage}%` : '0%'}
++                                            </Text>
+                                         </View>
+-                                    );
+-                                }}
+-                            />
+-                        </View>
+-                    ) : (
+-                        <Text className="text-center text-text-muted py-5">No spending this month.</Text>
+-                    )}
++                                    )}
++                                />
++                            </View>
+ 
+-                    {/* Category List */}
+-                    <View className="flex-col gap-3">
+-                        {data.categories.map((cat, i) => (
+-                            <View key={cat.category} className="flex-row items-center">
+-                                <View className="w-11 h-11 rounded-2xl items-center justify-center mr-3 bg-bg-tertiary">
+-                                    <Text className="text-[22px]">{cat.icon || typeEmojis[cat.category] || '≡ƒôª'}</Text>
+-                                </View>
+-                                <View className="flex-1 justify-center mr-2">
+-                                    <Text className="text-text-primary font-semibold text-[13px] mb-1.5">{cat.category}</Text>
+-                                    <View className="w-full h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+-                                        <View 
+-                                            className="h-full rounded-full" 
+-                                            style={{ width: `${Math.min(Math.max(cat.percentage, 4), 100)}%`, backgroundColor: chartColors[i % chartColors.length] }} 
+-                                        />
++                            <View>
++                                {data.categories.slice(0, 4).map((cat, i) => (
++                                    <View
++                                        key={cat.category}
++                                        className={`rounded-[22px] px-4 py-3 mb-3 flex-row items-center ${i === 3 ? 'mb-0' : ''}`}
++                                        style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}
++                                    >
++                                        <View
++                                            className="w-11 h-11 rounded-[16px] items-center justify-center mr-3"
++                                            style={{ backgroundColor: `${chartColors[i % chartColors.length]}22` }}
++                                        >
++                                            <Text className="text-[20px]">{cat.icon || typeEmojis[cat.category] || '≡ƒôª'}</Text>
++                                        </View>
++                                        <View className="flex-1 mr-2">
++                                            <Text className="text-white font-bold text-[13px] mb-1">{cat.category}</Text>
++                                            <View className="w-full h-1.5 rounded-full overflow-hidden bg-white/10">
++                                                <View
++                                                    className="h-full rounded-full"
++                                                    style={{
++                                                        width: `${Math.min(Math.max(cat.percentage, 4), 100)}%`,
++                                                        backgroundColor: chartColors[i % chartColors.length],
++                                                    }}
++                                                />
++                                            </View>
++                                        </View>
++                                        <View className="items-end min-w-[72px]">
++                                            <Text className="text-white font-bold text-[12px]">{cat.formattedTotal}</Text>
++                                            <Text className="text-white/70 text-[11px] font-semibold">{cat.percentage}%</Text>
++                                        </View>
+                                     </View>
+-                                </View>
+-                                <View className="items-end min-w-[80px]">
+-                                    <Text className="text-text-primary font-bold text-[13px] mb-0.5">{cat.formattedTotal}</Text>
+-                                    <Text className="text-text-muted text-[11px] font-bold">{cat.percentage}%</Text>
+-                                </View>
++                                ))}
+                             </View>
+-                        ))}
+-                    </View>
+-                </View>
++                        </>
++                    ) : (
++                        <Text className="text-center text-white/70 py-6">No spending this month.</Text>
++                    )}
++                </ColorCard>
+ 
+-                {/* Recent Transactions */}
+-                <View className="mb-4">
+-                    <View className="flex-row justify-between items-end mb-4 px-1">
+-                        <Text className="text-[17px] font-bold text-text-primary">Recent Transactions</Text>
++                <ColorCard variant="emerald" className="p-5 mb-4">
++                    <View className="flex-row justify-between items-end mb-4">
++                        <View>
++                            <Text className="text-white text-[17px] font-bold mb-1">Recent Transactions</Text>
++                            <Text className="text-white/70 text-[12px]">Small cards, quick scan</Text>
++                        </View>
+                         <TouchableOpacity onPress={() => navigation.navigate('AllTransactions')}>
+-                            <Text className="text-primary font-bold text-sm">View All</Text>
++                            <Text className="text-white text-[12px] font-bold">View All</Text>
+                         </TouchableOpacity>
+                     </View>
+ 
+                     {data.recent.length > 0 ? (
+-                        <View className="flex-col gap-3">
+-                            {data.recent.map(t => (
+-                                <View key={t._id} className="bg-bg-secondary p-3.5 rounded-2xl flex-row items-center shadow-sm border border-border/50">
+-                                    <View className="w-11 h-11 bg-bg-tertiary rounded-xl items-center justify-center mr-3">
+-                                        <Text className="text-[20px]">{typeEmojis[t.type] || '≡ƒôª'}</Text>
+-                                    </View>
+-                                    <View className="flex-1 mr-2">
+-                                        <Text className="text-text-primary font-semibold text-[13px] mb-1" numberOfLines={1}>{t.ngapain || 'No notes'}</Text>
+-                                        <Text className="text-text-muted text-[11px] font-medium">{new Date(t.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ΓÇó {t.pocket}</Text>
+-                                    </View>
+-                                    <Text className="text-coral font-bold text-[13px]">- {t.formattedAmount || `Rp ${t.amount}`}</Text>
++                        data.recent.slice(0, 4).map((transaction, index) => (
++                            <View
++                                key={transaction._id}
++                                className={`rounded-[22px] px-4 py-3 flex-row items-center ${index === data.recent.slice(0, 4).length - 1 ? '' : 'mb-3'}`}
++                                style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}
++                            >
++                                <View className="w-11 h-11 rounded-[16px] items-center justify-center mr-3 bg-black/15">
++                                    <Text className="text-[20px]">{typeEmojis[transaction.type] || '≡ƒôª'}</Text>
+                                 </View>
+-                            ))}
+-                        </View>
++                                <View className="flex-1 mr-2">
++                                    <Text className="text-white font-bold text-[13px] mb-1" numberOfLines={1}>
++                                        {transaction.ngapain || 'No notes'}
++                                    </Text>
++                                    <Text className="text-white/70 text-[11px] font-medium">
++                                        {new Date(transaction.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} ΓÇó {transaction.pocket}
++                                    </Text>
++                                </View>
++                                <Text className="text-white font-extrabold text-[13px]">
++                                    - {transaction.formattedAmount || `Rp ${transaction.amount}`}
++                                </Text>
++                            </View>
++                        ))
+                     ) : (
+-                        <Text className="text-center text-text-muted py-5">No recent transactions.</Text>
++                        <Text className="text-center text-white/70 py-6">No recent transactions.</Text>
+                     )}
+-                </View>
+-
++                </ColorCard>
+             </ScrollView>
+         </SafeAreaView>
+     );

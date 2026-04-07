@@ -23,10 +23,10 @@
     width: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0F172A;
+    background: #ffffff;
   }
   ::-webkit-scrollbar-thumb {
-    background: #334155;
+    background: #dedee5;
     border-radius: 3px;
   }
 
@@ -325,7 +325,7 @@
   /* --- Loading Shimmer --- */
   .loading-placeholder {
     @apply h-[70px] rounded-2xl;
-    background: linear-gradient(90deg, #1E293B 25%, #273449 50%, #1E293B 75%);
+    background: linear-gradient(90deg, #f4f4f6 25%, #dedee5 50%, #f4f4f6 75%);
     background-size: 400px 100%;
     animation: shimmer 1.5s ease-in-out infinite;
   }

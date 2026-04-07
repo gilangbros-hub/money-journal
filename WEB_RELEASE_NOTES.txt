@@ -1,0 +1,62 @@
+========================================================================
+                      MONEY JOURNAL - WEB RELEASE NOTES
+========================================================================
+Project Evolution: Initial Build to Present
+------------------------------------------------------------------------
+
+VERSION 1.0.0 - THE FOUNDATION
+------------------------------
+*   Initial project setup with Node.js and Express.
+*   Database integration using MongoDB and Mongoose.
+*   Authentication system:
+    - User registration and login.
+    - Password encryption with bcrypt.
+    - Session-based authentication with express-session.
+*   Server-side rendering with Handlebars (HBS).
+*   Basic routing for Transactions, Budgets, and Profile.
+
+VERSION 1.1.0 - CORE FUNCTIONALITY
+----------------------------------
+*   Dashboard Implementation:
+    - Total Balance tracking.
+    - Visual spending summaries.
+*   Transaction Management:
+    - Create, Read, Update, and Delete (CRUD) for daily expenses.
+    - Categorization by Expense Type and Pocket Source.
+*   Budget Tracker:
+    - Monthly budget allocation per pocket.
+    - "Wife" role enforcement for budget modifications.
+    - Progress bars for tracking pocket spending vs. budget.
+
+VERSION 1.2.0 - "TROPIS NEON" UI OVERHAUL
+-----------------------------------------
+*   Stunning Design System Upgrade:
+    - Shift to "Neon Tropis" aesthetic (dark slate and vibrant purples).
+    - Premium glassmorphism effects and modern typography.
+*   Tailwind CSS Integration for responsive and sleek layouts.
+*   Interactive Components:
+    - Dynamic Pie Charts (Chart.js) for budget visualization.
+    - Premium transitions and micro-animations for cards and buttons.
+*   Improved Mobile Responsiveness for all web views.
+
+VERSION 1.3.0 - ADVANCED FEATURES (CURRENT)
+-------------------------------------------
+*   Smart Month-Level Budget Closure:
+    - Ability for "Wife" users to lock entire budget months.
+    - Server-side rejection of transactions/edits for closed months.
+    - Visual "Locked" banners and dimmed states for closed data.
+*   Enhanced Post-Submission Flow:
+    - Interactive success modals after transaction save.
+    - Quick-action buttons: "Add Another" or "Go to Dashboard".
+    - Streak tracking and motivational "celebration" messages.
+*   Robustness & Fixes:
+    - Improved date/time handling (ISO formatting).
+    - Hardened API endpoints for mobile parity.
+    - Refined navigation with modern Sidebar and Bottom Navigation.
+
+------------------------------------------------------------------------
+TECH STACK SUMMARY
+- Backend: Node.js, Express, MongoDB, Mongoose
+- Frontend: Handlebars, Tailwind CSS, Vanilla JS, Chart.js
+- Deployment: Vercel, Git
+========================================================================
