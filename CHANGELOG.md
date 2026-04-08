@@ -4,6 +4,19 @@ All notable changes to the **Money Journal** app are documented here, from the f
 
 ---
 
+## [2026-04-08]
+
+### Changed
+- **Mobile App**: Completely overhauled styling to a clean, white/light minimalistic card design (zero shadows, unified typography, minimal `#E2E8F0` borders).
+- **Mobile Add Transaction**: Redesigned as a single white card with bottom-sheet (LOV) menus for category and pocket selections.
+- **Mobile UI Elements**: Replaced background styling panels with flat white/dock-style navigation and standalone floating pill buttons.
+
+### Commits
+| Hash | Description |
+|------|-------------|
+| *(pending)* | style: overhaul mobile UI to clean light minimalist card design |
+
+---
 ## [2026-03-01]
 
 ### Fixed

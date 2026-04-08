@@ -97,20 +97,19 @@
 - Backend supports both via `type` and `pocket` query params on `GET /api/transactions`.
 
 ### 6. Mobile Card System Direction
-- The mobile app is moving toward a compact, colorful, card-first design language.
-- Each major screen uses clearly differentiated section cards with softer shadows, tighter spacing, and stronger visual hierarchy.
-- Cards should feel compact and deliberate rather than like tall generic panels.
+- The mobile app emphasizes a clean, white/light minimalist card design language.
+- Each major screen uses white cards with zero shadows, using thin (#E2E8F0) borders and clear spacing for visual hierarchy.
+- Backgrounds are near-white (#F8FAFC), and all main text uses a dark palette.
 
 ### 7. Mobile Add Transaction Direction
-- The mobile Add Transaction screen now uses a card-centric interaction model.
-- The main transaction card supports inline editing for description and amount, opens a bottom sheet for category selection, and uses an accordion for timing and budget controls.
-- Expense types and pockets are embedded as chip selectors inside the main card instead of being separate page sections.
-- The primary save action sits in a sticky footer above the safe area for easier reach.
+- The mobile Add Transaction screen uses a single, minimal white card to house the entire form.
+- Category and pocket selections use bottom-sheet List of Values (LOVs) instead of inline/horizontal scroller chips.
+- The primary save action is a single floating pill button without any underlying background panel.
 
 ### 8. Dashboard & Budget Direction
-- Dashboard now uses compact colorful cards to separate total spending, category pulse, and recent transactions.
-- Budget now uses compact colorful cards for month status, total budget summary, and each pocket allocation.
-- Visual consistency across mobile screens is now centered around rounded elevated cards, compact spacing, and restrained shadows.
+- Dashboard and Budget screens use minimal white cards with clear typography.
+- Tab bar is flat, white, and docked to the bottom. The FAB is a simple, shadow-free circular button.
+- Restrained visual language: single accent colors used mostly as indicators (progress bars, status rings).
 
 ---
 
@@ -132,13 +131,14 @@
 13. Redesigned the mobile Add Transaction screen into an amount-first layout with a blue hero stage, horizontal selector rails, and a sticky save footer
 14. Refactored the mobile Add Transaction screen into a card-centric inline-editing flow with an in-screen category sheet and accordion details
 15. Unified the mobile Dashboard, Budget, and navigation taskbar around a compact colorful card system with a floating dock-style tab bar
+16. Completely overhauled the mobile app's styling to a **clean, white/light minimalistic card design** (removing Tropis Neon theme on mobile, zero shadows, LOV selections, pill buttons, flat navigators).
 
 ### Known Issues / Potential Improvements
 - OTA updates may not always apply immediately on older APK builds; user sometimes needs a new APK.
 - The `cli.appVersionSource` field in `eas.json` should be configured per Expo's upcoming requirement.
 - Expo package versions currently show minor SDK mismatch warnings in `expo-doctor` (`expo`, `expo-status-bar`, `expo-updates`, `react-native`, `react-native-svg`).
 - No edit functionality for existing transactions in the mobile app (only delete).
-- No dark/light mode toggle (currently dark-only).
+- No dark/light mode toggle (web is dark-only, mobile is light-only).
 
 ---
 

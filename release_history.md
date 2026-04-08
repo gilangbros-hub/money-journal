@@ -111,6 +111,7 @@
 | 16 | `f05a277` | feat: redesign mobile add transaction screen |
 | 17 | `ff28208` | feat: refactor add transaction to card-centric flow |
 | 18 | `a0e86f5` | style: unify mobile cards and floating nav polish |
+| 19 | *(pending)* | style: overhaul mobile UI to clean light minimalist card design |
 
 ---
 

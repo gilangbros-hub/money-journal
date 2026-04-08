@@ -2,7 +2,7 @@
 
 > **Objective**: Transform the mobile Add Transaction screen into a unified card-driven interface where all interactions happen inline inside cards.
 > **Target Screen**: `mobile-app/src/screens/AddTransactionScreen.js`
-> **Design Direction**: Keep the dark Money Journal theme and blue gradient hero energy, but replace the current multi-section layout with an editable card-centric flow.
+> **Design Direction**: Adopt the clean light minimalist card design, but replace the current multi-section layout with an editable card-centric flow.
 
 ---
 
@@ -19,7 +19,7 @@
 
 ### 1. Screen Container
 
-- Use a scrollable dark background with 16-20px horizontal padding.
+- Use a scrollable near-white background (#F8FAFC) with 16-20px horizontal padding.
 - Keep the current header and sticky bottom CTA.
 - Reserve enough bottom padding so content never hides behind the sticky save button.
 
@@ -71,7 +71,7 @@ Create reusable local components inside the screen file first, then extract only
 
 ### `CardContainer`
 
-- Shared rounded dark card shell
+- Shared rounded white card shell (#FFFFFF)
 - Supports gradient or solid variants
 - Applies border, soft shadow, and active ring states
 
@@ -214,7 +214,7 @@ Inside the transaction card:
 
 ## Visual Design Rules
 
-- Maintain dark theme with the existing blue gradient card as the main visual anchor.
+- Maintain clean white/light theme with a single minimal white card as the main visual anchor.
 - Use one strong card instead of multiple equally weighted sections.
 - Rounded corners should stay soft and premium: 24-32px on the main card, 16-20px on embedded elements.
 - Use subtle shadows, not neon glow overload.
@@ -287,7 +287,7 @@ Optional polish after core refactor:
 - Amount editing is inline and no longer uses a separate amount-edit section.
 - Expense type and pocket source are embedded chip selectors inside the card.
 - Timing and budget controls live inside a collapsible section in the card.
-- The screen keeps the dark theme and blue card identity.
+- The screen uses the clean, lightweight, minimal white card identity.
 - Saving a transaction still hits the existing endpoint with the existing payload.
 - Closed months remain disabled and visually obvious.
 
@@ -295,6 +295,6 @@ Optional polish after core refactor:
 
 ## Notes for Implementation
 
-- The current screen already has good base assets: dark theme tokens, blue highlight palette, sticky save CTA, and modal flow. Reuse those instead of redesigning from zero.
+- The current screen already has good base assets which we will adapt: light theme tokens, single floating pill sticky save CTA, and modal flow.
 - If a bottom sheet library is not already installed, implement a lightweight in-screen modal sheet first instead of adding a heavy new dependency.
 - Keep the refactor self-contained to `AddTransactionScreen.js` unless a reusable component clearly benefits the rest of the mobile app.
