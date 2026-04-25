@@ -7,7 +7,7 @@
 </head>
 
 <body>
-    <div class="page-container transaction-page">
+    <div class="page-container">
         <!-- Header -->
         <header class="app-header">
             <h1 class="page-title">📝 Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
@@ -142,13 +142,11 @@
                 <input type="datetime-local" id="date" name="date" required class="input-dark">
             </div>
 
-            <!-- Bottom anchored submit -->
-            <div class="transaction-submit-dock">
-                <div class="transaction-submit-wrap">
-                    <button type="submit" class="transaction-submit-btn" id="submitBtn">
-                        Save Transaction
-                    </button>
-                </div>
+            <!-- Save directly under date/time -->
+            <div class="mb-7">
+                <button type="submit" class="transaction-save-btn" id="submitBtn">
+                    Save Transaction
+                </button>
             </div>
         </form>
     </div>
@@ -170,8 +168,6 @@
     <script src="/js/common.js"></script>
     <script src="/js/confetti.js"></script>
     <script src="/js/transaction.js"></script>
-
-    {{> actionHub}}
 </body>
 
 </html>

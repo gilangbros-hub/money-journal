@@ -60,7 +60,7 @@ module.exports = {
         "gradient-danger": "linear-gradient(135deg, #f44028 0%, #b83422 100%)",
         "gradient-success": "linear-gradient(135deg, #1f4f92 0%, #163a6f 100%)",
         "gradient-card": "linear-gradient(135deg, #f6f1e7 0%, #efe7d8 100%)",
-        "gradient-cta": "linear-gradient(135deg, #7b3cf1 0%, #5a21d1 100%)",
+        "gradient-cta": "linear-gradient(135deg, #1f4f92 0%, #183f75 100%)",
       },
       borderRadius: {
         "xl": "12px",
