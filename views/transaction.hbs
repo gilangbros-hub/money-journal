@@ -6,11 +6,10 @@
     <title>Add Transaction</title>
 </head>
 
-<body>
-    <div class="page-container">
-        <!-- Header -->
-        <header class="app-header">
-            <h1 class="page-title">📝 Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
+<body class="transaction-screen">
+    <div class="page-container transaction-layout">
+        <header class="app-header transaction-header">
+            <h1 class="page-title transaction-title">Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
             <div class="user-info" onclick="toggleMenu()">
                 <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
                 <span class="text-[28px]">{{avatar}}</span>
@@ -22,144 +21,142 @@
         </header>
 
         <input type="hidden" id="currentUsername" value="{{username}}">
+
         <form id="transactionForm">
             <input type="hidden" id="transactionId" name="transactionId">
 
-            <!-- 1. Expense Type -->
-            <div class="mb-7">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🏷️</span> Expense Type</div>
-                <div class="option-grid">
-                    {{!-- prettier-ignore --}}
-                    {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang
-                    Sampah,Uang Keamanan,Medicine,Others")}}
-                    <label>
-                        <input type="radio" name="type" value="{{this}}" class="option-input" required>
-                        <div class="icon-btn">
-                            <span class="text-[28px] mb-1.5">{{getEmoji this}}</span>
-                            <span class="text-[11px] font-semibold text-center text-text-secondary">{{this}}</span>
+            <div class="transaction-shell">
+                <section class="transaction-counter">
+                    <p class="transaction-counter-label">Amount</p>
+                    <p class="transaction-counter-currency">Rp</p>
+                    <input type="number" id="amount" name="amount" placeholder="0" required class="transaction-counter-input">
+                </section>
+
+                <section class="transaction-section">
+                    <label class="transaction-field-label" for="ngapain">Description</label>
+                    <input type="text" id="ngapain" name="ngapain" placeholder="What did you spend on?" required class="transaction-note-input">
+                </section>
+
+                <section class="transaction-section transaction-rows">
+                    <button type="button" class="transaction-row" id="categoryTrigger">
+                        <span class="transaction-row-label">Category</span>
+                        <span class="transaction-row-value" id="selectedTypeDisplay">Eat</span>
+                    </button>
+
+                    <div class="transaction-mode-toggle">
+                        <label class="transaction-mode-pill">
+                            <input type="radio" name="sourceType" value="single" checked id="sourceTypeSingle">
+                            <span>Single Pocket</span>
+                        </label>
+                        <label class="transaction-mode-pill">
+                            <input type="radio" name="sourceType" value="multi" id="sourceTypeMulti">
+                            <span>Multi Pocket</span>
+                        </label>
+                    </div>
+
+                    <button type="button" class="transaction-row" id="pocketTrigger">
+                        <span class="transaction-row-label">Pocket</span>
+                        <span class="transaction-row-value" id="selectedPocketDisplay">Kwintals</span>
+                    </button>
+
+                    <div class="transaction-breakdown-panel" id="multiPocketSection" style="display:none;">
+                        <div class="transaction-breakdown-head">
+                            <span>Pocket Breakdown</span>
+                            <button type="button" class="transaction-breakdown-add" id="addPocketBtn" onclick="addBreakdownRow()">Add Pocket</button>
                         </div>
-                    </label>
-                    {{/each}}
-                </div>
-            </div>
-
-            <!-- 2. Notes -->
-            <div class="mb-7">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>📝</span> Description</div>
-                <input type="text" id="ngapain" name="ngapain" placeholder="What did you buy?" required class="input-dark">
-            </div>
-
-            <!-- 3. Amount -->
-            <div class="mb-7">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>💵</span> Amount</div>
-                <div class="bg-bg-secondary p-5 rounded-2xl border border-border">
-                    <div class="relative flex items-center">
-                        <span class="font-extrabold text-primary text-2xl mr-2">Rp</span>
-                        <input type="number" id="amount" name="amount" placeholder="0" required
-                            class="bg-transparent border-none text-[32px] font-extrabold text-text-primary p-0 h-auto w-full focus:outline-none focus:ring-0">
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Source Type -->
-            <div class="mb-7">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🔀</span> Source Type</div>
-                <div class="source-type-toggle">
-                    <label>
-                        <input type="radio" name="sourceType" value="single" checked id="sourceTypeSingle">
-                        <div class="source-type-option">
-                            <span>👛</span> Single Pocket
+                        <div class="breakdown-container" id="breakdownRows"></div>
+                        <div class="breakdown-total mt-4" id="breakdownTotalCard">
+                            <div class="breakdown-total-row mb-2">
+                                <span class="label">Allocated</span>
+                                <span class="value" id="allocatedTotal">Rp 0</span>
+                            </div>
+                            <div class="breakdown-total-row mb-2">
+                                <span class="label">Transaction Amount</span>
+                                <span class="value" id="transactionAmountDisplay">Rp 0</span>
+                            </div>
+                            <div class="breakdown-total-row">
+                                <span class="label">Difference</span>
+                                <span class="value" id="differenceDisplay">Rp 0</span>
+                            </div>
+                            <div class="breakdown-progress">
+                                <div class="breakdown-progress-fill" id="breakdownProgressFill" style="width: 0%"></div>
+                            </div>
                         </div>
-                    </label>
-                    <label>
-                        <input type="radio" name="sourceType" value="multi" id="sourceTypeMulti">
-                        <div class="source-type-option">
-                            <span>🔀</span> Multi Pocket
-                        </div>
-                    </label>
-                </div>
-            </div>
-
-            <!-- 5a. Pocket (Single Mode) -->
-            <div class="mb-7" id="singlePocketSection">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>👛</span> Pocket Source</div>
-                <div class="option-grid">
-                    {{!-- prettier-ignore --}}
-                    {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend
-                    Transport,Investasi,Bandung,Sedeqah,IPL")}}
-                    <label>
-                        <input type="radio" name="pocket" value="{{this}}" class="option-input">
-                        <div class="icon-btn">
-                            <span class="text-[28px] mb-1.5">{{getPocketEmoji this}}</span>
-                            <span class="text-[11px] font-semibold text-center text-text-secondary">{{this}}</span>
-                        </div>
-                    </label>
-                    {{/each}}
-                </div>
-            </div>
-
-            <!-- 5b. Pocket (Multi Mode) -->
-            <div class="mb-7" id="multiPocketSection" style="display:none;">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🔀</span> Pocket Breakdown</div>
-                <div class="breakdown-container" id="breakdownRows">
-                    <!-- Dynamic rows inserted by JS -->
-                </div>
-                <button type="button" class="add-pocket-btn mt-3" id="addPocketBtn" onclick="addBreakdownRow()">
-                    <span>➕</span> Add Pocket
-                </button>
-
-                <!-- Running Total -->
-                <div class="breakdown-total mt-4" id="breakdownTotalCard">
-                    <div class="breakdown-total-row mb-2">
-                        <span class="label">Allocated</span>
-                        <span class="value" id="allocatedTotal">Rp 0</span>
                     </div>
-                    <div class="breakdown-total-row mb-2">
-                        <span class="label">Transaction Amount</span>
-                        <span class="value" id="transactionAmountDisplay">Rp 0</span>
+
+                    <div id="singlePocketSection" style="display:none;">
+                        {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Bandung,Sedeqah,IPL")}}
+                        <input type="radio" name="pocket" value="{{this}}" class="option-input pocket-hidden-input" data-pocket-label="{{this}}">
+                        {{/each}}
                     </div>
-                    <div class="breakdown-total-row">
-                        <span class="label">Difference</span>
-                        <span class="value" id="differenceDisplay">Rp 0</span>
+
+                    <button type="button" class="transaction-row" id="dateTrigger">
+                        <span class="transaction-row-label">Date & Time</span>
+                        <span class="transaction-row-value" id="dateDisplay">25 Apr · 10:06 PM</span>
+                    </button>
+
+                    <div class="transaction-budget-month">
+                        <p class="transaction-field-label">Budget Month</p>
+                        <div class="transaction-budget-options" id="budgetMonthOptions"></div>
+                        <select id="budgetMonth" name="budgetMonth" required class="sr-only"></select>
                     </div>
-                    <div class="breakdown-progress">
-                        <div class="breakdown-progress-fill" id="breakdownProgressFill" style="width: 0%"></div>
-                    </div>
-                </div>
+                </section>
+
+                <button type="submit" class="transaction-save-btn" id="submitBtn">Save Transaction</button>
             </div>
 
-            <!-- 5. Budget Month -->
-            <div class="mb-7">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🗓️</span> Budget Month</div>
-                <select id="budgetMonth" name="budgetMonth" class="input-dark appearance-none cursor-pointer font-semibold" required
-                    style="background-image: url(&quot;data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e&quot;); background-repeat: no-repeat; background-position: right 16px center; background-size: 16px; padding-right: 40px;">
-                </select>
-            </div>
+            <input type="datetime-local" id="date" name="date" required class="sr-only">
 
-            <!-- 6. Date Time -->
-            <div class="mb-7">
-                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>📅</span> Date & Time</div>
-                <input type="datetime-local" id="date" name="date" required class="input-dark">
-            </div>
-
-            <!-- Save directly under date/time -->
-            <div class="mb-7">
-                <button type="submit" class="transaction-save-btn" id="submitBtn">
-                    Save Transaction
-                </button>
+            <div class="transaction-hidden-types" aria-hidden="true">
+                {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}
+                <input type="radio" name="type" value="{{this}}" class="option-input type-hidden-input" data-type-label="{{this}}" required>
+                {{/each}}
             </div>
         </form>
     </div>
 
-    <!-- Success Modal -->
-    <div id="successModal" class="modal-overlay">
+    <div class="picker-sheet-overlay" id="typeSheet">
+        <div class="picker-sheet-card">
+            <div class="picker-sheet-head">
+                <h3>Expense Type</h3>
+                <button type="button" class="picker-sheet-close" data-close-sheet="typeSheet">Close</button>
+            </div>
+            <div class="picker-grid">
+                {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}
+                <button type="button" class="picker-grid-item" data-type-option="{{this}}">
+                    <span class="picker-grid-icon">{{getEmoji this}}</span>
+                    <span>{{this}}</span>
+                </button>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+
+    <div class="picker-sheet-overlay" id="pocketSheet">
+        <div class="picker-sheet-card">
+            <div class="picker-sheet-head">
+                <h3>Pocket Source</h3>
+                <button type="button" class="picker-sheet-close" data-close-sheet="pocketSheet">Close</button>
+            </div>
+            <div class="picker-grid">
+                {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Bandung,Sedeqah,IPL")}}
+                <button type="button" class="picker-grid-item" data-pocket-option="{{this}}">
+                    <span class="picker-grid-icon">{{getPocketEmoji this}}</span>
+                    <span>{{this}}</span>
+                </button>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+
+        <div id="successModal" class="modal-overlay">
         <div class="modal-card text-center">
-            <div class="text-5xl mb-4" id="successEmoji">🎉</div>
+            <div class="text-5xl mb-4" id="successEmoji">Saved</div>
             <h3 class="text-xl font-bold text-text-primary mb-2">Transaction Saved!</h3>
             <p class="text-sm text-text-secondary mb-6" id="successMessage">Great job tracking your expenses!</p>
             <div class="flex flex-col gap-3">
-                <button class="btn-neon w-full h-12" onclick="addAnother()">➕ Add Another Transaction</button>
-                <button class="btn-ghost w-full h-12" onclick="window.location.href='/transactions'">🏠 Go to Transactions</button>
+                <button class="btn-neon w-full h-12" onclick="addAnother()">Add Another</button>
+                <button class="btn-ghost w-full h-12" onclick="window.location.href='/transactions'">Go to Transactions</button>
             </div>
         </div>
     </div>
