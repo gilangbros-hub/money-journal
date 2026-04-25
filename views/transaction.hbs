@@ -7,7 +7,7 @@
 </head>
 
 <body>
-    <div class="page-container" style="padding-bottom: 160px;">
+    <div class="page-container transaction-page">
         <!-- Header -->
         <header class="app-header">
             <h1 class="page-title">📝 Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
@@ -142,11 +142,13 @@
                 <input type="datetime-local" id="date" name="date" required class="input-dark">
             </div>
 
-            <!-- Sticky Submit Button -->
-            <div class="fixed bottom-[104px] left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-w-[460px] z-[100]">
-                <button type="submit" class="btn-neon w-full h-14" id="submitBtn">
-                    Save Transaction
-                </button>
+            <!-- Bottom anchored submit -->
+            <div class="transaction-submit-dock">
+                <div class="transaction-submit-wrap">
+                    <button type="submit" class="transaction-submit-btn" id="submitBtn">
+                        Save Transaction
+                    </button>
+                </div>
             </div>
         </form>
     </div>

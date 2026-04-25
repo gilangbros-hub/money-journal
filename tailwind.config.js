@@ -10,57 +10,57 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#7132f5",
-          dark: "#5741d8",
-          deep: "#5b1ecf",
-          subtle: "rgba(133,91,251,0.16)",
+          DEFAULT: "#1f4f92",
+          dark: "#183f75",
+          deep: "#163a6f",
+          subtle: "rgba(31,79,146,0.14)",
         },
         bg: {
-          DEFAULT: "#ffffff",
-          secondary: "#ffffff",
-          tertiary: "#f8f9fa",
-          overlay: "rgba(16, 17, 20, 0.4)",
+          DEFAULT: "#e5ddcd",
+          secondary: "#f6f1e7",
+          tertiary: "#efe7d8",
+          overlay: "rgba(18, 25, 43, 0.45)",
         },
         text: {
-          primary: "#101114",
-          secondary: "#686b82",
-          muted: "#9497a9",
+          primary: "#17213a",
+          secondary: "#4a5473",
+          muted: "#7d879e",
           inverse: "#ffffff",
         },
         border: {
-          DEFAULT: "#dedee5",
-          light: "#dedee5",
-          subtle: "#f4f4f6",
+          DEFAULT: "#d3c8b5",
+          light: "#d3c8b5",
+          subtle: "#ece3d4",
         },
         semantic: {
           success: {
-            DEFAULT: "#149e61",
-            bg: "rgba(20,158,97,0.16)",
-            text: "#026b3f"
+            DEFAULT: "#1f4f92",
+            bg: "rgba(31,79,146,0.12)",
+            text: "#163a6f"
           },
           neutral: {
-            bg: "rgba(104,107,130,0.12)",
-            text: "#484b5e"
+            bg: "rgba(23,33,58,0.08)",
+            text: "#35405b"
           },
           danger: {
-            DEFAULT: "#e3342f",
-            bg: "#fee2e2",
-            text: "#b91c1c"
+            DEFAULT: "#f44028",
+            bg: "#fde3dc",
+            text: "#b83422"
           }
         },
         // We set legacy token names pointing to standard gray to prevent crash before full refactor
-        coral: { DEFAULT: "#e3342f", light: "#fee2e2", dark: "#b91c1c", glow: "#fee2e2" },
-        lime: { DEFAULT: "#149e61", light: "#d1fae5", dark: "#026b3f", glow: "#d1fae5" },
-        cyan: { DEFAULT: "#686b82", light: "#9497a9", dark: "#101114", glow: "#f8f9fa" },
-        amber: { DEFAULT: "#686b82", light: "#9497a9", dark: "#101114", glow: "#f8f9fa" },
+        coral: { DEFAULT: "#f44028", light: "#fde3dc", dark: "#b83422", glow: "#fde3dc" },
+        lime: { DEFAULT: "#1f4f92", light: "#d7e3f6", dark: "#163a6f", glow: "#d7e3f6" },
+        cyan: { DEFAULT: "#1f4f92", light: "#d7e3f6", dark: "#163a6f", glow: "#d7e3f6" },
+        amber: { DEFAULT: "#f8b11b", light: "#fdf0cc", dark: "#b68011", glow: "#fdf0cc" },
       },
       backgroundImage: {
-        "gradient-hero": "linear-gradient(135deg, #7132f5 0%, #5b1ecf 100%)",
-        "gradient-primary": "linear-gradient(135deg, #7132f5 0%, #5741d8 100%)",
-        "gradient-danger": "linear-gradient(135deg, #e3342f 0%, #b91c1c 100%)",
-        "gradient-success": "linear-gradient(135deg, #149e61 0%, #026b3f 100%)",
-        "gradient-card": "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)",
-        "gradient-cta": "linear-gradient(135deg, #7132f5 0%, #5b1ecf 100%)",
+        "gradient-hero": "linear-gradient(135deg, #1f4f92 0%, #183f75 100%)",
+        "gradient-primary": "linear-gradient(135deg, #1f4f92 0%, #183f75 100%)",
+        "gradient-danger": "linear-gradient(135deg, #f44028 0%, #b83422 100%)",
+        "gradient-success": "linear-gradient(135deg, #1f4f92 0%, #163a6f 100%)",
+        "gradient-card": "linear-gradient(135deg, #f6f1e7 0%, #efe7d8 100%)",
+        "gradient-cta": "linear-gradient(135deg, #7b3cf1 0%, #5a21d1 100%)",
       },
       borderRadius: {
         "xl": "12px",
@@ -80,8 +80,8 @@ module.exports = {
         "micro": "rgba(16,24,40,0.04) 0px 1px 4px",
       },
       fontFamily: {
-        brand: ["Kraken-Brand", "IBM Plex Sans", "Helvetica", "Arial", "sans-serif"],
-        sans: ["Kraken-Product", "Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
+        brand: ["Newsreader", "Georgia", "serif"],
+        sans: ["Manrope", "IBM Plex Sans", "Helvetica Neue", "Helvetica", "Arial", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace"],
       },
       fontSize: {
