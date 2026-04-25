@@ -21,7 +21,7 @@ const isEditableMonth = (month, year) => {
 
 // GET /budget - Render budget page
 exports.getBudgetPage = (req, res) => {
-    res.render('budget', {
+    res.render('check-pockets', {
         username: req.session.username,
         avatar: req.session.avatar || '👤',
         role: req.session.role,

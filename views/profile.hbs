@@ -7,49 +7,59 @@
 </head>
 
 <body>
-    <header class="bg-bg-secondary border-b border-border p-3 px-5 flex justify-between items-center sticky top-0 z-[1000]">
-        <div class="flex items-center gap-2">
-            <a href="/transaction" class="text-text-secondary no-underline flex items-center p-0 px-2">
-                <span class="material-symbols-outlined">arrow_back</span>
-            </a>
-            <h1 class="text-[19px] font-bold text-text-primary m-0">Edit Profile</h1>
-        </div>
-    </header>
+    <div class="page-container journal-shell">
+        <!-- Header -->
+        <header class="app-header">
+            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
+                <p class="journal-eyebrow"><a href="/monthly-story" style="color: inherit; text-decoration: none;">← Back</a></p>
+                <h1 class="page-title page-title-ledger">Edit Profile</h1>
+            </div>
+            <div class="user-info" onclick="toggleMenu()">
+                <span class="text-sm font-semibold" style="color: var(--journal-soft-ink);">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
+            </div>
+            <div id="userMenu" class="user-menu" style="background: var(--journal-panel); border: 1px solid var(--journal-line);">
+                <a href="/profile" style="color: var(--journal-ink);">Edit Profile</a>
+                <a href="/logout" class="logout" style="color: var(--journal-danger);">Logout</a>
+            </div>
+        </header>
 
-    <div class="page-container">
-        <form action="/profile" method="POST">
-            <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3">CHOOSE AVATAR</div>
+        <form action="/profile" method="POST" class="journal-surface" style="padding: 24px;">
+            <div class="journal-metric-label mb-3" style="font-size: 11px;">CHOOSE AVATAR</div>
             <div class="grid grid-cols-4 gap-3 mb-6">
                 {{#each (split "👨‍💼,👩‍💼,🧑‍💻,🦸‍♂️,🦹‍♀️,🧙‍♂️,🧛‍♂️,🧟‍♂️,🐱,🐶,🦊,🐻")}}
                 <label>
                     <input type="radio" name="avatar" value="{{this}}" class="hidden peer" {{#if (eq ../currentAvatar
                         this)}}checked{{/if}}>
-                    <div class="cursor-pointer border-2 border-transparent rounded-full p-1 text-center text-[32px] bg-bg-secondary transition-all duration-200 peer-checked:border-primary peer-checked:bg-primary/15 peer-checked:scale-110">{{this}}</div>
+                    <div class="cursor-pointer border-[1.5px] rounded-full p-1 text-center text-[32px] bg-white transition-all duration-200 peer-checked:border-[var(--journal-accent)] peer-checked:bg-[var(--journal-accent-soft)] peer-checked:scale-110 shadow-sm" style="border-color: var(--journal-line);">{{this}}</div>
                 </label>
                 {{/each}}
             </div>
 
-            <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3">CHOOSE ROLE</div>
+            <div class="journal-metric-label mb-3" style="font-size: 11px;">CHOOSE ROLE</div>
             <div class="flex items-center gap-2 mb-6">
                 {{#each (split "Husband,Wife,Self")}}
                 <label class="flex-1">
                     <input type="radio" name="role" value="{{this}}" class="hidden peer" {{#if (eq ../currentRole
                         this)}}checked{{/if}}>
-                    <div class="cursor-pointer border-2 border-transparent rounded-xl p-3 text-center text-base font-semibold bg-bg-secondary transition-all duration-200 text-text-secondary peer-checked:border-primary peer-checked:bg-primary/15 peer-checked:text-primary">{{this}}</div>
+                    <div class="cursor-pointer border-[1.5px] rounded-xl p-3 text-center text-sm font-bold bg-white transition-all duration-200 text-[var(--journal-soft-ink)] peer-checked:border-[var(--journal-accent)] peer-checked:bg-[var(--journal-accent-soft)] peer-checked:text-[var(--journal-ink)] shadow-sm" style="border-color: var(--journal-line);">{{this}}</div>
                 </label>
                 {{/each}}
             </div>
 
             <div class="mb-6">
-                <label for="username" class="block text-[13px] font-medium text-text-secondary mb-1.5">Username</label>
-                <input type="text" id="username" name="username" value="{{username}}" required class="input-dark">
+                <label for="username" class="transaction-field-label">Username</label>
+                <input type="text" id="username" name="username" value="{{username}}" required class="transaction-note-input">
             </div>
 
-            <button type="submit" class="btn-neon h-[50px]">
+            <button type="submit" class="transaction-save-btn" style="margin-top: 10px;">
                 Save Changes
             </button>
         </form>
     </div>
+    
+    {{> actionHub}}
+    <script src="/js/common.js"></script>
 </body>
 
 </html>

@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const backBtn = document.getElementById('backBtn');
     if (backBtn) {
-        backBtn.href = '/transactions';
+        backBtn.href = '/monthly-story';
     }
 
     buildFilterPills();

@@ -3,31 +3,34 @@
 
 <head>
     {{> head}}
-    <title>Pocket Budget</title>
+    <title>Check Pockets</title>
 </head>
 
 <body>
-    <div class="page-container">
+    <div class="page-container journal-shell">
         <!-- Header -->
         <header class="app-header">
-            <h1 class="page-title">💰 Pocket Budget</h1>
+            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
+                <p class="journal-eyebrow"><a href="/monthly-story" style="color: inherit; text-decoration: none;">← Back</a></p>
+                <h1 class="page-title page-title-ledger">Check Pockets</h1>
+            </div>
             <div class="user-info" onclick="toggleMenu()">
-                <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
+                <span class="text-sm font-semibold" style="color: var(--journal-soft-ink);">{{username}}</span>
                 <span class="text-[28px]">{{avatar}}</span>
             </div>
-            <div id="userMenu" class="user-menu">
-                <a href="/profile">Edit Profile</a>
-                <a href="/logout" class="logout">Logout</a>
+            <div id="userMenu" class="user-menu" style="background: var(--journal-panel); border: 1px solid var(--journal-line);">
+                <a href="/profile" style="color: var(--journal-ink);">Edit Profile</a>
+                <a href="/logout" class="logout" style="color: var(--journal-danger);">Logout</a>
             </div>
         </header>
 
         <!-- Month Selector -->
-        <div class="flex items-center justify-center gap-4 mb-5 bg-bg-secondary p-3 rounded-2xl shadow-card border border-border/50">
-            <button class="bg-bg-tertiary border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-border text-text-secondary" id="prevMonth">
+        <div class="journal-hero-card flex items-center justify-center gap-4 mb-5 p-4 rounded-2xl">
+            <button class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="prevMonth">
                 <span class="material-symbols-outlined">chevron_left</span>
             </button>
-            <div class="text-lg font-bold text-text-primary min-w-[160px] text-center" id="currentMonth">Februari 2026</div>
-            <button class="bg-bg-tertiary border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-border text-text-secondary" id="nextMonth">
+            <div class="text-lg font-bold text-white min-w-[160px] text-center" id="currentMonth">Februari 2026</div>
+            <button class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="nextMonth">
                 <span class="material-symbols-outlined">chevron_right</span>
             </button>
         </div>
@@ -40,36 +43,36 @@
         {{/unless}}
 
         <!-- Financial Health Summary — Pie Chart -->
-        <div class="bg-bg-secondary rounded-2xl p-5 mb-6 shadow-card border border-border/50" id="healthCard">
+        <div class="journal-hero-card" id="healthCard">
             <div class="relative w-full max-w-[220px] mx-auto mb-4">
                 <canvas id="budgetPieChart"></canvas>
             </div>
             <div class="text-center mt-2">
-                <span class="text-xs text-text-secondary block">Total Budget</span>
-                <span class="text-[22px] font-extrabold text-text-primary block" id="totalBudgetDisplay">Rp 0</span>
+                <span class="journal-total-label block m-0">Total Budget</span>
+                <span class="journal-total-amount block" id="totalBudgetDisplay" style="font-size: 1.8rem; margin-bottom: 0;">Rp 0</span>
             </div>
-            <div class="flex justify-between mt-3">
+            <div class="flex justify-between mt-5 px-2">
                 <div class="flex flex-col items-center">
-                    <span class="text-xs text-text-muted mb-1">Spent</span>
-                    <span class="text-sm font-bold text-coral" id="totalSpentDisplay">Rp 0</span>
+                    <span class="journal-metric-label mb-1" style="color: #b7bdd0;">Spent</span>
+                    <span class="journal-metric-value" style="color: #fca5a5;" id="totalSpentDisplay">Rp 0</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <span class="text-xs text-text-muted mb-1">Remaining</span>
-                    <span class="text-sm font-bold text-lime" id="totalRemainingDisplay">Rp 0</span>
+                    <span class="journal-metric-label mb-1" style="color: #b7bdd0;">Remaining</span>
+                    <span class="journal-metric-value" style="color: #bef264;" id="totalRemainingDisplay">Rp 0</span>
                 </div>
             </div>
         </div>
 
         <!-- Budget List -->
         <div class="section-header">
-            <h2 class="section-title">Pocket Breakdown</h2>
+            <h2 class="section-title" style="color: var(--journal-ink);">Pocket Breakdown</h2>
         </div>
-        <div class="flex flex-col gap-2.5 mb-4" id="budgetList">
-            <p class="text-center text-text-muted py-5">Loading budgets...</p>
+        <div class="journal-group-rows mb-4" id="budgetList">
+            <p class="text-center py-5" style="color: var(--journal-soft-ink);">Loading budgets...</p>
         </div>
 
         <!-- History Button -->
-        <button class="btn-ghost" onclick="showHistory()">
+        <button class="transaction-save-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;" onclick="showHistory()">
             <span class="material-symbols-outlined">history</span>
             View History
         </button>
@@ -113,7 +116,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/common.js"></script>
-    <script src="/js/budget.js"></script>
+    <script src="/js/check-pockets.js"></script>
 </body>
 
 </html>

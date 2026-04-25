@@ -182,7 +182,7 @@ function renderFeedRow(item) {
             <div class="journal-row-right">
                 <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(amount)}</p>
                 <div class="journal-row-actions">
-                    <a class="journal-action-link" href="/transaction?edit=${item._id}">Edit</a>
+                    <a class="journal-action-link" href="/log-spending?edit=${item._id}">Edit</a>
                     <button class="journal-action-link danger" type="button" onclick="openOptions('${item._id}', '${escapedNote}', ${amount})">Delete</button>
                 </div>
             </div>

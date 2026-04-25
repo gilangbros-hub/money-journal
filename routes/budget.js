@@ -14,7 +14,7 @@ const isAuthenticated = (req, res, next) => {
 router.use(isAuthenticated);
 
 // Page routes
-router.get('/budget', budgetController.getBudgetPage);
+router.get('/check-pockets', budgetController.getBudgetPage);
 
 // API routes
 router.get('/api/budget', budgetController.getBudgets);

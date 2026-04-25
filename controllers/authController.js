@@ -132,7 +132,7 @@ exports.getProfile = async (req, res) => {
             currentRole: user.role || 'Self'
         });
     } catch (error) {
-        res.redirect('/transaction');
+        res.redirect('/log-spending');
     }
 };
 
@@ -151,7 +151,7 @@ exports.postProfile = async (req, res) => {
         req.session.avatar = user.avatar;
         req.session.role = user.role;
 
-        res.redirect('/transaction');
+        res.redirect('/log-spending');
     } catch (error) {
         console.error('Profile update error:', error);
         res.redirect('/profile?error=Error updating profile');

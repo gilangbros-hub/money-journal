@@ -6,56 +6,56 @@
     <title>Money Journal - Login</title>
 </head>
 
-<body class="flex flex-col justify-center items-center min-h-screen bg-bg p-4 sm:p-8">
+<body class="flex flex-col justify-center items-center min-h-screen p-4 sm:p-8" style="background: radial-gradient(circle at top right, #efe6d5 0%, transparent 46%), var(--journal-bg);">
 
     <div class="w-full max-w-[400px] animate-fade-in">
         <!-- Header -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-bg-secondary border border-border/50 mb-6 shadow-glow-primary transition-transform hover:scale-105">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 transition-transform hover:scale-105" style="background: var(--journal-panel); border: 1px solid var(--journal-line); box-shadow: 0 8px 20px rgba(23, 33, 58, 0.06);">
                 <img src="/images/logo.png" alt="Money Journal Logo" class="w-10 h-10 object-contain rounded-xl">
             </div>
-            <h1 class="text-[26px] font-bold text-text-primary mb-2">Welcome Back</h1>
-            <p class="text-[15px] text-text-secondary">Sign in to your account</p>
+            <h1 class="page-title-ledger mb-2 text-center text-[28px]" style="color: var(--journal-ink); font-weight: 800;">Welcome Back</h1>
+            <p class="journal-metric-label" style="font-size: 12px;">SIGN IN TO YOUR ACCOUNT</p>
         </div>
 
         <!-- Form Card -->
-        <div class="bg-bg-secondary border border-border/50 rounded-3xl shadow-card p-6 sm:p-8">
-            <h2 class="text-xl font-bold text-text-primary mb-6">Sign In</h2>
+        <div class="journal-surface p-6 sm:p-8">
+            <h2 class="text-xl font-bold mb-6" style="color: var(--journal-ink);">Sign In</h2>
 
             {{#if error}}
-            <div class="bg-coral/10 text-coral p-3 rounded-xl text-sm mb-5 border border-coral/20 font-medium">{{error}}</div>
+            <div class="p-3 rounded-xl text-sm mb-5 font-medium" style="background: rgba(237, 63, 39, 0.12); color: var(--journal-danger); border: 1px solid rgba(237, 63, 39, 0.2);">{{error}}</div>
             {{/if}}
 
             {{#if success}}
-            <div class="bg-lime/10 text-lime p-3 rounded-xl text-sm mb-5 border border-lime/20 font-medium">{{success}}</div>
+            <div class="p-3 rounded-xl text-sm mb-5 font-medium" style="background: rgba(132, 204, 22, 0.12); color: #65a30d; border: 1px solid rgba(132, 204, 22, 0.2);">{{success}}</div>
             {{/if}}
 
             <form method="POST" action="/auth/login">
-                <div class="field-group mb-5">
-                    <label for="username" class="!text-sm !mb-2">Username</label>
+                <div class="mb-5">
+                    <label for="username" class="transaction-field-label">Username</label>
                     <div class="relative">
                         <input type="text" id="username" name="username" placeholder="your_username" required
-                            autocomplete="username" class="!py-3.5 !rounded-2xl">
+                            autocomplete="username" class="transaction-note-input !py-3.5 !rounded-2xl">
                     </div>
                 </div>
 
-                <div class="field-group mb-6">
-                    <label for="password" class="!text-sm !mb-2">Password</label>
+                <div class="mb-6">
+                    <label for="password" class="transaction-field-label">Password</label>
                     <div class="relative">
                         <input type="password" id="password" name="password" placeholder="••••••••" required
-                            autocomplete="current-password" class="!py-3.5 !rounded-2xl">
-                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer text-text-muted hover:text-text-primary flex items-center transition-colors" onclick="togglePw('password', this)"
+                            autocomplete="current-password" class="transaction-note-input !py-3.5 !rounded-2xl">
+                        <button type="button" class="absolute right-4 top-1/2 -translate-y-1/2 bg-transparent border-none cursor-pointer flex items-center transition-colors" style="color: var(--journal-soft-ink);" onclick="togglePw('password', this)"
                             aria-label="Toggle password">
                             <span class="material-symbols-outlined" style="font-size:20px;">visibility_off</span>
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn-neon h-14 w-full text-[15px]">Sign In</button>
+                <button type="submit" class="transaction-save-btn mt-2">Sign In</button>
             </form>
 
-            <div class="text-center mt-6 text-[14px] text-text-secondary">
-                I'm a new user. <a href="/register" class="text-primary font-bold no-underline hover:text-primary-light transition-colors">Register</a>
+            <div class="text-center mt-6 text-[14px]" style="color: var(--journal-soft-ink);">
+                I'm a new user. <a href="/register" class="font-bold no-underline transition-colors hover:opacity-80" style="color: var(--journal-accent);">Register</a>
             </div>
         </div>
     </div>

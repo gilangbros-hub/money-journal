@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{> head}}
+    <title>Review History</title>
+</head>
+
+<body>
+    <div class="page-container journal-shell">
+        <!-- Header -->
+        <header class="app-header">
+            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
+                <p class="journal-eyebrow"><a href="/monthly-story" style="color: inherit; text-decoration: none;">← Back</a></p>
+                <h1 class="page-title page-title-ledger">Review History</h1>
+            </div>
+            <div class="user-info" onclick="toggleMenu()">
+                <span class="text-sm font-semibold" style="color: var(--journal-soft-ink);">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
+            </div>
+            <div id="userMenu" class="user-menu" style="background: var(--journal-panel); border: 1px solid var(--journal-line);">
+                <a href="/profile" style="color: var(--journal-ink);">Edit Profile</a>
+                <a href="/logout" class="logout" style="color: var(--journal-danger);">Logout</a>
+            </div>
+        </header>
+
+        <!-- Month Picker -->
+        <div class="mb-4">
+            <input type="month" id="monthFilter" class="transaction-note-input w-full font-bold">
+        </div>
+
+        <!-- Type Filter Pills -->
+        <div class="mb-2 overflow-hidden">
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="filterPills">
+                <button class="journal-strip-item active-filter" data-type="all">All</button>
+                <!-- Injected by JS -->
+            </div>
+        </div>
+
+        <!-- Pocket Filter Pills (NEW) -->
+        <div class="mb-4 overflow-hidden">
+            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="pocketFilterPills">
+                <button class="journal-strip-item active-filter" data-pocket="all">All Pockets</button>
+                <!-- Injected by JS -->
+            </div>
+        </div>
+
+        <!-- Sort Control -->
+        <div class="journal-hero-card flex justify-between items-center mb-4 p-4">
+            <div class="flex flex-col gap-0.5" id="summaryInfo">
+                <span class="journal-total-label m-0 text-white/80">0 transactions</span>
+                <span class="journal-total-amount m-0 text-white" style="font-size: 1.6rem; margin-bottom: 0;">Rp 0</span>
+            </div>
+            <button class="flex items-center gap-1 py-2 px-3.5 border border-white/20 rounded-xl bg-white/10 text-[13px] font-semibold text-white cursor-pointer transition-all duration-200 hover:bg-white/20" id="sortBtn" title="Toggle sort order">
+                <span class="text-sm transition-transform duration-300">↓</span> Newest
+            </button>
+        </div>
+
+        <!-- Transaction List -->
+        <div class="journal-group-rows pb-5" id="transactionList">
+            <p class="text-center py-10" style="color: var(--journal-soft-ink);">Loading transactions...</p>
+        </div>
+
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="text-5xl mb-4">🗑️</div>
+            <h3>Delete this?</h3>
+            <p id="deleteDetails" class="text-text-secondary mb-5"></p>
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-modal-danger" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/common.js"></script>
+    <script src="/js/review-history.js"></script>
+
+    {{> actionHub}}
+</body>
+
+</html>

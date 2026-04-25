@@ -3,15 +3,15 @@
 
 <head>
     {{> head}}
-    <title>Add Transaction</title>
+    <title>Log Spending</title>
 </head>
 
 <body class="transaction-screen">
     <div class="page-container transaction-layout">
         <header class="app-header">
-            <div>
+            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
                 <p class="journal-eyebrow">Money Journal</p>
-                <h1 class="page-title page-title-ledger">Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
+                <h1 class="page-title page-title-ledger">Log Spending <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
             </div>
             <div class="user-info" onclick="toggleMenu()">
                 <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
@@ -159,7 +159,7 @@
             <p class="text-sm text-text-secondary mb-6" id="successMessage">Great job tracking your expenses!</p>
             <div class="flex flex-col gap-3">
                 <button class="btn-neon w-full h-12" onclick="addAnother()">Add Another</button>
-                <button class="btn-ghost w-full h-12" onclick="window.location.href='/transactions'">Go to Transactions</button>
+                <button class="btn-ghost w-full h-12" onclick="window.location.href='/monthly-story'">Go to Monthly Story</button>
             </div>
         </div>
     </div>
@@ -167,7 +167,7 @@
     <div id="message" class="toast"></div>
     <script src="/js/common.js"></script>
     <script src="/js/confetti.js"></script>
-    <script src="/js/transaction.js"></script>
+    <script src="/js/log-spending.js"></script>
 </body>
 
 </html>

@@ -3,7 +3,7 @@
 
 <head>
     {{> head}}
-    <title>Journal</title>
+    <title>Monthly Story</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
@@ -11,9 +11,9 @@
 <body>
     <div class="page-container journal-shell">
         <header class="app-header">
-            <div>
+            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
                 <p class="journal-eyebrow">Money Journal</p>
-                <h1 class="page-title page-title-ledger">Today</h1>
+                <h1 class="page-title page-title-ledger">Monthly Story</h1>
             </div>
             <div class="user-info" onclick="toggleMenu()">
                 <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
@@ -49,15 +49,15 @@
         </section>
 
         <section class="journal-strip">
-            <button class="journal-strip-item" onclick="location.href='/transaction'">
+            <button class="journal-strip-item" onclick="location.href='/log-spending'">
                 <span class="material-symbols-outlined">edit_note</span>
                 Log Spending
             </button>
-            <button class="journal-strip-item" onclick="location.href='/all-transactions'">
+            <button class="journal-strip-item" onclick="location.href='/review-history'">
                 <span class="material-symbols-outlined">history</span>
                 Review History
             </button>
-            <button class="journal-strip-item" onclick="location.href='/budget'">
+            <button class="journal-strip-item" onclick="location.href='/check-pockets'">
                 <span class="material-symbols-outlined">account_balance_wallet</span>
                 Check Pockets
             </button>
@@ -79,7 +79,7 @@
         <section class="journal-surface">
             <div class="section-header">
                 <h2 class="section-title">Today Feed</h2>
-                <a href="/all-transactions" class="journal-surface-link">View Full Feed</a>
+                <a href="/review-history" class="journal-surface-link">View Full Feed</a>
             </div>
             <div class="journal-timeline" id="todayTimeline">
                 <p class="text-center text-text-muted py-5">Loading today...</p>
@@ -132,7 +132,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="/js/common.js"></script>
-    <script src="/js/transactions.js"></script>
+    <script src="/js/monthly-story.js"></script>
 
     {{> actionHub}}
 </body>

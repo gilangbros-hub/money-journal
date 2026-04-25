@@ -6,12 +6,12 @@
     <title>Welcome - Money Journal</title>
 </head>
 
-<body class="flex justify-center items-center h-screen overflow-hidden flex-col">
-    <div class="text-[32px] font-bold text-text-primary opacity-0 translate-y-2.5 animate-fade-in text-center" style="animation: fadeInUp 0.8s ease forwards;">
+<body class="flex justify-center items-center h-screen overflow-hidden flex-col" style="background: radial-gradient(circle at top right, #efe6d5 0%, transparent 46%), var(--journal-bg);">
+    <div class="page-title-ledger opacity-0 translate-y-2.5 animate-fade-in text-center" style="font-size: 38px; color: var(--journal-ink); animation: fadeInUp 0.8s ease forwards;">
         Hi! {{username}} 👋
     </div>
-    <div class="text-base font-medium text-text-secondary opacity-0 translate-y-2.5 mt-2 text-center" id="streakDisplay" style="animation: fadeInUp 0.8s 0.4s ease forwards;"></div>
-    <div class="text-sm text-text-muted opacity-0 translate-y-2.5 mt-4 text-center" id="motivationDisplay" style="animation: fadeInUp 0.8s 0.7s ease forwards;"></div>
+    <div class="opacity-0 translate-y-2.5 mt-2 text-center" id="streakDisplay" style="font-size: 16px; font-weight: 800; color: var(--journal-soft-ink); animation: fadeInUp 0.8s 0.4s ease forwards;"></div>
+    <div class="opacity-0 translate-y-2.5 mt-4 text-center journal-metric-label" id="motivationDisplay" style="animation: fadeInUp 0.8s 0.7s ease forwards;"></div>
 
     <style>
         @keyframes fadeInUp {
@@ -57,7 +57,7 @@
 
         // Redirect after delay
         setTimeout(() => {
-            window.location.href = '/transaction';
+            window.location.href = '/monthly-story';
         }, 3000);
     </script>
 </body>

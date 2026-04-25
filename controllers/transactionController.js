@@ -6,21 +6,21 @@ const { formatCurrency } = require('../utils/formatters');
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 exports.getTransactionPage = (req, res) => {
-    res.render('transaction', {
+    res.render('log-spending', {
         username: req.session.username,
         avatar: req.session.avatar || '👤'
     });
 };
 
 exports.getTransactionsPage = (req, res) => {
-    res.render('transactions', {
+    res.render('monthly-story', {
         username: req.session.username,
         avatar: req.session.avatar || '👤'
     });
 };
 
 exports.getAllTransactionsPage = (req, res) => {
-    res.render('allTransactions', {
+    res.render('review-history', {
         username: req.session.username,
         avatar: req.session.avatar || '👤'
     });

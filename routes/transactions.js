@@ -13,9 +13,9 @@ const isAuthenticated = (req, res, next) => {
 
 router.use(isAuthenticated);
 
-router.get('/transaction', transactionController.getTransactionPage);
-router.get('/transactions', transactionController.getTransactionsPage);
-router.get('/all-transactions', transactionController.getAllTransactionsPage);
+router.get('/log-spending', transactionController.getTransactionPage);
+router.get('/monthly-story', transactionController.getTransactionsPage);
+router.get('/review-history', transactionController.getAllTransactionsPage);
 
 router.post('/api/transaction', transactionController.createTransaction);// API
 router.get('/api/dashboard/summary', transactionController.getDashboardSummary);

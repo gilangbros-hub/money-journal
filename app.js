@@ -78,7 +78,7 @@ app.use(session({
 // Root Route
 app.get('/', (req, res) => {
     if (req.session.userId) {
-        res.redirect('/transactions');
+        res.redirect('/monthly-story');
     } else {
         res.redirect('/login');
     }
