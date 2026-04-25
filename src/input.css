@@ -909,14 +909,14 @@ body {
 .transaction-save-btn {
   width: 100%;
   height: 56px;
-  border: 1px solid #163a6f;
+  border: 1px solid #D99A1E;
   border-radius: 18px;
-  background: linear-gradient(135deg, #f8b11b 0%, #ffbf2f 100%);
-  color: #151515;
+  background: #F5B233;
+  color: #0A0A0A;
   font-size: 1.1rem;
   font-weight: 800;
   letter-spacing: 0.01em;
-  box-shadow: 0 16px 28px rgba(248, 177, 27, 0.18);
+  box-shadow: 0 12px 24px rgba(245, 178, 51, 0.15);
   transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
 
@@ -931,7 +931,7 @@ body {
 }
 
 .transaction-screen {
-  background: #090909;
+  background: #0A0A0A;
 }
 
 .transaction-layout {
@@ -941,21 +941,21 @@ body {
 }
 
 .transaction-header {
-  margin-bottom: 18px;
+  margin-bottom: 24px;
 }
 
 .transaction-title {
-  color: #f7f3eb;
+  color: #F2F0EB;
   font-size: 2.1rem;
   font-weight: 700;
 }
 
 .transaction-shell {
   background: #141414;
-  border: 1px solid #1f1f1f;
+  border: 1px solid #1F1F1F;
   border-radius: 34px;
   padding: 28px;
-  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.34);
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.4);
 }
 
 .transaction-counter {
@@ -964,13 +964,13 @@ body {
 }
 
 .transaction-counter-label {
-  color: #b8b1a9;
+  color: #A8A29E;
   font-size: 0.95rem;
   margin-bottom: 6px;
 }
 
 .transaction-counter-currency {
-  color: #f8b11b;
+  color: #F5B233;
   font-size: 1.85rem;
   font-weight: 800;
   margin-bottom: 4px;
@@ -980,7 +980,7 @@ body {
   width: 100%;
   border: none;
   background: transparent;
-  color: #f7f3eb;
+  color: #F2F0EB;
   text-align: center;
   font-size: clamp(3rem, 8vw, 4.6rem);
   font-weight: 300;
@@ -989,17 +989,17 @@ body {
 }
 
 .transaction-counter-input::placeholder {
-  color: #f7f3eb;
+  color: #6B6560;
   opacity: 0.8;
 }
 
 .transaction-section {
-  margin-top: 16px;
+  margin-top: 24px;
 }
 
 .transaction-field-label {
   display: block;
-  color: #b8b1a9;
+  color: #A8A29E;
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 12px;
@@ -1007,9 +1007,9 @@ body {
 
 .transaction-note-input {
   width: 100%;
-  border: 1px solid #252525;
-  background: #191919;
-  color: #f4efe7;
+  border: 1px solid #262626;
+  background: #1A1A1A;
+  color: #F2F0EB;
   border-radius: 20px;
   padding: 18px 20px;
   font-size: 1rem;
@@ -1018,12 +1018,12 @@ body {
 }
 
 .transaction-note-input::placeholder {
-  color: #6f6a65;
+  color: #6B6560;
 }
 
 .transaction-note-input:focus {
-  border-color: #3a3a3a;
-  box-shadow: 0 0 0 3px rgba(248, 177, 27, 0.12);
+  border-color: #F5B233;
+  box-shadow: 0 0 0 3px rgba(245, 178, 51, 0.12);
 }
 
 .transaction-rows {
@@ -1037,22 +1037,22 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 0;
+  padding: 20px 0;
   border: none;
-  border-bottom: 1px solid #262626;
+  border-bottom: 1px solid #1F1F1F;
   background: transparent;
   color: inherit;
   cursor: pointer;
 }
 
 .transaction-row-label {
-  color: #d2ccc4;
+  color: #A8A29E;
   font-size: 1rem;
   font-weight: 500;
 }
 
 .transaction-row-value {
-  color: #f4efe7;
+  color: #F2F0EB;
   font-size: 1rem;
   font-weight: 700;
   text-align: right;
@@ -1075,26 +1075,26 @@ body {
   justify-content: center;
   min-height: 48px;
   border-radius: 16px;
-  background: #1a1a1a;
+  background: #1A1A1A;
   border: 1px solid #262626;
-  color: #b8b1a9;
+  color: #A8A29E;
   font-size: 0.92rem;
   font-weight: 700;
   transition: all 140ms ease;
 }
 
 .transaction-mode-pill input:checked + span {
-  border-color: #f8b11b;
-  background: rgba(248, 177, 27, 0.12);
-  color: #f7f3eb;
+  border-color: #F5B233;
+  background: #2A1F0A;
+  color: #F2F0EB;
 }
 
 .transaction-breakdown-panel {
-  margin-top: 4px;
-  margin-bottom: 10px;
-  padding: 14px 16px 16px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  padding: 16px;
   border-radius: 22px;
-  background: #191919;
+  background: #1A1A1A;
   border: 1px solid #262626;
 }
 
@@ -1102,16 +1102,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  color: #f4efe7;
+  color: #F2F0EB;
   font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 12px;
 }
 
 .transaction-breakdown-add {
-  border: 1px solid #3a3015;
-  background: rgba(248, 177, 27, 0.12);
-  color: #f8b11b;
+  border: 1px solid #2A1F0A;
+  background: #2A1F0A;
+  color: #F5B233;
   border-radius: 999px;
   padding: 7px 12px;
   font-size: 0.82rem;
@@ -1128,21 +1128,21 @@ body {
   min-height: 52px;
   border-radius: 18px;
   border: 1px solid #262626;
-  background: #191919;
-  color: #d0c9bf;
+  background: #1A1A1A;
+  color: #A8A29E;
   font-size: 0.96rem;
   font-weight: 700;
   transition: all 140ms ease;
 }
 
 .transaction-budget-pill.is-selected {
-  border-color: #f8b11b;
-  color: #fff4d8;
-  box-shadow: inset 0 0 0 1px rgba(248, 177, 27, 0.35);
+  border-color: #F5B233;
+  color: #F5B233;
+  box-shadow: inset 0 0 0 1px rgba(245, 178, 51, 0.35);
 }
 
 .transaction-budget-pill.is-locked {
-  color: #74706b;
+  color: #6B6560;
 }
 
 .picker-sheet-overlay {
@@ -1162,11 +1162,11 @@ body {
 
 .picker-sheet-card {
   width: min(100%, 560px);
-  background: #161616;
-  border: 1px solid #232323;
+  background: #141414;
+  border: 1px solid #1F1F1F;
   border-radius: 28px;
   padding: 20px;
-  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
 }
 
 .picker-sheet-head {
@@ -1177,15 +1177,15 @@ body {
 }
 
 .picker-sheet-head h3 {
-  color: #f5efe6;
+  color: #F2F0EB;
   font-size: 1.1rem;
   font-weight: 800;
 }
 
 .picker-sheet-close {
-  border: 1px solid #2a2a2a;
-  background: #1e1e1e;
-  color: #c7c0b6;
+  border: 1px solid #262626;
+  background: #1A1A1A;
+  color: #A8A29E;
   border-radius: 12px;
   padding: 8px 12px;
   font-size: 0.85rem;
@@ -1199,29 +1199,29 @@ body {
 }
 
 .picker-grid-item {
-  min-height: 110px;
-  border-radius: 22px;
-  border: 1px solid #2a2a2a;
-  background: #1b1b1b;
-  color: #ece6dd;
-  font-size: 0.92rem;
+  min-height: 85px;
+  border-radius: 20px;
+  border: 1px solid #1F1F1F;
+  background: #1A1A1A;
+  color: #F2F0EB;
+  font-size: 0.85rem;
   font-weight: 700;
-  padding: 14px 10px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   text-align: center;
 }
 
 .picker-grid-item.is-selected {
-  border-color: #f8b11b;
-  box-shadow: inset 0 0 0 1px rgba(248, 177, 27, 0.38);
+  border-color: #F5B233;
+  box-shadow: inset 0 0 0 1px rgba(245, 178, 51, 0.38);
 }
 
 .picker-grid-icon {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
 }
 
 .breakdown-row {
@@ -1238,34 +1238,34 @@ body {
 .breakdown-row .breakdown-amount {
   min-height: 46px;
   border-radius: 14px;
-  border: 1px solid #2b2b2b;
-  background: #121212;
-  color: #f4efe7;
+  border: 1px solid #262626;
+  background: #1A1A1A;
+  color: #F2F0EB;
 }
 
 .breakdown-row .remove-pocket-btn {
   width: 36px;
   height: 46px;
   border-radius: 14px;
-  background: rgba(244, 64, 40, 0.12);
-  color: #f44028;
+  background: rgba(239, 68, 68, 0.12);
+  color: #EF4444;
 }
 
 .breakdown-total {
-  background: #121212;
-  border: 1px solid #2b2b2b;
+  background: #1A1A1A;
+  border: 1px solid #262626;
 }
 
 .breakdown-total-row .label {
-  color: #a7a098;
+  color: #A8A29E;
 }
 
 .breakdown-total-row .value {
-  color: #f4efe7;
+  color: #F2F0EB;
 }
 
 .breakdown-total-row .value.matched {
-  color: #f8b11b;
+  color: #F5B233;
 }
 
 @media (max-width: 640px) {
@@ -1284,7 +1284,7 @@ body {
   }
 
   .picker-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
