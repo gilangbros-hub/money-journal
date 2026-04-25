@@ -10,57 +10,57 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#1f4f92",
-          dark: "#183f75",
-          deep: "#163a6f",
-          subtle: "rgba(31,79,146,0.14)",
+          DEFAULT: "#1D4A86",
+          dark: "#143765",
+          deep: "#0B213F",
+          subtle: "rgba(29, 74, 134, 0.14)",
         },
         bg: {
-          DEFAULT: "#e5ddcd",
-          secondary: "#f6f1e7",
-          tertiary: "#efe7d8",
-          overlay: "rgba(18, 25, 43, 0.45)",
+          DEFAULT: "#FDF7EA",
+          secondary: "#F8F1DF",
+          tertiary: "#EFE6CF",
+          overlay: "rgba(11, 33, 63, 0.45)",
         },
         text: {
-          primary: "#17213a",
-          secondary: "#4a5473",
-          muted: "#7d879e",
+          primary: "#0B213F",
+          secondary: "#1D4A86",
+          muted: "#6B7B96",
           inverse: "#ffffff",
         },
         border: {
-          DEFAULT: "#d3c8b5",
-          light: "#d3c8b5",
-          subtle: "#ece3d4",
+          DEFAULT: "#E5D9BC",
+          light: "#EAE0C7",
+          subtle: "#F3ECD9",
         },
         semantic: {
           success: {
-            DEFAULT: "#1f4f92",
-            bg: "rgba(31,79,146,0.12)",
-            text: "#163a6f"
+            DEFAULT: "#1D4A86",
+            bg: "rgba(29, 74, 134, 0.12)",
+            text: "#0B213F"
           },
           neutral: {
-            bg: "rgba(23,33,58,0.08)",
+            bg: "rgba(11, 33, 63, 0.08)",
             text: "#35405b"
           },
           danger: {
-            DEFAULT: "#f44028",
-            bg: "#fde3dc",
-            text: "#b83422"
+            DEFAULT: "#ED3F27",
+            bg: "#FCD9D4",
+            text: "#B82F1D"
           }
         },
         // We set legacy token names pointing to standard gray to prevent crash before full refactor
-        coral: { DEFAULT: "#f44028", light: "#fde3dc", dark: "#b83422", glow: "#fde3dc" },
-        lime: { DEFAULT: "#1f4f92", light: "#d7e3f6", dark: "#163a6f", glow: "#d7e3f6" },
-        cyan: { DEFAULT: "#1f4f92", light: "#d7e3f6", dark: "#163a6f", glow: "#d7e3f6" },
-        amber: { DEFAULT: "#f8b11b", light: "#fdf0cc", dark: "#b68011", glow: "#fdf0cc" },
+        coral: { DEFAULT: "#ED3F27", light: "#FCD9D4", dark: "#B82F1D", glow: "#FCD9D4" },
+        lime: { DEFAULT: "#1D4A86", light: "#D2DFF0", dark: "#0B213F", glow: "#D2DFF0" },
+        cyan: { DEFAULT: "#1D4A86", light: "#D2DFF0", dark: "#0B213F", glow: "#D2DFF0" },
+        amber: { DEFAULT: "#F9A41E", light: "#FDE9CA", dark: "#C27A10", glow: "#FDE9CA" },
       },
       backgroundImage: {
-        "gradient-hero": "linear-gradient(135deg, #1f4f92 0%, #183f75 100%)",
-        "gradient-primary": "linear-gradient(135deg, #1f4f92 0%, #183f75 100%)",
-        "gradient-danger": "linear-gradient(135deg, #f44028 0%, #b83422 100%)",
-        "gradient-success": "linear-gradient(135deg, #1f4f92 0%, #163a6f 100%)",
-        "gradient-card": "linear-gradient(135deg, #f6f1e7 0%, #efe7d8 100%)",
-        "gradient-cta": "linear-gradient(135deg, #1f4f92 0%, #183f75 100%)",
+        "gradient-hero": "linear-gradient(135deg, #1D4A86 0%, #143765 100%)",
+        "gradient-primary": "linear-gradient(135deg, #1D4A86 0%, #143765 100%)",
+        "gradient-danger": "linear-gradient(135deg, #ED3F27 0%, #B82F1D 100%)",
+        "gradient-success": "linear-gradient(135deg, #1D4A86 0%, #0B213F 100%)",
+        "gradient-card": "linear-gradient(135deg, #F8F1DF 0%, #EFE6CF 100%)",
+        "gradient-cta": "linear-gradient(135deg, #F9A41E 0%, #F18F08 100%)",
       },
       borderRadius: {
         "xl": "12px",
