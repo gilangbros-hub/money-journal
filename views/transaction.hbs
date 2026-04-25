@@ -8,8 +8,11 @@
 
 <body class="transaction-screen">
     <div class="page-container transaction-layout">
-        <header class="app-header transaction-header">
-            <h1 class="page-title transaction-title">Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
+        <header class="app-header">
+            <div>
+                <p class="journal-eyebrow">Money Journal</p>
+                <h1 class="page-title page-title-ledger">Add Transaction <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
+            </div>
             <div class="user-info" onclick="toggleMenu()">
                 <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
                 <span class="text-[28px]">{{avatar}}</span>
