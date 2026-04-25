@@ -3,16 +3,18 @@
 
 <head>
     {{> head}}
-    <title>📊 Dashboard</title>
+    <title>Journal</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 
 <body>
-    <div class="page-container">
-        <!-- Header -->
+    <div class="page-container journal-shell">
         <header class="app-header">
-            <h1 class="page-title">📊 Dashboard</h1>
+            <div>
+                <p class="journal-eyebrow">Money Journal</p>
+                <h1 class="page-title page-title-ledger">Today</h1>
+            </div>
             <div class="user-info" onclick="toggleMenu()">
                 <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
                 <span class="text-[28px]">{{avatar}}</span>
@@ -23,24 +25,77 @@
             </div>
         </header>
 
-        <!-- Summary Card -->
-        <div class="hero-card">
-            <input type="month" id="monthFilter" class="bg-white/20 border-none text-white py-1 px-3 rounded-full text-sm font-medium cursor-pointer backdrop-blur mb-4 inline-block focus:outline-none focus:bg-white/30" style="-webkit-appearance: none;">
-            <div class="text-sm opacity-90 mb-1">Total Expenses</div>
-            <h1 class="text-rupiah-lg m-0 tracking-tight" id="totalAmount">Rp 0</h1>
-        </div>
-
-        <!-- Monthly Comparison Card -->
-        <div id="comparisonCard" class="bg-bg-secondary rounded-2xl p-4 flex items-center gap-3 mb-5 shadow-card border border-border/50" style="display: none;">
-            <div class="text-[32px]" id="comparisonIcon">📊</div>
-            <div class="flex flex-col">
-                <span class="text-xs text-text-secondary mb-0.5">vs Last Month</span>
-                <span class="text-base font-bold" id="comparisonValue">-</span>
+        <section class="journal-hero-card">
+            <div class="journal-hero-row">
+                <input type="month" id="monthFilter" class="journal-month-input">
+                <button type="button" class="journal-chip-btn" id="jumpToTodayBtn">Jump to Today</button>
             </div>
-        </div>
+            <p class="journal-total-label">This Month</p>
+            <h2 class="journal-total-amount" id="totalAmount">Rp 0</h2>
+            <div class="journal-hero-metrics">
+                <div>
+                    <p class="journal-metric-label">Today</p>
+                    <p class="journal-metric-value" id="todayAmount">Rp 0</p>
+                </div>
+                <div>
+                    <p class="journal-metric-label">Entries</p>
+                    <p class="journal-metric-value" id="entryCount">0</p>
+                </div>
+                <div>
+                    <p class="journal-metric-label">Nudge</p>
+                    <p class="journal-metric-value" id="monthNudge">Steady</p>
+                </div>
+            </div>
+        </section>
 
-        <!-- Spending Breakdown Pie Chart -->
-        <div class="chart-card">
+        <section class="journal-strip">
+            <button class="journal-strip-item" onclick="location.href='/transaction'">
+                <span class="material-symbols-outlined">edit_note</span>
+                Log Spending
+            </button>
+            <button class="journal-strip-item" onclick="location.href='/all-transactions'">
+                <span class="material-symbols-outlined">history</span>
+                Review Feed
+            </button>
+            <button class="journal-strip-item" onclick="location.href='/budget'">
+                <span class="material-symbols-outlined">account_balance_wallet</span>
+                Check Pockets
+            </button>
+        </section>
+
+        <section class="journal-story-grid" id="storyCards">
+            <article class="journal-story-card">
+                <p class="journal-story-kicker">Shift vs last month</p>
+                <h3 class="journal-story-title" id="comparisonValue">Loading...</h3>
+                <p class="journal-story-desc">Tracking movement keeps spending decisions calm.</p>
+            </article>
+            <article class="journal-story-card">
+                <p class="journal-story-kicker">Top category</p>
+                <h3 class="journal-story-title" id="topCategory">Loading...</h3>
+                <p class="journal-story-desc" id="topCategoryAmount">Rp 0</p>
+            </article>
+        </section>
+
+        <section class="journal-surface">
+            <div class="section-header">
+                <h2 class="section-title">Today Feed</h2>
+                <a href="/all-transactions" class="journal-surface-link">View Full Feed</a>
+            </div>
+            <div class="journal-timeline" id="todayTimeline">
+                <p class="text-center text-text-muted py-5">Loading today...</p>
+            </div>
+        </section>
+
+        <section class="journal-surface">
+            <div class="section-header">
+                <h2 class="section-title">Pocket Pulse</h2>
+            </div>
+            <div id="pocketPulseList">
+                <p class="text-center text-text-muted py-5">Reading pocket signals...</p>
+            </div>
+        </section>
+
+        <section class="journal-surface">
             <div class="section-header">
                 <h2 class="section-title">Spending Breakdown</h2>
             </div>
@@ -48,38 +103,22 @@
                 <canvas id="spendingChart"></canvas>
             </div>
             <div id="chartLegend" class="grid grid-cols-2 gap-2 mt-4">
-                <!-- Injected by JS -->
             </div>
-        </div>
+        </section>
 
-        <!-- Categories Section -->
-        <div class="section-header">
-            <h2 class="section-title">By Category</h2>
-        </div>
-        <div class="flex flex-col gap-4 mb-8" id="categoryList">
-            <!-- Injected by JS -->
-            <p class="text-center text-text-muted">Loading categories...</p>
-        </div>
-
-        <!-- Recent Transactions -->
-        <div class="section-header">
-            <h2 class="section-title" id="recentTransactionsHeader">Recent Transactions</h2>
-            <div class="flex gap-4 items-center">
-                <a href="/all-transactions" id="viewAllLink" class="text-sm font-semibold text-primary no-underline hover:text-primary-light transition-colors">View All</a>
-                <button onclick="exportToCSV()" class="text-sm font-semibold text-lime bg-transparent border-none cursor-pointer hover:text-lime-light transition-colors">Export</button>
+        <section class="journal-surface">
+            <div class="section-header">
+                <h2 class="section-title">Month Feed</h2>
             </div>
-        </div>
-
-        <div class="flex flex-col gap-3" id="historyList">
-            <!-- Injected by JS -->
-        </div>
-
+            <div id="historyList">
+                <p class="text-center text-text-muted py-5">Loading month feed...</p>
+            </div>
+        </section>
     </div>
 
-    <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal-overlay">
         <div class="modal-card">
-            <div class="text-5xl mb-4">🗑️</div>
+            <div class="text-5xl mb-4">Delete</div>
             <h3>Delete this?</h3>
             <p id="deleteDetails" class="text-text-secondary mb-5"></p>
             <div class="modal-actions">
@@ -93,7 +132,7 @@
     <script src="/js/common.js"></script>
     <script src="/js/transactions.js"></script>
 
-    {{> navbar isDashboard=true}}
+    {{> actionHub}}
 </body>
 
 </html>

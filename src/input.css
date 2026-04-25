@@ -478,3 +478,427 @@
     background: linear-gradient(135deg, #149e61 0%, #026b3f 100%);
   }
 }
+
+/* ============================================
+   JOURNAL REDESIGN TOKENS & SURFACES
+   ============================================ */
+
+:root {
+  --journal-bg: #f4f1eb;
+  --journal-ink: #1d1e24;
+  --journal-soft-ink: #5a5f70;
+  --journal-line: #d6d0c5;
+  --journal-panel: #fdfcf8;
+  --journal-accent: #1f6e57;
+  --journal-accent-soft: #d9ece5;
+}
+
+body {
+  background: radial-gradient(circle at top right, #f3e8d6 0%, transparent 45%), var(--journal-bg);
+  color: var(--journal-ink);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+.page-title-ledger {
+  font-family: "Newsreader", "Georgia", serif;
+  letter-spacing: -0.01em;
+}
+
+.journal-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--journal-soft-ink);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.journal-shell {
+  padding-bottom: 140px;
+}
+
+.journal-hero-card {
+  background: linear-gradient(145deg, #1f232f 0%, #2d3344 100%);
+  border-radius: 24px;
+  border: 1px solid #343a4d;
+  padding: 20px;
+  margin-bottom: 18px;
+  color: #f7f3ea;
+  box-shadow: 0 16px 30px rgba(31, 35, 47, 0.22);
+}
+
+.journal-hero-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.journal-month-input {
+  border: 1px solid rgba(245, 241, 230, 0.2);
+  background: rgba(255, 255, 255, 0.09);
+  color: #f7f3ea;
+  font-size: 13px;
+  border-radius: 12px;
+  padding: 8px 12px;
+  outline: none;
+}
+
+.journal-chip-btn {
+  border: 1px solid rgba(245, 241, 230, 0.2);
+  background: transparent;
+  color: #d6efe6;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+
+.journal-total-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #c5cadd;
+  margin-bottom: 6px;
+}
+
+.journal-total-amount {
+  font-family: "Newsreader", "Georgia", serif;
+  font-size: 2.3rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.journal-hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.journal-metric-label {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b7bdd0;
+  margin-bottom: 2px;
+}
+
+.journal-metric-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f6f2e8;
+}
+
+.journal-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 16px;
+}
+
+.journal-strip-item {
+  background: var(--journal-panel);
+  color: var(--journal-ink);
+  border: 1px solid var(--journal-line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(29, 30, 36, 0.06);
+}
+
+.journal-story-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.journal-story-card {
+  border-radius: 18px;
+  border: 1px solid var(--journal-line);
+  background: var(--journal-panel);
+  padding: 14px;
+  box-shadow: 0 10px 24px rgba(29, 30, 36, 0.05);
+}
+
+.journal-story-kicker {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--journal-soft-ink);
+  margin-bottom: 6px;
+}
+
+.journal-story-title {
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--journal-ink);
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+.journal-story-desc {
+  font-size: 12px;
+  color: var(--journal-soft-ink);
+}
+
+.journal-surface {
+  border-radius: 18px;
+  border: 1px solid var(--journal-line);
+  background: var(--journal-panel);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 8px 22px rgba(29, 30, 36, 0.05);
+}
+
+.journal-surface-link {
+  font-size: 12px;
+  text-decoration: none;
+  color: var(--journal-accent);
+  font-weight: 700;
+}
+
+.journal-timeline,
+.journal-group-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.journal-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #ece6da;
+  border-radius: 14px;
+  background: #fffdfa;
+  padding: 10px;
+}
+
+.journal-row.compact {
+  border-style: dashed;
+}
+
+.journal-row-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #f2ede2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.journal-row-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.journal-row-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--journal-ink);
+  margin-bottom: 2px;
+}
+
+.journal-row-meta {
+  font-size: 11px;
+  color: var(--journal-soft-ink);
+}
+
+.journal-row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.journal-row-amount {
+  color: #b3382c;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.journal-row-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.journal-action-link {
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  color: var(--journal-accent);
+  text-decoration: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.journal-action-link.danger {
+  color: #bb3b31;
+}
+
+.journal-pulse-item {
+  border: 1px solid #e5dccd;
+  border-radius: 14px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #fffdfa;
+}
+
+.journal-pulse-item.warning {
+  border-color: #e4d2a9;
+  background: #fef7e8;
+}
+
+.journal-pulse-item.danger {
+  border-color: #e8c3bd;
+  background: #fdf0ed;
+}
+
+.journal-pulse-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--journal-ink);
+  margin-bottom: 3px;
+}
+
+.journal-pulse-copy {
+  font-size: 12px;
+  color: var(--journal-soft-ink);
+}
+
+.action-hub-root {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2100;
+}
+
+.action-hub-trigger {
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  border: 1px solid #215c4b;
+  background: linear-gradient(145deg, #1f6e57 0%, #265d4b 100%);
+  color: #f4faf7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 16px 30px rgba(25, 76, 61, 0.32);
+}
+
+.action-hub-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 18, 24, 0.42);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+
+.action-hub-sheet {
+  position: fixed;
+  right: 14px;
+  left: 14px;
+  bottom: 92px;
+  background: #ffffff;
+  border: 1px solid #ddd4c6;
+  border-radius: 22px;
+  box-shadow: 0 18px 34px rgba(24, 25, 31, 0.2);
+  transform: translateY(20px);
+  opacity: 0;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+  padding: 14px;
+}
+
+.action-hub-handle {
+  width: 42px;
+  height: 4px;
+  border-radius: 999px;
+  background: #ddd7ca;
+  margin: 0 auto 10px;
+}
+
+.action-hub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.action-hub-header h3 {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--journal-ink);
+}
+
+.action-hub-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid #ece7db;
+  background: #faf7f0;
+  color: var(--journal-soft-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.action-hub-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.action-hub-item {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  border-radius: 14px;
+  border: 1px solid #ebe4d8;
+  background: #fcfbf8;
+  padding: 11px;
+  color: var(--journal-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.action-hub-backdrop.show {
+  opacity: 1;
+}
+
+.action-hub-sheet.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (min-width: 900px) {
+  .page-container.journal-shell {
+    max-width: 900px;
+  }
+
+  .journal-story-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .action-hub-sheet {
+    left: auto;
+    width: 360px;
+  }
+}

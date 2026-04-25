@@ -1,0 +1,43 @@
+<div class="action-hub-root">
+    <button
+        class="action-hub-trigger"
+        id="actionHubTrigger"
+        type="button"
+        aria-haspopup="dialog"
+        aria-controls="actionHubSheet"
+        aria-expanded="false"
+        title="Quick actions"
+    >
+        <span class="material-symbols-outlined">add</span>
+    </button>
+
+    <div class="action-hub-backdrop" id="actionHubBackdrop" hidden></div>
+
+    <aside class="action-hub-sheet" id="actionHubSheet" role="dialog" aria-label="Quick actions" hidden>
+        <div class="action-hub-handle"></div>
+        <div class="action-hub-header">
+            <h3>Quick Actions</h3>
+            <button class="action-hub-close" id="actionHubClose" type="button" aria-label="Close quick actions">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="action-hub-grid">
+            <a class="action-hub-item" href="/transaction">
+                <span class="material-symbols-outlined">edit_note</span>
+                <span>Log Spending</span>
+            </a>
+            <a class="action-hub-item" href="/all-transactions">
+                <span class="material-symbols-outlined">history</span>
+                <span>Review History</span>
+            </a>
+            <a class="action-hub-item" href="/budget">
+                <span class="material-symbols-outlined">account_balance_wallet</span>
+                <span>Check Pockets</span>
+            </a>
+            <a class="action-hub-item" href="/transactions">
+                <span class="material-symbols-outlined">auto_graph</span>
+                <span>Monthly Story</span>
+            </a>
+        </div>
+    </aside>
+</div>

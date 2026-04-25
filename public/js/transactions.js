@@ -1,146 +1,259 @@
 let dashboardData = null;
+let monthTransactions = [];
 let currentMonth = new Date().toISOString().slice(0, 7);
 
-// Emoji Mappings
 const typeEmojis = {
-    'Eat': '🍽️', 'Snack': '🍿', 'Groceries': '🛒', 'Laundry': '🧺',
-    'Bensin': '⛽', 'Flazz': '💳', 'Home Appliance': '🏠', 'Jumat Berkah': '🤲',
-    'Uang Sampah': '🗑️', 'Uang Keamanan': '👮', 'Medicine': '💊', 'Others': '📦'
+    Eat: '🍽️',
+    Snack: '🍿',
+    Groceries: '🛒',
+    Laundry: '🧺',
+    Bensin: '⛽',
+    Flazz: '💳',
+    'Home Appliance': '🏠',
+    'Jumat Berkah': '🤲',
+    'Uang Sampah': '🗑️',
+    'Uang Keamanan': '👮',
+    Medicine: '💊',
+    Others: '📦'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     const monthFilter = document.getElementById('monthFilter');
     monthFilter.value = currentMonth;
 
-    // Initial Load
-    fetchDashboardData();
-
-    // Listeners
     monthFilter.addEventListener('change', (e) => {
         currentMonth = e.target.value;
-        fetchDashboardData();
+        loadJournalData();
     });
+
+    const jumpBtn = document.getElementById('jumpToTodayBtn');
+    if (jumpBtn) {
+        jumpBtn.addEventListener('click', () => {
+            const now = new Date();
+            currentMonth = now.toISOString().slice(0, 7);
+            monthFilter.value = currentMonth;
+            loadJournalData();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    loadJournalData();
 });
 
-async function fetchDashboardData() {
+async function loadJournalData() {
     try {
-        const response = await fetch(`/api/dashboard/summary?month=${currentMonth}`);
-        const result = await response.json();
+        const [summaryResponse, txResponse] = await Promise.all([
+            fetch(`/api/dashboard/summary?month=${currentMonth}`),
+            fetch(`/api/transactions?month=${currentMonth}`)
+        ]);
 
-        if (result.success) {
-            dashboardData = result.data;
-            updateDashboardUI();
+        const summaryResult = await summaryResponse.json();
+        const txResult = await txResponse.json();
+
+        if (!summaryResult.success) {
+            throw new Error('Failed to load summary');
         }
+
+        dashboardData = summaryResult.data;
+        monthTransactions = Array.isArray(txResult) ? txResult : [];
+        monthTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        renderHero();
+        renderStoryCards();
+        renderTodayTimeline();
+        renderPocketPulse();
+        renderSpendingChart();
+        renderMonthFeed();
     } catch (error) {
-        console.error('Error loading dashboard:', error);
+        console.error('Journal load error:', error);
+        showToast('Failed to load journal data', 'error');
     }
 }
 
-function updateDashboardUI() {
-    // 1. Render Total
-    document.getElementById('totalAmount').textContent = dashboardData.total.formatted;
+function renderHero() {
+    const totalEl = document.getElementById('totalAmount');
+    const todayEl = document.getElementById('todayAmount');
+    const entryEl = document.getElementById('entryCount');
+    const nudgeEl = document.getElementById('monthNudge');
 
-    // 2. Render Monthly Comparison
-    renderComparison(dashboardData.comparison);
+    totalEl.textContent = dashboardData.total.formatted;
 
-    // 3. Render Spending Pie Chart
-    renderSpendingChart();
+    const todayKey = getLocalDateKey(new Date());
+    const todayTx = monthTransactions.filter((item) => getLocalDateKey(new Date(item.date)) === todayKey);
+    const todayTotal = todayTx.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-    // 4. Render Categories
-    renderCategoryList();
+    todayEl.textContent = formatRupiah(todayTotal);
+    entryEl.textContent = String(monthTransactions.length);
+    nudgeEl.textContent = buildNudgeText(dashboardData.comparison);
+}
 
-    // 5. Render Recent History (Default view)
-    renderTransactionList(dashboardData.recent, false);
+function buildNudgeText(comparison) {
+    if (!comparison || !comparison.hasLastMonth) return 'Fresh month';
+    if (comparison.increased) return `${comparison.percentChange}% above last month`;
+    return `${comparison.percentChange}% calmer than last month`;
+}
 
-    // 6. Update View All link with current month
-    const viewAllLink = document.getElementById('viewAllLink');
-    if (viewAllLink) {
-        viewAllLink.href = `/all-transactions?month=${currentMonth}`;
+function renderStoryCards() {
+    const comparisonEl = document.getElementById('comparisonValue');
+    const topCategoryEl = document.getElementById('topCategory');
+    const topCategoryAmountEl = document.getElementById('topCategoryAmount');
+    const topCategory = dashboardData.categories?.[0];
+
+    if (!dashboardData.comparison || !dashboardData.comparison.hasLastMonth) {
+        comparisonEl.textContent = 'No prior month baseline yet';
+    } else if (dashboardData.comparison.increased) {
+        comparisonEl.textContent = `▲ +${dashboardData.comparison.difference} (${dashboardData.comparison.percentChange}%)`;
+    } else {
+        comparisonEl.textContent = `▼ -${dashboardData.comparison.difference} (${dashboardData.comparison.percentChange}%)`;
     }
 
-    // Reset Header
-    const header = document.getElementById('recentTransactionsHeader');
-    if (header) {
-        header.textContent = 'Recent Transactions';
-        if (header.nextElementSibling) {
-            header.nextElementSibling.style.display = 'flex';
-        }
+    if (topCategory) {
+        topCategoryEl.textContent = `${topCategory.icon || typeEmojis[topCategory.category] || '📦'} ${topCategory.category}`;
+        topCategoryAmountEl.textContent = `${topCategory.formattedTotal} (${topCategory.percentage}%)`;
+    } else {
+        topCategoryEl.textContent = 'No category yet';
+        topCategoryAmountEl.textContent = 'Start logging to see pattern';
     }
 }
 
-function renderComparison(comparison) {
-    const card = document.getElementById('comparisonCard');
-    const icon = document.getElementById('comparisonIcon');
-    const value = document.getElementById('comparisonValue');
+function renderTodayTimeline() {
+    const target = document.getElementById('todayTimeline');
+    const todayKey = getLocalDateKey(new Date());
+    const todayTx = monthTransactions.filter((item) => getLocalDateKey(new Date(item.date)) === todayKey);
 
-    if (!comparison || !comparison.hasLastMonth) {
-        card.style.display = 'none';
+    if (todayTx.length === 0) {
+        target.innerHTML = '<p class="text-center text-text-muted py-5">No entries yet today. Add one while it is fresh.</p>';
         return;
     }
 
-    card.style.display = 'flex';
-
-    if (comparison.increased) {
-        icon.textContent = '📈';
-        value.textContent = `▲ +${comparison.difference} (${comparison.percentChange}% more)`;
-        value.className = 'text-base font-bold text-coral';
-    } else {
-        icon.textContent = '📉';
-        value.textContent = `▼ -${comparison.difference} (${comparison.percentChange}% less)`;
-        value.className = 'text-base font-bold text-lime';
-    }
+    target.innerHTML = todayTx
+        .slice(0, 6)
+        .map((item) => renderTimelineRow(item))
+        .join('');
 }
 
-// Global chart instance
-let spendingChart = null;
+function renderMonthFeed() {
+    const list = document.getElementById('historyList');
+    if (monthTransactions.length === 0) {
+        list.innerHTML = '<p class="text-center text-text-muted py-5">No transactions for this month.</p>';
+        return;
+    }
 
+    const groups = groupByDate(monthTransactions);
+    const sortedKeys = Object.keys(groups).sort((a, b) => (a < b ? 1 : -1));
+    list.innerHTML = sortedKeys
+        .map((dateKey) => {
+            const label = formatDateGroupLabel(dateKey);
+            const rows = groups[dateKey].map((item) => renderFeedRow(item)).join('');
+            return `
+                <div class="journal-date-group">
+                    <p class="date-group-header">${label}</p>
+                    <div class="journal-group-rows">${rows}</div>
+                </div>
+            `;
+        })
+        .join('');
+}
+
+function renderTimelineRow(item) {
+    return `
+        <article class="journal-row compact">
+            <div class="journal-row-icon">${typeEmojis[item.type] || '📦'}</div>
+            <div class="journal-row-body">
+                <p class="journal-row-title">${safeText(item.ngapain || 'No description')}</p>
+                <p class="journal-row-meta">${formatTime(item.date)} · ${safeText(item.pocket || 'Unknown')}</p>
+            </div>
+            <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(item.amount)}</p>
+        </article>
+    `;
+}
+
+function renderFeedRow(item) {
+    const escapedNote = (item.ngapain || '').replace(/'/g, "\\'");
+    const amount = Number(item.amount || 0);
+
+    return `
+        <article class="journal-row">
+            <div class="journal-row-icon">${typeEmojis[item.type] || '📦'}</div>
+            <div class="journal-row-body">
+                <p class="journal-row-title">${safeText(item.ngapain || 'No description')}</p>
+                <p class="journal-row-meta">${formatTime(item.date)} · ${safeText(item.pocket || 'Unknown')}</p>
+            </div>
+            <div class="journal-row-right">
+                <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(amount)}</p>
+                <div class="journal-row-actions">
+                    <a class="journal-action-link" href="/transaction?edit=${item._id}">Edit</a>
+                    <button class="journal-action-link danger" type="button" onclick="openOptions('${item._id}', '${escapedNote}', ${amount})">Delete</button>
+                </div>
+            </div>
+        </article>
+    `;
+}
+
+function renderPocketPulse() {
+    const target = document.getElementById('pocketPulseList');
+    const alerts = Array.isArray(dashboardData.budgetAlerts) ? dashboardData.budgetAlerts : [];
+
+    if (alerts.length === 0) {
+        target.innerHTML = '<p class="text-center text-text-muted py-5">Pockets look stable this month.</p>';
+        return;
+    }
+
+    target.innerHTML = alerts
+        .slice(0, 4)
+        .map((alert) => `
+            <article class="journal-pulse-item ${alert.status}">
+                <p class="journal-pulse-title">${safeText(alert.pocket)}</p>
+                <p class="journal-pulse-copy">${safeText(alert.message)}</p>
+            </article>
+        `)
+        .join('');
+}
+
+let spendingChart = null;
 function renderSpendingChart() {
     const canvas = document.getElementById('spendingChart');
     const legendContainer = document.getElementById('chartLegend');
-    const { categories, total } = dashboardData;
+    const { categories } = dashboardData;
 
     if (!categories || categories.length === 0) {
         canvas.parentElement.style.display = 'none';
-        legendContainer.innerHTML = '<p class="text-center text-text-muted">No data yet</p>';
+        legendContainer.innerHTML = '<p class="text-center text-text-muted">No chart data yet</p>';
         return;
     }
 
     canvas.parentElement.style.display = 'block';
+    const labels = categories.map((c) => c.category);
+    const data = categories.map((c) => c.total);
+    const percentages = categories.map((c) => c.percentage || 0);
 
-    const labels = categories.map(c => c.category);
-    const data = categories.map(c => c.total);
-    const percentages = categories.map(c => c.percentage || 0);
-
-    if (spendingChart) {
-        spendingChart.destroy();
-    }
+    if (spendingChart) spendingChart.destroy();
 
     spendingChart = new Chart(canvas, {
         type: 'doughnut',
         data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: chartColors.slice(0, labels.length),
-                borderWidth: 2,
-                borderColor: '#1E293B'
-            }]
+            labels,
+            datasets: [
+                {
+                    data,
+                    backgroundColor: chartColors.slice(0, labels.length),
+                    borderWidth: 0
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: {
-                    display: false
-                },
+                legend: { display: false },
                 tooltip: {
-                    backgroundColor: '#1E293B',
-                    titleColor: '#F8FAFC',
-                    bodyColor: '#94A3B8',
-                    borderColor: '#334155',
+                    backgroundColor: '#1f232f',
+                    titleColor: '#f8f7f5',
+                    bodyColor: '#d9d7d4',
+                    borderColor: '#2d3344',
                     borderWidth: 1,
                     callbacks: {
-                        label: function (context) {
+                        label: (context) => {
                             const value = context.raw;
                             const pct = percentages[context.dataIndex];
                             return ` ${formatRupiah(value)} (${pct}%)`;
@@ -148,170 +261,74 @@ function renderSpendingChart() {
                     }
                 }
             },
-            cutout: '60%'
+            cutout: '68%'
         }
     });
 
-    legendContainer.innerHTML = categories.map((cat, i) => `
-        <div class="legend-item">
-            <span class="w-2.5 h-2.5 rounded flex-shrink-0" style="background: ${chartColors[i % chartColors.length]}"></span>
-            <span class="flex-1 text-text-secondary font-medium whitespace-nowrap overflow-hidden text-ellipsis">${cat.icon || typeEmojis[cat.category] || '📦'} ${cat.category}</span>
-            <span class="font-bold text-text-primary">${cat.percentage}%</span>
-        </div>
-    `).join('');
-}
-
-
-// formatRupiah is now in common.js
-
-
-function renderCategoryList() {
-    const categoryList = document.getElementById('categoryList');
-    const { categories, total } = dashboardData;
-
-    if (categories.length === 0) {
-        categoryList.innerHTML = '<p class="text-center text-text-muted mt-5">No spending this month yet!</p>';
-        return;
-    }
-
-    const allCard = `
-        <div class="category-item border border-border" onclick="resetFilter()" style="cursor: pointer;">
-            <div class="cat-icon">♾️</div>
-            <div class="flex-1">
-                <div class="flex justify-between mb-1.5">
-                    <span class="font-semibold text-[15px] text-text-primary">Show All</span>
-                    <span class="font-bold text-[15px] text-text-primary">${total.formatted}</span>
-                </div>
+    legendContainer.innerHTML = categories
+        .map((cat, index) => `
+            <div class="legend-item">
+                <span class="w-2.5 h-2.5 rounded flex-shrink-0" style="background: ${chartColors[index % chartColors.length]}"></span>
+                <span class="flex-1 text-text-secondary font-medium whitespace-nowrap overflow-hidden text-ellipsis">${cat.icon || typeEmojis[cat.category] || '📦'} ${cat.category}</span>
+                <span class="font-bold text-text-primary">${cat.percentage}%</span>
             </div>
-        </div>
-    `;
-
-    categoryList.innerHTML = allCard + categories.map((cat, i) => {
-        const barColor = chartColors[i % chartColors.length];
-        return `
-            <div class="category-item" onclick="filterByCategory('${cat.category}')" style="cursor: pointer;">
-                <div class="cat-icon">${cat.icon}</div>
-                <div class="flex-1">
-                    <div class="flex justify-between mb-1.5">
-                        <span class="font-semibold text-[15px] text-text-primary">${cat.category}</span>
-                        <span class="font-bold text-[15px] text-text-primary">${cat.formattedTotal}</span>
-                    </div>
-                    <div class="progress-track">
-                        <div class="progress-fill" style="width: ${cat.percentage < 5 ? 5 : cat.percentage}%; background: ${barColor};"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }).join('');
+        `)
+        .join('');
 }
 
-function resetFilter() {
-    const header = document.getElementById('recentTransactionsHeader');
-    if (header) {
-        header.textContent = 'Recent Transactions';
-        if (header.nextElementSibling) {
-            header.nextElementSibling.style.display = 'flex';
-        }
-    }
-    fetchAllTransactionsForMonth();
+function groupByDate(transactions) {
+    return transactions.reduce((acc, item) => {
+        const key = getLocalDateKey(new Date(item.date));
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+    }, {});
 }
 
-async function fetchAllTransactionsForMonth() {
-    const list = document.getElementById('historyList');
-    list.innerHTML = '<p class="text-center py-5 text-text-muted">Loading all...</p>';
-
-    try {
-        const response = await fetch(`/api/transactions?month=${currentMonth}`);
-        const transactions = await response.json();
-
-        const header = document.getElementById('recentTransactionsHeader');
-        if (header) header.textContent = 'All Transactions';
-
-        renderTransactionList(transactions, true);
-    } catch (e) {
-        console.error(e);
-        renderTransactionList(dashboardData.recent, false);
-    }
+function getLocalDateKey(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
-async function filterByCategory(category) {
-    const list = document.getElementById('historyList');
-    list.innerHTML = '<p class="text-center py-5 text-text-muted">Loading...</p>';
+function formatDateGroupLabel(dateKey) {
+    const today = getLocalDateKey(new Date());
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = getLocalDateKey(yesterdayDate);
 
-    try {
-        const response = await fetch(`/api/transactions?month=${currentMonth}&type=${category}`);
+    if (dateKey === today) return 'Today';
+    if (dateKey === yesterday) return 'Yesterday';
 
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.statusText}`);
-        }
-
-        const transactions = await response.json();
-
-        const header = document.getElementById('recentTransactionsHeader');
-        if (header) {
-            header.textContent = `${category} Transactions`;
-            if (header.nextElementSibling) {
-                header.nextElementSibling.style.display = 'none';
-            }
-        }
-
-        if (Array.isArray(transactions)) {
-            renderTransactionList(transactions, true);
-        } else {
-            throw new Error('Invalid data format received from API');
-        }
-
-    } catch (error) {
-        console.error('Error fetching category transactions:', error);
-        list.innerHTML = `<p class="text-center text-coral">Error loading data: ${error.message}</p>`;
-    }
+    const date = new Date(`${dateKey}T00:00:00`);
+    return date.toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short'
+    });
 }
 
-function renderTransactionList(transactions, isFullList) {
-    const list = document.getElementById('historyList');
-
-    if (transactions.length === 0) {
-        list.innerHTML = '<p class="text-center py-5 text-text-muted">No transactions found.</p>';
-        return;
-    }
-
-    list.innerHTML = transactions.map(t => {
-        try {
-            const date = new Date(t.date);
-            const dateStr = isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
-
-            const formattedAmount = t.formattedAmount || `Rp ${Number(t.amount).toLocaleString('id-ID')}`;
-            const icon = typeEmojis[t.type] || '📦';
-            const paidByLabel = t.paidBy && t.paidBy !== 'Self' ? `<span class="text-[10px] bg-bg-tertiary text-text-secondary py-0.5 px-1.5 rounded ml-1.5">${t.paidBy}</span>` : '';
-
-            return `
-                <div class="trans-item" onclick="openOptions('${t._id}', '${t.ngapain ? t.ngapain.replace(/'/g, "\\'") : ""}', ${t.amount})">
-                    <div class="trans-icon">${icon}</div>
-                    <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-sm text-text-primary mb-0.5 flex items-center gap-1.5 flex-wrap">
-                            ${t.ngapain || 'No Description'}
-                            ${paidByLabel}
-                        </div>
-                        <div class="text-xs text-text-muted">${dateStr} • ${t.pocket || 'Unknown'}</div>
-                    </div>
-                    <div class="font-bold text-sm text-coral whitespace-nowrap ml-2">- ${formattedAmount}</div>
-                </div>
-            `;
-        } catch (err) {
-            console.error('Error rendering item:', t, err);
-            return '';
-        }
-    }).join('');
+function formatTime(dateValue) {
+    const date = new Date(dateValue);
+    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-// Delete Logic
+function safeText(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 let deleteId = null;
 function openOptions(id, note, amount) {
     deleteId = id;
-    const modal = document.getElementById('deleteModal');
-    const formatted = typeof amount === 'number' ? `Rp ${amount.toLocaleString('id-ID')}` : amount;
+    const formatted = typeof amount === 'number' ? formatRupiah(amount) : amount;
     document.getElementById('deleteDetails').innerText = `${note} - ${formatted}`;
-    modal.classList.add('show');
+    document.getElementById('deleteModal').classList.add('show');
 }
 
 function closeDeleteModal() {
@@ -324,53 +341,13 @@ async function confirmDelete() {
         const response = await fetch(`/api/transaction/${deleteId}`, { method: 'DELETE' });
         if (response.ok) {
             closeDeleteModal();
-            fetchDashboardData();
+            loadJournalData();
+            showToast('Transaction deleted', 'success');
+        } else {
+            showToast('Could not delete transaction', 'error');
         }
     } catch (error) {
         console.error(error);
-    }
-}
-
-async function exportToCSV() {
-    try {
-        const response = await fetch(`/api/transactions?month=${currentMonth}`);
-        const transactions = await response.json();
-
-        if (transactions.length === 0) {
-            alert("No transactions to export!");
-            return;
-        }
-
-        const csvRows = [];
-        csvRows.push(['Date', 'Type', 'Pocket', 'Description', 'Amount', 'Paid By', 'Submitted By']);
-
-        transactions.forEach(t => {
-            const date = new Date(t.date);
-            const dateStr = date.toLocaleDateString('en-GB');
-            const safeDesc = `"${t.ngapain.replace(/"/g, '""')}"`;
-
-            csvRows.push([
-                dateStr,
-                t.type,
-                t.pocket,
-                safeDesc,
-                t.amount,
-                t.paidBy || 'Self',
-                t.by || 'Unknown'
-            ]);
-        });
-
-        const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `MoneyJournal_${currentMonth}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-    } catch (error) {
-        console.error('Export failed:', error);
-        alert('Failed to export data');
+        showToast('Network error', 'error');
     }
 }

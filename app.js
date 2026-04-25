@@ -78,7 +78,7 @@ app.use(session({
 // Root Route
 app.get('/', (req, res) => {
     if (req.session.userId) {
-        res.redirect('/transaction');
+        res.redirect('/transactions');
     } else {
         res.redirect('/login');
     }
