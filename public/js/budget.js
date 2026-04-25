@@ -124,11 +124,7 @@ function renderBudgets(data) {
 }
 
 function renderHealthSummary(data) {
-    // Distinct color palette — auto-assigned per pocket
-    const chartColors = [
-        '#FF4D6D', '#7C3AED', '#22C55E', '#F59E0B', '#06B6D4',
-        '#F97316', '#3B82F6', '#EC4899', '#FBBF24', '#14B8A6'
-    ];
+    // Distinct color palette — auto-assigned per pocket (now uses shared chartColors from common.js)
 
     // Build chart data from pockets
     const pocketsWithBudget = data.pockets.filter(p => p.budget > 0);

@@ -17,10 +17,7 @@ const POCKET_LIST = [
 // =============================================
 //  FORMAT HELPERS
 // =============================================
-function formatRupiahDisplay(num) {
-    if (!num || isNaN(num)) return 'Rp 0';
-    return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
+// formatRupiah is now provided by common.js
 
 // =============================================
 //  STREAK MANAGEMENT (localStorage)
@@ -241,8 +238,8 @@ function updateBreakdownTotal() {
     const allocated = getBreakdownSum();
     const diff = total - allocated;
 
-    document.getElementById('allocatedTotal').textContent = formatRupiahDisplay(allocated);
-    document.getElementById('transactionAmountDisplay').textContent = formatRupiahDisplay(total);
+    document.getElementById('allocatedTotal').textContent = formatRupiah(allocated);
+    document.getElementById('transactionAmountDisplay').textContent = formatRupiah(total);
 
     const diffEl = document.getElementById('differenceDisplay');
     const progressFill = document.getElementById('breakdownProgressFill');
@@ -258,13 +255,13 @@ function updateBreakdownTotal() {
         progressFill.style.width = '100%';
         progressFill.className = 'breakdown-progress-fill matched';
     } else if (diff > 0) {
-        diffEl.textContent = `- ${formatRupiahDisplay(diff)} remaining`;
+        diffEl.textContent = `- ${formatRupiah(diff)} remaining`;
         diffEl.className = 'value unmatched';
         const pct = Math.min((allocated / total) * 100, 100);
         progressFill.style.width = `${pct}%`;
         progressFill.className = 'breakdown-progress-fill';
     } else {
-        diffEl.textContent = `+ ${formatRupiahDisplay(Math.abs(diff))} over`;
+        diffEl.textContent = `+ ${formatRupiah(Math.abs(diff))} over`;
         diffEl.className = 'value unmatched';
         progressFill.style.width = '100%';
         progressFill.className = 'breakdown-progress-fill over';
@@ -405,7 +402,7 @@ function validateForm() {
         const totalAmount = parseFloat(amountValue);
         if (Math.round(breakdownSum) !== Math.round(totalAmount)) {
             const diff = totalAmount - breakdownSum;
-            showToast(`Breakdown total (${formatRupiahDisplay(breakdownSum)}) does not match transaction amount (${formatRupiahDisplay(totalAmount)}). Difference: ${formatRupiahDisplay(Math.abs(diff))}`, 'error');
+            showToast(`Breakdown total (${formatRupiah(breakdownSum)}) does not match transaction amount (${formatRupiah(totalAmount)}). Difference: ${formatRupiah(Math.abs(diff))}`, 'error');
             return false;
         }
     }

@@ -94,12 +94,6 @@ function renderComparison(comparison) {
 // Global chart instance
 let spendingChart = null;
 
-// Chart color palette — Neon
-const chartColors = [
-    '#FF4D6D', '#7C3AED', '#22C55E', '#F59E0B', '#06B6D4',
-    '#F97316', '#3B82F6', '#EC4899', '#FBBF24', '#14B8A6'
-];
-
 function renderSpendingChart() {
     const canvas = document.getElementById('spendingChart');
     const legendContainer = document.getElementById('chartLegend');
@@ -168,9 +162,7 @@ function renderSpendingChart() {
 }
 
 
-function formatRupiah(num) {
-    return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
+// formatRupiah is now in common.js
 
 
 function renderCategoryList() {

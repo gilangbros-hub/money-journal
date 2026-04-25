@@ -33,3 +33,15 @@ function showToast(text, type = 'success', duration = 2500) {
         messageDiv.classList.remove('show');
     }, duration);
 }
+
+// Format number to Rupiah string
+function formatRupiah(num) {
+    if (num === null || num === undefined || isNaN(num)) return 'Rp 0';
+    return 'Rp ' + Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Shared Chart Colors - Neon Palette
+const chartColors = [
+    '#FF4D6D', '#7C3AED', '#22C55E', '#F59E0B', '#06B6D4',
+    '#F97316', '#3B82F6', '#EC4899', '#FBBF24', '#14B8A6'
+];

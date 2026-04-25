@@ -146,9 +146,7 @@ function updateSummary() {
     `;
 }
 
-function formatRupiah(num) {
-    return 'Rp ' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-}
+// formatRupiah is now in common.js
 
 function renderTransactions() {
     const list = document.getElementById('transactionList');
