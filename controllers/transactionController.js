@@ -28,11 +28,13 @@ exports.getAllTransactionsPage = (req, res) => {
 
 exports.createTransaction = async (req, res) => {
     try {
-        const { date, type, pocket, ngapain, amount, paidBy, budgetMonth, budgetYear } = req.body;
+        const { date, type, pocket, ngapain, amount, paidBy, budgetMonth, budgetYear, sourceType, sourceBreakdowns } = req.body;
         const txDate = new Date(date);
+        const parsedAmount = parseFloat(amount);
 
         // Check if the target month is closed
         const ClosedMonth = require('../models/closedMonth');
+        const { POCKETS } = require('../utils/constants');
         const targetMonth = budgetMonth ? parseInt(budgetMonth) : txDate.getMonth() + 1;
         const targetYear = budgetYear ? parseInt(budgetYear) : txDate.getFullYear();
         const closedDoc = await ClosedMonth.findOne({ month: targetMonth, year: targetYear });
@@ -40,23 +42,66 @@ exports.createTransaction = async (req, res) => {
             return res.status(400).json({ success: false, message: `Budget for this month is closed. You cannot add transactions to a closed month.` });
         }
 
+        // Multi-pocket server-side validation
+        let finalSourceType = sourceType || 'single';
+        let finalBreakdowns = [];
+        let finalPocket = pocket ? pocket.trim() : pocket;
+
+        if (finalSourceType === 'multi' && sourceBreakdowns && sourceBreakdowns.length > 0) {
+            if (sourceBreakdowns.length > 3) {
+                return res.status(400).json({ success: false, message: 'Maximum 3 pockets allowed in multi-pocket mode.' });
+            }
+
+            const pocketSet = new Set();
+            let breakdownSum = 0;
+
+            for (const b of sourceBreakdowns) {
+                if (!b.pocket || !POCKETS[b.pocket]) {
+                    return res.status(400).json({ success: false, message: `Invalid pocket: ${b.pocket}` });
+                }
+                if (pocketSet.has(b.pocket)) {
+                    return res.status(400).json({ success: false, message: `Duplicate pocket: ${b.pocket}` });
+                }
+                if (!b.amount || b.amount <= 0) {
+                    return res.status(400).json({ success: false, message: `Each pocket amount must be greater than 0.` });
+                }
+                pocketSet.add(b.pocket);
+                breakdownSum += parseFloat(b.amount);
+            }
+
+            if (Math.round(breakdownSum) !== Math.round(parsedAmount)) {
+                return res.status(400).json({ success: false, message: `Breakdown total (${breakdownSum}) does not match transaction amount (${parsedAmount}).` });
+            }
+
+            finalBreakdowns = sourceBreakdowns.map(b => ({ pocket: b.pocket, amount: parseFloat(b.amount) }));
+            finalPocket = finalBreakdowns[0].pocket; // Primary pocket for backward compat
+        } else {
+            finalSourceType = 'single';
+            finalBreakdowns = [];
+        }
+
         const transaction = new Transaction({
             date: txDate,
             type: type ? type.trim() : type,
-            pocket: pocket ? pocket.trim() : pocket,
+            pocket: finalPocket,
             ngapain,
             by: req.session.userId,
             paidBy: paidBy || req.session.role || 'Self',
-            amount: parseFloat(amount),
+            amount: parsedAmount,
             budgetMonth: budgetMonth ? parseInt(budgetMonth) : txDate.getMonth() + 1,
-            budgetYear: budgetYear ? parseInt(budgetYear) : txDate.getFullYear()
+            budgetYear: budgetYear ? parseInt(budgetYear) : txDate.getFullYear(),
+            sourceType: finalSourceType,
+            sourceBreakdowns: finalBreakdowns
         });
 
         await transaction.save();
 
         // Send Email Notification (Non-blocking)
         if (resend) {
-            const formattedAmount = new Intl.NumberFormat('id-ID').format(amount);
+            const formattedAmount = new Intl.NumberFormat('id-ID').format(parsedAmount);
+            const pocketLabel = finalSourceType === 'multi'
+                ? `${finalPocket} (+ ${finalBreakdowns.length - 1} more)`
+                : finalPocket;
             const recipients = process.env.NOTIFY_EMAIL ? process.env.NOTIFY_EMAIL.split(';').map(email => email.trim()) : ['your-email@example.com'];
 
             // Send individually to avoid one restricted email blocking the whole batch
@@ -70,7 +115,7 @@ exports.createTransaction = async (req, res) => {
                             <h2 style="color: #4F46E5;">New Spending Alert!</h2>
                             <p><strong>Who:</strong> ${req.session.username}</p>
                             <p><strong>Amount:</strong> Rp ${formattedAmount}</p>
-                            <p><strong>Category:</strong> ${type} (${pocket})</p>
+                            <p><strong>Category:</strong> ${type} (${pocketLabel})</p>
                             <p><strong>Notes:</strong> ${ngapain}</p>
                             <hr style="border: 0; border-top: 1px solid #eee;">
                             <p style="font-size: 12px; color: #666;">This is an automated notification from your Money Journal.</p>
@@ -130,19 +175,63 @@ exports.getTransaction = async (req, res) => {
 
 exports.updateTransaction = async (req, res) => {
     try {
-        const { date, type, pocket, ngapain, amount, budgetMonth, budgetYear } = req.body;
+        const { date, type, pocket, ngapain, amount, budgetMonth, budgetYear, sourceType, sourceBreakdowns } = req.body;
         const txDate = new Date(date);
+        const parsedAmount = parseFloat(amount);
+        const { POCKETS } = require('../utils/constants');
+
+        // Multi-pocket server-side validation
+        let finalSourceType = sourceType || 'single';
+        let finalBreakdowns = [];
+        let finalPocket = pocket ? pocket.trim() : pocket;
+
+        if (finalSourceType === 'multi' && sourceBreakdowns && sourceBreakdowns.length > 0) {
+            if (sourceBreakdowns.length > 3) {
+                return res.status(400).json({ success: false, message: 'Maximum 3 pockets allowed.' });
+            }
+
+            const pocketSet = new Set();
+            let breakdownSum = 0;
+
+            for (const b of sourceBreakdowns) {
+                if (!b.pocket || !POCKETS[b.pocket]) {
+                    return res.status(400).json({ success: false, message: `Invalid pocket: ${b.pocket}` });
+                }
+                if (pocketSet.has(b.pocket)) {
+                    return res.status(400).json({ success: false, message: `Duplicate pocket: ${b.pocket}` });
+                }
+                if (!b.amount || b.amount <= 0) {
+                    return res.status(400).json({ success: false, message: 'Each pocket amount must be greater than 0.' });
+                }
+                pocketSet.add(b.pocket);
+                breakdownSum += parseFloat(b.amount);
+            }
+
+            if (Math.round(breakdownSum) !== Math.round(parsedAmount)) {
+                return res.status(400).json({ success: false, message: `Breakdown total does not match transaction amount.` });
+            }
+
+            finalBreakdowns = sourceBreakdowns.map(b => ({ pocket: b.pocket, amount: parseFloat(b.amount) }));
+            finalPocket = finalBreakdowns[0].pocket;
+        } else {
+            finalSourceType = 'single';
+            finalBreakdowns = [];
+        }
+
         await Transaction.findByIdAndUpdate(req.params.id, {
             date: txDate,
             type,
-            pocket,
+            pocket: finalPocket,
             ngapain,
-            amount: parseFloat(amount),
+            amount: parsedAmount,
             budgetMonth: budgetMonth ? parseInt(budgetMonth) : txDate.getMonth() + 1,
-            budgetYear: budgetYear ? parseInt(budgetYear) : txDate.getFullYear()
+            budgetYear: budgetYear ? parseInt(budgetYear) : txDate.getFullYear(),
+            sourceType: finalSourceType,
+            sourceBreakdowns: finalBreakdowns
         });
         res.json({ success: true });
     } catch (error) {
+        console.error('Update transaction error:', error);
         res.status(500).json({ success: false });
     }
 };
@@ -225,7 +314,14 @@ exports.getDashboardSummary = async (req, res) => {
         // Calculate spending per pocket for budget alerts
         const pocketSpending = {};
         transactions.forEach(t => {
-            pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
+            if (t.sourceType === 'multi' && t.sourceBreakdowns && t.sourceBreakdowns.length > 0) {
+                // Distribute amounts across breakdown pockets
+                t.sourceBreakdowns.forEach(b => {
+                    pocketSpending[b.pocket] = (pocketSpending[b.pocket] || 0) + b.amount;
+                });
+            } else {
+                pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
+            }
         });
 
         // Generate budget alerts

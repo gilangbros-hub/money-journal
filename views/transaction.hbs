@@ -61,21 +61,70 @@
                 </div>
             </div>
 
-            <!-- 4. Pocket -->
+            <!-- 4. Source Type -->
             <div class="mb-7">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🔀</span> Source Type</div>
+                <div class="source-type-toggle">
+                    <label>
+                        <input type="radio" name="sourceType" value="single" checked id="sourceTypeSingle">
+                        <div class="source-type-option">
+                            <span>👛</span> Single Pocket
+                        </div>
+                    </label>
+                    <label>
+                        <input type="radio" name="sourceType" value="multi" id="sourceTypeMulti">
+                        <div class="source-type-option">
+                            <span>🔀</span> Multi Pocket
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 5a. Pocket (Single Mode) -->
+            <div class="mb-7" id="singlePocketSection">
                 <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>👛</span> Pocket Source</div>
                 <div class="option-grid">
                     {{!-- prettier-ignore --}}
                     {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend
                     Transport,Investasi,Bandung,Sedeqah,IPL")}}
                     <label>
-                        <input type="radio" name="pocket" value="{{this}}" class="option-input" required>
+                        <input type="radio" name="pocket" value="{{this}}" class="option-input">
                         <div class="icon-btn">
                             <span class="text-[28px] mb-1.5">{{getPocketEmoji this}}</span>
                             <span class="text-[11px] font-semibold text-center text-text-secondary">{{this}}</span>
                         </div>
                     </label>
                     {{/each}}
+                </div>
+            </div>
+
+            <!-- 5b. Pocket (Multi Mode) -->
+            <div class="mb-7" id="multiPocketSection" style="display:none;">
+                <div class="text-[13px] font-bold uppercase tracking-wider text-text-secondary mb-3 flex items-center gap-1.5"><span>🔀</span> Pocket Breakdown</div>
+                <div class="breakdown-container" id="breakdownRows">
+                    <!-- Dynamic rows inserted by JS -->
+                </div>
+                <button type="button" class="add-pocket-btn mt-3" id="addPocketBtn" onclick="addBreakdownRow()">
+                    <span>➕</span> Add Pocket
+                </button>
+
+                <!-- Running Total -->
+                <div class="breakdown-total mt-4" id="breakdownTotalCard">
+                    <div class="breakdown-total-row mb-2">
+                        <span class="label">Allocated</span>
+                        <span class="value" id="allocatedTotal">Rp 0</span>
+                    </div>
+                    <div class="breakdown-total-row mb-2">
+                        <span class="label">Transaction Amount</span>
+                        <span class="value" id="transactionAmountDisplay">Rp 0</span>
+                    </div>
+                    <div class="breakdown-total-row">
+                        <span class="label">Difference</span>
+                        <span class="value" id="differenceDisplay">Rp 0</span>
+                    </div>
+                    <div class="breakdown-progress">
+                        <div class="breakdown-progress-fill" id="breakdownProgressFill" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
 

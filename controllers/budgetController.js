@@ -64,7 +64,14 @@ exports.getBudgets = async (req, res) => {
         // Calculate spending per pocket
         const pocketSpending = {};
         transactions.forEach(t => {
-            pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
+            if (t.sourceType === 'multi' && t.sourceBreakdowns && t.sourceBreakdowns.length > 0) {
+                // Distribute amounts across breakdown pockets
+                t.sourceBreakdowns.forEach(b => {
+                    pocketSpending[b.pocket] = (pocketSpending[b.pocket] || 0) + b.amount;
+                });
+            } else {
+                pocketSpending[t.pocket] = (pocketSpending[t.pocket] || 0) + t.amount;
+            }
         });
 
         // Build budget map

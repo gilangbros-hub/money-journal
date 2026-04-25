@@ -4,6 +4,31 @@ All notable changes to the **Money Journal** app are documented here, from the f
 
 ---
 
+## [2026-04-25]
+
+### Added
+- **Multi-Pocket Source** on Add Transaction: users can now split a single transaction across up to 3 source pockets (e.g., 60k from Kwintals + 40k from IPL).
+- New `sourceType` field (`single` | `multi`) and `sourceBreakdowns` array on the Transaction schema.
+- Source Type toggle (Single Pocket / Multi Pocket) in the Add Transaction form.
+- Dynamic breakdown rows with pocket dropdown and per-pocket amount input (max 3 rows).
+- Live running total indicator with progress bar showing allocated vs. transaction amount.
+- Duplicate pocket prevention via dropdown filtering.
+- Server-side and client-side validation: sum match, positive amounts, max 3 pockets.
+- Multi-pocket badge (`🔀 Multi (N)`) on All Transactions page.
+- Dashboard and Budget spending aggregation correctly distributes multi-pocket amounts per pocket.
+- Edit mode preloads source type and breakdown rows for multi-pocket transactions.
+
+### Changed
+- Transaction form pocket section is now conditional (single radio grid or multi breakdown rows).
+- Email notification shows "(+ N more)" for multi-pocket transactions.
+
+### Commits
+| Hash | Description |
+|------|-------------|
+| `696ae3d` | feat: add multi-pocket source for Add Transaction |
+
+---
+
 ## [2026-04-08]
 
 ### Changed

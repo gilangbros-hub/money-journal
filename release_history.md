@@ -86,6 +86,7 @@
 | 76 | `87af598` | Feat: close/reopen budget, success modal, closed pocket validation |
 | 77 | `1703a45` | Fix: rework close budget to close entire month, not per-pocket |
 | 78 | `7bc8281` | Feat: add pocket (budget type) filter to All Transactions web page |
+| 79 | `696ae3d` | Feat: add multi-pocket source for Add Transaction |
 
 ---
 

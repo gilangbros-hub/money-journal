@@ -48,6 +48,21 @@ const transactionSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    sourceType: {
+        type: String,
+        enum: ['single', 'multi'],
+        default: 'single'
+    },
+    sourceBreakdowns: [{
+        pocket: {
+            type: String,
+            enum: Object.keys(POCKETS)
+        },
+        amount: {
+            type: Number,
+            min: 0
+        }
+    }],
     createdAt: {
         type: Date,
         default: Date.now

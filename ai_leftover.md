@@ -30,9 +30,9 @@
 ### Backend
 | File | Purpose |
 |------|---------|
-| `controllers/transactionController.js` | CRUD for transactions, dashboard summary, closed-month validation |
-| `controllers/budgetController.js` | Budget CRUD, month-level close/reopen, budget history |
-| `models/transaction.js` | Transaction schema (date, type, pocket, amount, budgetMonth, budgetYear) |
+| `controllers/transactionController.js` | CRUD for transactions, dashboard summary, closed-month validation, multi-pocket validation |
+| `controllers/budgetController.js` | Budget CRUD, month-level close/reopen, budget history, multi-pocket spending aggregation |
+| `models/transaction.js` | Transaction schema (date, type, pocket, amount, budgetMonth, budgetYear, sourceType, sourceBreakdowns) |
 | `models/pocketBudget.js` | Per-pocket budget allocation per month |
 | `models/closedMonth.js` | Tracks which months are locked (month, year, closedBy) |
 | `models/user.js` | User model with role (Wife/Husband), avatar, isActive |
@@ -47,8 +47,8 @@
 | `views/transaction.hbs` | Add Transaction form page |
 | `views/allTransactions.hbs` | All Transactions listing page |
 | `views/budget.hbs` | Budget Tracker page |
-| `public/js/transaction.js` | Add Transaction form logic, closed month check |
-| `public/js/allTransactions.js` | All Transactions filtering (type + pocket), sorting, delete |
+| `public/js/transaction.js` | Add Transaction form logic, closed month check, multi-pocket source toggle and breakdown rows |
+| `public/js/allTransactions.js` | All Transactions filtering (type + pocket), sorting, delete, multi-pocket badge display |
 | `public/js/budget.js` | Budget rendering, month-level close/reopen toggle |
 | `public/js/common.js` | Shared utilities (toast, menu toggle) |
 
@@ -111,6 +111,16 @@
 - Tab bar is flat, white, and docked to the bottom. The FAB is a simple, shadow-free circular button.
 - Restrained visual language: single accent colors used mostly as indicators (progress bars, status rings).
 
+### 9. Multi-Pocket Source Transactions
+- Transactions support `sourceType`: `'single'` (default, backward-compatible) or `'multi'`.
+- Multi-pocket stores `sourceBreakdowns: [{ pocket, amount }]` (max 3 pockets).
+- The existing `pocket` field always stores the first/primary pocket for backward compatibility with filters and queries.
+- Breakdown sum must exactly match transaction total amount (validated client-side and server-side).
+- Dashboard and budget spending aggregation distributes multi-pocket amounts per breakdown pocket.
+- All Transactions page shows a `🔀 Multi (N)` badge for multi-pocket transactions.
+- Edit mode preloads the correct source type and breakdown rows.
+- No database migration needed — new fields have defaults and are optional.
+
 ---
 
 ## Current State (What Was Last Done)
@@ -132,6 +142,7 @@
 14. Refactored the mobile Add Transaction screen into a card-centric inline-editing flow with an in-screen category sheet and accordion details
 15. Unified the mobile Dashboard, Budget, and navigation taskbar around a compact colorful card system with a floating dock-style tab bar
 16. Completely overhauled the mobile app's styling to a **clean, white/light minimalistic card design** (removing Tropis Neon theme on mobile, zero shadows, LOV selections, pill buttons, flat navigators).
+17. **Multi-Pocket Source** on Add Transaction (web): users can split a single transaction across up to 3 source pockets with per-pocket amount breakdown, live running total, and full validation.
 
 ### Known Issues / Potential Improvements
 - OTA updates may not always apply immediately on older APK builds; user sometimes needs a new APK.

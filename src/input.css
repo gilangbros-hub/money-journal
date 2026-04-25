@@ -366,4 +366,115 @@
   .field-group input::placeholder {
     @apply text-text-muted;
   }
+
+  /* --- Source Type Toggle --- */
+  .source-type-toggle {
+    @apply flex gap-2;
+  }
+
+  .source-type-toggle label {
+    @apply flex-1;
+  }
+
+  .source-type-toggle .source-type-option {
+    @apply flex items-center justify-center gap-2 py-3 px-4 bg-bg-secondary border-[1.5px] border-border rounded-2xl cursor-pointer transition-all duration-200 text-sm font-semibold text-text-secondary;
+  }
+
+  .source-type-toggle input[type="radio"] {
+    @apply hidden;
+  }
+
+  .source-type-toggle input[type="radio"]:checked + .source-type-option {
+    @apply bg-primary/15 border-primary text-primary shadow-glow-primary;
+  }
+
+  /* --- Multi Pocket Breakdown --- */
+  .breakdown-container {
+    @apply flex flex-col gap-3;
+  }
+
+  .breakdown-row {
+    @apply flex items-center gap-2 bg-bg-secondary p-3 rounded-2xl border border-border transition-all duration-200;
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .breakdown-row select {
+    @apply flex-1 min-w-0 py-2.5 px-3 bg-bg-tertiary border border-border rounded-xl text-sm text-text-primary outline-none transition-all duration-200 appearance-none cursor-pointer font-semibold;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    padding-right: 28px;
+  }
+
+  .breakdown-row select:focus {
+    @apply border-primary shadow-glow-primary;
+  }
+
+  .breakdown-row .breakdown-amount {
+    @apply w-[120px] py-2.5 px-3 bg-bg-tertiary border border-border rounded-xl text-sm font-bold text-text-primary outline-none transition-all duration-200 text-right;
+  }
+
+  .breakdown-row .breakdown-amount:focus {
+    @apply border-primary shadow-glow-primary;
+  }
+
+  .breakdown-row .remove-pocket-btn {
+    @apply w-8 h-8 flex items-center justify-center rounded-lg bg-coral/10 text-coral border-none cursor-pointer transition-all duration-200 text-base flex-shrink-0;
+  }
+
+  .breakdown-row .remove-pocket-btn:hover {
+    @apply bg-coral/20;
+  }
+
+  .add-pocket-btn {
+    @apply w-full py-3 bg-bg-tertiary border-[1.5px] border-dashed border-border rounded-2xl text-sm font-semibold text-text-secondary cursor-pointer transition-all duration-200 flex items-center justify-center gap-2;
+  }
+
+  .add-pocket-btn:hover {
+    @apply border-primary text-primary bg-primary/5;
+  }
+
+  /* --- Breakdown Total Indicator --- */
+  .breakdown-total {
+    @apply bg-bg-secondary p-4 rounded-2xl border border-border;
+  }
+
+  .breakdown-total-row {
+    @apply flex justify-between items-center text-sm;
+  }
+
+  .breakdown-total-row .label {
+    @apply text-text-secondary font-medium;
+  }
+
+  .breakdown-total-row .value {
+    @apply font-bold text-text-primary;
+  }
+
+  .breakdown-total-row .value.matched {
+    @apply text-lime;
+  }
+
+  .breakdown-total-row .value.unmatched {
+    @apply text-coral;
+  }
+
+  .breakdown-total .breakdown-progress {
+    @apply w-full h-2 bg-bg-tertiary rounded-full overflow-hidden mt-3;
+  }
+
+  .breakdown-total .breakdown-progress-fill {
+    @apply h-full rounded-full transition-all duration-300;
+    background: linear-gradient(135deg, #7132f5 0%, #5b1ecf 100%);
+  }
+
+  .breakdown-total .breakdown-progress-fill.over {
+    @apply bg-coral;
+    background: linear-gradient(135deg, #e3342f 0%, #b91c1c 100%);
+  }
+
+  .breakdown-total .breakdown-progress-fill.matched {
+    background: linear-gradient(135deg, #149e61 0%, #026b3f 100%);
+  }
 }

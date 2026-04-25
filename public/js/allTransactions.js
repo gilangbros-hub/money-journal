@@ -192,6 +192,14 @@ function renderTransactions() {
                 : '';
             const safeNote = (t.ngapain || '').replace(/'/g, "\\'");
 
+            // Multi-pocket badge
+            let pocketDisplay = t.pocket || 'Unknown';
+            let multiBadge = '';
+            if (t.sourceType === 'multi' && t.sourceBreakdowns && t.sourceBreakdowns.length > 1) {
+                pocketDisplay = t.sourceBreakdowns.map(b => b.pocket).join(' + ');
+                multiBadge = `<span class="text-[10px] bg-primary/15 text-primary py-0.5 px-1.5 rounded font-semibold ml-1">🔀 Multi (${t.sourceBreakdowns.length})</span>`;
+            }
+
             html += `
                 <div class="trans-item" onclick="openOptions('${t._id}', '${safeNote}', ${t.amount})">
                     <div class="trans-icon">${icon}</div>
@@ -199,8 +207,9 @@ function renderTransactions() {
                         <div class="font-semibold text-sm text-text-primary mb-0.5 flex items-center gap-1.5 flex-wrap">
                             ${t.ngapain || 'No Description'}
                             ${paidByBadge}
+                            ${multiBadge}
                         </div>
-                        <div class="text-xs text-text-muted">${t.type} • ${t.pocket || 'Unknown'}</div>
+                        <div class="text-xs text-text-muted">${t.type} • ${pocketDisplay}</div>
                     </div>
                     <div class="font-bold text-sm text-coral whitespace-nowrap ml-2">- ${formattedAmount}</div>
                 </div>
