@@ -8,12 +8,15 @@
 
 <body class="transaction-screen">
     <div class="page-container transaction-layout">
-        <header class="app-header">
-            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
+        <header class="app-header" style="justify-content: flex-start; gap: 1rem;">
+            <a href="/monthly-story" class="btn-ghost" style="width: 40px; height: 40px; padding: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none;">
+                <span class="material-symbols-outlined" style="font-size: 20px;">arrow_back</span>
+            </a>
+            <div style="flex: 1;">
                 <p class="journal-eyebrow">Money Journal</p>
-                <h1 class="page-title page-title-ledger">Log Spending <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
+                <h1 class="page-title page-title-ledger transaction-title">Log Spending <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
             </div>
-            <div class="user-info" onclick="toggleMenu()">
+            <div class="user-info" onclick="toggleMenu()" style="margin-left: auto;">
                 <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
                 <span class="text-[28px]">{{avatar}}</span>
             </div>
@@ -93,10 +96,11 @@
                         {{/each}}
                     </div>
 
-                    <button type="button" class="transaction-row" id="dateTrigger">
+                    <label class="transaction-row relative" style="position: relative; cursor: pointer;">
                         <span class="transaction-row-label">Date & Time</span>
                         <span class="transaction-row-value" id="dateDisplay">25 Apr · 10:06 PM</span>
-                    </button>
+                        <input type="datetime-local" id="date" name="date" required style="position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer;">
+                    </label>
 
                     <div class="transaction-budget-month">
                         <p class="transaction-field-label">Budget Month</p>
@@ -107,8 +111,6 @@
 
                 <button type="submit" class="transaction-save-btn" id="submitBtn">Save Transaction</button>
             </div>
-
-            <input type="datetime-local" id="date" name="date" required class="sr-only">
 
             <div class="transaction-hidden-types" aria-hidden="true">
                 {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}

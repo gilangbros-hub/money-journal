@@ -17,8 +17,51 @@ const typeEmojis = {
     Others: '📦'
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+async function determineDefaultMonth() {
+    const now = new Date();
+    let targetMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    try {
+        const response = await fetch('/api/budget/closed-months');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const closedKeys = result.data.map(m => m.key);
+            
+            if (closedKeys.includes(targetMonth)) {
+                let found = false;
+                for (let i = 1; i <= 12; i++) {
+                    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    if (!closedKeys.includes(key)) {
+                        targetMonth = key;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    for (let i = 1; i <= 12; i++) {
+                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                        if (!closedKeys.includes(key)) {
+                            targetMonth = key;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Error fetching closed months:', e);
+    }
+    return targetMonth;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
     const monthFilter = document.getElementById('monthFilter');
+    
+    currentMonth = await determineDefaultMonth();
     monthFilter.value = currentMonth;
 
     monthFilter.addEventListener('change', (e) => {
@@ -28,9 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const jumpBtn = document.getElementById('jumpToTodayBtn');
     if (jumpBtn) {
-        jumpBtn.addEventListener('click', () => {
-            const now = new Date();
-            currentMonth = now.toISOString().slice(0, 7);
+        jumpBtn.addEventListener('click', async () => {
+            currentMonth = await determineDefaultMonth();
             monthFilter.value = currentMonth;
             loadJournalData();
             window.scrollTo({ top: 0, behavior: 'smooth' });
