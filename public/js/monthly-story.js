@@ -203,7 +203,7 @@ function renderTimelineRow(item) {
             <div class="journal-row-icon">${typeEmojis[item.type] || '📦'}</div>
             <div class="journal-row-body">
                 <p class="journal-row-title">${safeText(item.ngapain || 'No description')}</p>
-                <p class="journal-row-meta">${formatTime(item.date)} · ${safeText(item.pocket || 'Unknown')}</p>
+                <p class="journal-row-meta">${safeText(item.pocket || 'Unknown')}</p>
             </div>
             <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(item.amount)}</p>
         </article>
@@ -219,7 +219,7 @@ function renderFeedRow(item) {
             <div class="journal-row-icon">${typeEmojis[item.type] || '📦'}</div>
             <div class="journal-row-body">
                 <p class="journal-row-title">${safeText(item.ngapain || 'No description')}</p>
-                <p class="journal-row-meta">${formatTime(item.date)} · ${safeText(item.pocket || 'Unknown')}</p>
+                <p class="journal-row-meta">${safeText(item.pocket || 'Unknown')}</p>
             </div>
             <div class="journal-row-right">
                 <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(amount)}</p>
@@ -351,10 +351,7 @@ function formatDateGroupLabel(dateKey) {
     });
 }
 
-function formatTime(dateValue) {
-    const date = new Date(dateValue);
-    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-}
+// Time formatting removed as requested
 
 function safeText(value) {
     return String(value)

@@ -70,8 +70,7 @@ function displayStreak() {
 
 function formatDateTimeLabel(value) {
     const date = new Date(value);
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) + ' \u00B7 ' +
-        date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function getSelectedType() {
@@ -392,7 +391,7 @@ async function loadTransactionForEdit(id) {
 
         const date = new Date(transaction.date);
         date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-        document.getElementById('date').value = date.toISOString().slice(0, 16);
+        document.getElementById('date').value = date.toISOString().slice(0, 10);
         updateDateDisplay();
 
         setSelectedType(transaction.type || 'Eat');
@@ -423,7 +422,7 @@ function addAnother() {
     document.getElementById('transactionForm').reset();
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('date').value = now.toISOString().slice(0, 16);
+    document.getElementById('date').value = now.toISOString().slice(0, 10);
     updateDateDisplay();
     populateBudgetMonthSelect();
     document.getElementById('sourceTypeSingle').checked = true;
@@ -437,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('date').value = now.toISOString().slice(0, 16);
+    document.getElementById('date').value = now.toISOString().slice(0, 10);
     updateDateDisplay();
     populateBudgetMonthSelect();
     setSelectedType('Eat');
