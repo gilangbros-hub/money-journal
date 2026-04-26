@@ -96,10 +96,10 @@
                         {{/each}}
                     </div>
 
-                    <label class="transaction-row relative" style="position: relative; cursor: pointer;">
+                    <label class="transaction-row relative" id="dateTrigger" style="position: relative; cursor: pointer;">
                         <span class="transaction-row-label">Date & Time</span>
                         <span class="transaction-row-value" id="dateDisplay">25 Apr · 10:06 PM</span>
-                        <input type="datetime-local" id="date" name="date" required style="position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; cursor: pointer;">
+                        <input type="datetime-local" id="date" name="date" required style="position: absolute; bottom: 0; right: 0; width: 1px; height: 1px; opacity: 0.01; z-index: -1;">
                     </label>
 
                     <div class="transaction-budget-month">

@@ -459,6 +459,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('categoryTrigger').addEventListener('click', () => openSheet('typeSheet'));
     document.getElementById('pocketTrigger').addEventListener('click', () => openSheet('pocketSheet'));
+    
+    document.getElementById('dateTrigger').addEventListener('click', (e) => {
+        e.preventDefault();
+        const dateInput = document.getElementById('date');
+        if (typeof dateInput.showPicker === 'function') {
+            dateInput.showPicker();
+        } else {
+            dateInput.focus();
+        }
+    });
 
     document.querySelectorAll('[data-close-sheet]').forEach((button) => {
         button.addEventListener('click', () => closeSheet(button.dataset.closeSheet));
