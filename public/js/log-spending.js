@@ -461,10 +461,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pocketTrigger').addEventListener('click', () => openSheet('pocketSheet'));
     
     document.getElementById('dateTrigger').addEventListener('click', (e) => {
-        e.preventDefault();
         const dateInput = document.getElementById('date');
         if (typeof dateInput.showPicker === 'function') {
-            dateInput.showPicker();
+            try {
+                dateInput.showPicker();
+            } catch (err) {
+                // Ignore, native picker is likely already opening or unsupported
+            }
         } else {
             dateInput.focus();
         }
