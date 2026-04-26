@@ -8,15 +8,12 @@
 
 <body class="transaction-screen">
     <div class="page-container transaction-layout">
-        <header class="app-header" style="justify-content: flex-start; gap: 1rem;">
-            <a href="/monthly-story" class="btn-ghost" style="width: 40px; height: 40px; padding: 0; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-decoration: none;">
-                <span class="material-symbols-outlined" style="font-size: 20px;">arrow_back</span>
-            </a>
-            <div style="flex: 1;">
-                <p class="journal-eyebrow">Money Journal</p>
+        <header class="app-header">
+            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
+                <p class="journal-eyebrow"><a href="/monthly-story" style="color: inherit; text-decoration: none;">← Back</a></p>
                 <h1 class="page-title page-title-ledger transaction-title">Log Spending <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
             </div>
-            <div class="user-info" onclick="toggleMenu()" style="margin-left: auto;">
+            <div class="user-info" onclick="toggleMenu()">
                 <span class="text-sm font-semibold text-text-secondary">{{username}}</span>
                 <span class="text-[28px]">{{avatar}}</span>
             </div>
