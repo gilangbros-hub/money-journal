@@ -1,50 +1,104 @@
-# Money Journal (CatatBoros)
+# CatatBoros
 
-Money Journal is a full-stack personal finance application designed for seamless daily expense tracking and monthly budget management. It features a modern "Tropis Neon" dark theme on the web and a clean, light minimalist card design on its native mobile app.
+Track spending before spending tracks you.
 
-## Key Features
-- **Transaction Tracking**: Log daily expenses with precise categories and pockets.
-- **Multi-Pocket Support**: Split a single transaction across up to 3 source pockets.
-- **Budget Management**: Set and track monthly budgets per pocket with a month-level close/reopen feature.
-- **Interactive Dashboard**: View real-time spending summaries, pie charts, and monthly comparisons.
-- **Gamification**: Built-in streaks, success confetti, and motivational messages to encourage consistency.
-- **Export Options**: Export transaction history to CSV/Excel.
-- **Email Notifications**: Real-time spending alerts via Resend.
+CatatBoros is a small, punchy money journal for daily expenses, monthly pocket budgets, and honest budget reality checks. It uses streaks, confetti, alerts, and charts so budgeting feels less like homework and more like keeping your wallet from becoming a goblin cave.
 
-## Tech Stack
-- **Backend**: Node.js, Express, MongoDB, Mongoose
-- **Frontend (Web)**: Handlebars (HBS), Tailwind CSS, Vanilla JS, Chart.js
-- **Mobile App**: React Native (Expo)
-- **Deployment**: Vercel (Web), EAS (Mobile)
+## What it does
 
-## Setup Instructions
+- Log daily spending with category, pocket, payer, note, and date.
+- Split one transaction across up to 3 pockets.
+- Set monthly budgets per pocket.
+- Close or reopen a month when budget review is done.
+- Review spending history with month, type, and pocket filters.
+- See monthly story cards, charts, recent transactions, and budget alerts.
+- Send spending notifications by email with Resend.
+- Works as a web app and installs like a PWA.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/gilangbros-hub/money-journal.git
-   cd money-journal
-   ```
+## Tech stack
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+- Node.js
+- Express
+- MongoDB + Mongoose
+- Handlebars
+- Tailwind CSS
+- Vanilla JavaScript
+- Resend
+- Vercel
 
-3. Set up environment variables (create a `.env` file based on `.env.example`):
-   ```env
-   MONGODB_URI=your_mongodb_connection_string
-   SESSION_SECRET=your_secret_key
-   RESEND_API_KEY=your_resend_api_key
-   NOTIFY_EMAIL=email1@example.com;email2@example.com
-   BASE_URL=http://localhost:3000
-   ```
+## Local setup
 
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
+```bash
+npm install
+copy .env.example .env
+npm run build:css
+npm run dev
+```
 
-5. (Optional) Run the Tailwind CSS watcher:
-   ```bash
-   npm run dev:css
-   ```
+Required `.env` values:
+
+```env
+MONGODB_URI=mongodb://localhost:27017/moneyjournal
+SESSION_SECRET=change_me
+PORT=3000
+NODE_ENV=development
+```
+
+Optional email values:
+
+```env
+RESEND_API_KEY=your_resend_api_key
+NOTIFY_EMAIL=email1@example.com;email2@example.com
+BASE_URL=http://localhost:3000
+```
+
+Open `http://localhost:3000`.
+
+## Scripts
+
+```bash
+npm run dev        # start server
+npm start          # start server
+npm run build:css  # build Tailwind CSS
+npm run dev:css    # watch Tailwind CSS
+```
+
+## Project map
+
+| Path | Purpose |
+|---|---|
+| `app.js` | Express app, sessions, routes, HBS helpers |
+| `database.js` | MongoDB connection |
+| `controllers/` | Auth, budget, transaction logic |
+| `routes/` | Express route definitions |
+| `models/` | Mongoose schemas |
+| `views/` | Handlebars pages and partials |
+| `public/` | CSS, JS, images, manifest |
+| `services/` | Transaction summary helpers |
+| `utils/` | Constants and formatters |
+
+## Deploy
+
+Vercel builds CSS with `npm run build:css` and serves `app.js` through `@vercel/node`.
+
+Set production environment variables in Vercel:
+
+```env
+MONGODB_URI=...
+SESSION_SECRET=...
+NODE_ENV=production
+RESEND_API_KEY=...
+NOTIFY_EMAIL=...
+BASE_URL=...
+```
+
+## Code review notes
+
+- `controllers/transactionController.js` builds email HTML from user input; escape `type`, `ngapain`, and username before sending HTML.
+- `controllers/transactionController.js` validates multi-pocket amounts but does not reject invalid top-level `amount`, `date`, or single-pocket values early.
+- `controllers/authController.js` lets profile updates change username without duplicate checks.
+- `package.json` has no real test/lint script yet; add smoke tests before bigger refactors.
+
+## License
+
+Private project unless owner says otherwise.
