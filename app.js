@@ -2,9 +2,10 @@ const express = require('express');
 const hbs = require('hbs');
 const dotenv = require('dotenv');
 const session = require('express-session');
-let MongoStore = require('connect-mongo');
-if (MongoStore.default) MongoStore = MongoStore.default;
+const MongoStore = require('connect-mongo');
+const path = require('path');
 const connectDB = require('./database');
+const { authLimiter } = require('./middleware/auth');
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -15,9 +16,6 @@ dotenv.config({ path: './.env' });
 
 // Connect to database
 connectDB();
-
-const path = require('path');
-
 
 const app = express();
 
@@ -37,24 +35,27 @@ const { TRANSACTION_TYPES, POCKETS } = require('./utils/constants');
 
 hbs.registerHelper('getEmoji', function (type) {
     return TRANSACTION_TYPES[type] || '📝';
-
 });
 
 hbs.registerHelper('getPocketEmoji', function (pocket) {
     return POCKETS[pocket] || '👛';
-
 });
 
 hbs.registerHelper('eq', function (a, b) {
     return a === b;
 });
 
+// Middleware
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // Trust proxy (required for Render/Heroku secure cookies)
 app.set('trust proxy', 1);
+
+// Apply rate limiting globally for auth endpoints
+app.use('/auth', authLimiter);
+app.use('/api/auth', authLimiter);
 
 if (!process.env.SESSION_SECRET) {
     console.error('FATAL ERROR: SESSION_SECRET is not defined.');
@@ -88,6 +89,20 @@ app.get('/', (req, res) => {
 app.use(authRoutes);
 app.use(transactionRoutes);
 app.use(budgetRoutes);
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).render('login', { error: 'Page not found' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+    console.error('Error:', err.message);
+    res.status(err.status || 500).json({ 
+        success: false, 
+        message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message 
+    });
+});
 
 const PORT = process.env.PORT || 5000;
 

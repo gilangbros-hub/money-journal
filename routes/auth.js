@@ -7,20 +7,13 @@ router.get('/register', authController.getRegister);
 router.get('/welcome', authController.getWelcome);
 router.get('/profile', authController.getProfile);
 router.post('/profile', authController.postProfile);
-const rateLimit = require('express-rate-limit');
 
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 20, // Limit each IP to 20 requests per windowMs
-    message: "Too many login/register attempts from this IP, please try again after 15 minutes"
-});
-
-router.post('/auth/register', authLimiter, authController.postRegister);
-router.post('/auth/login', authLimiter, authController.postLogin);
+router.post('/auth/register', authController.postRegister);
+router.post('/auth/login', authController.postLogin);
 router.get('/logout', authController.logout);
 
 // Mobile API Auth
-router.post('/api/auth/login', authLimiter, authController.apiLogin);
+router.post('/api/auth/login', authController.apiLogin);
 router.post('/api/auth/logout', authController.apiLogout);
 router.get('/api/auth/me', authController.getMe);
 
