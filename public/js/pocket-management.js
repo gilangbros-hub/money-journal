@@ -397,6 +397,13 @@
         }
     }
 
+    // Step 1's create form lives in a <details> so step 2's pocket list is the
+    // first thing on screen once pockets exist. Anything that needs the form
+    // (empty state, "create your first pocket") opens it first.
+    function openCreateDisclosure() {
+        if (els.createDisclosure) els.createDisclosure.open = true;
+    }
+
     function renderDefinitions(collections) {
         const active = Array.isArray(collections.active) ? collections.active : [];
         const archived = Array.isArray(collections.archived) ? collections.archived : [];
@@ -406,6 +413,9 @@
             els.activeList.innerHTML = '';
             if (active.length === 0) {
                 if (els.activeEmptyState) toggleHidden(els.activeEmptyState, false);
+                // With nothing defined yet, step 1 is the only useful action, so
+                // the create form starts open instead of behind a disclosure.
+                openCreateDisclosure();
             } else {
                 if (els.activeEmptyState) toggleHidden(els.activeEmptyState, true);
                 active.forEach((dto) => els.activeList.appendChild(renderDefinitionCard(dto)));
@@ -1235,6 +1245,7 @@
             createDefaultAmount: byId('createPocketDefaultAmount'),
             createSubmit: byId('pocketCreateSubmit'),
             createStatus: byId('createPocketStatus'),
+            createDisclosure: byId('createPocketDisclosure'),
 
             includeArchivedToggle: byId('includeArchivedToggle'),
             activeList: byId('activePocketList'),
@@ -1273,7 +1284,10 @@
             els.createForm.addEventListener('submit', (event) => { event.preventDefault(); submitCreate(); });
         }
         if (els.createFirstBtn) {
-            els.createFirstBtn.addEventListener('click', () => { if (els.createEmoji) els.createEmoji.focus(); });
+            els.createFirstBtn.addEventListener('click', () => {
+                openCreateDisclosure();
+                if (els.createEmoji) els.createEmoji.focus();
+            });
         }
         if (els.includeArchivedToggle) {
             els.includeArchivedToggle.addEventListener('change', () => {

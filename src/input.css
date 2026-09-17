@@ -692,6 +692,123 @@ body {
   gap: 8px;
 }
 
+/* --- Check Pockets: read-only pocket card ---------------------------------
+   The card answers one question at a glance: which pocket, and how much is in
+   it this Budget Month. Emoji + name lead, the rupiah amount is the hero, and
+   spent / remaining / used sit underneath as supporting facts. Allocation and
+   cadence are edited in Pocket Management, so the card links there instead of
+   carrying its own controls. */
+.journal-pocket-card {
+  background: var(--journal-panel);
+  border: 1px solid var(--journal-line);
+  border-radius: 20px;
+  padding: 16px 18px;
+  color: var(--journal-ink);
+  box-shadow: 0 8px 20px rgba(23, 33, 58, 0.06);
+}
+
+.journal-pocket-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.journal-pocket-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--journal-ink);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.journal-cadence-chip {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--journal-soft-ink);
+  background: var(--journal-accent-soft);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.journal-pocket-amount {
+  font-family: "Newsreader", "Georgia", serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  color: var(--journal-ink);
+  margin: 12px 0 2px;
+  overflow-wrap: anywhere;
+}
+
+.journal-pocket-amount[data-missing-allocation="true"] {
+  color: #B82F1D;
+}
+
+.journal-pocket-amount-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--journal-soft-ink);
+  margin: 0;
+}
+
+.journal-pocket-week {
+  margin-top: 12px;
+}
+
+.journal-pocket-week select {
+  border: 1.5px solid #6B7B96;
+  background: #fff;
+  color: var(--journal-ink);
+  outline: none;
+}
+
+.journal-pocket-facts {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.journal-pocket-facts dt {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--journal-soft-ink);
+}
+
+.journal-pocket-facts dd {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--journal-ink);
+  margin: 2px 0 0;
+}
+
+/* Overspend keeps the danger text color against the dd default above. */
+.journal-pocket-facts dd.text-coral {
+  color: #B82F1D;
+}
+
+.journal-pocket-manage-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--journal-accent);
+  text-decoration: none;
+}
+
+.journal-pocket-manage-link[hidden] {
+  display: none;
+}
+
 .journal-row {
   display: flex;
   align-items: center;
@@ -1366,6 +1483,106 @@ body {
    render that wrapper as a light journal panel (matching the Check Pockets
    journal-surface treatment) so all enclosed text sits on a light surface at
    >=4.5:1. Tokens, radius, and spacing from the journal scale are preserved. */
+/* --- Pocket Management: three separated steps (Req 11.1, 11.5) ------------
+   Step 1 defines a pocket type, step 2 shows what is active, step 3 assigns
+   pockets to a Budget Month. The badge + divider make the boundary obvious
+   without hiding any step behind navigation. */
+.pm-stepnav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+  overflow-x: auto;
+}
+
+.pm-stepnav a {
+  flex: 1 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--journal-line);
+  border-radius: 999px;
+  background: var(--journal-panel);
+  color: var(--journal-soft-ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pm-stepnav a span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--journal-accent);
+  color: #fff;
+  font-size: 11px;
+}
+
+.pm-step {
+  margin-bottom: 24px;
+  scroll-margin-top: 16px;
+}
+
+.pm-step-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.pm-step-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--journal-accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.pm-step-hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--journal-soft-ink);
+  margin: 2px 0 0;
+}
+
+.pm-divider {
+  border: 0;
+  border-top: 1px solid var(--journal-line);
+  margin: 0 0 24px;
+}
+
+.pm-disclosure-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--journal-ink);
+  list-style: none;
+}
+
+.pm-disclosure-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pm-disclosure[open] .pm-disclosure-summary {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--journal-line);
+}
+
 [data-pocket-management] .journal-hero-card {
   background: var(--journal-panel);
   border: 1px solid var(--journal-line);

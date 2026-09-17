@@ -104,33 +104,38 @@
         {{#if salaryCycleBudgetingEnabled}}
         <!-- Card templates are populated by the server-driven Check Pockets client. -->
         <template id="monthlyPocketCardTemplate">
-            <article class="bg-bg-secondary p-4 rounded-2xl shadow-card border border-border/50" data-pocket-card data-cadence="Monthly">
-                <header class="flex items-center justify-between gap-3 mb-3">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-2xl" data-pocket-icon aria-hidden="true"></span>
-                        <h3 class="text-sm font-semibold text-text-primary" data-pocket-name></h3>
+            <article class="journal-pocket-card" data-pocket-card data-cadence="Monthly">
+                <header class="journal-pocket-head">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="text-2xl leading-none" data-pocket-icon aria-hidden="true"></span>
+                        <h3 class="journal-pocket-name" data-pocket-name></h3>
                     </div>
+                    <span class="journal-cadence-chip" data-cadence-readonly>Monthly</span>
                     {{#if canEdit}}
-                    <label class="text-[10px] uppercase tracking-wide text-primary">
+                    <label class="text-[10px] uppercase tracking-wide text-primary" data-cadence-control>
                         <span class="sr-only">Budget cadence for </span>
                         <select data-cadence-select data-mutation-control disabled aria-label="Budget cadence" class="bg-transparent">
                             <option value="Monthly">Monthly</option>
                             <option value="Weekly">Weekly</option>
                         </select>
                     </label>
-                    {{else}}
-                    <span class="text-[10px] uppercase tracking-wide text-primary" data-cadence-readonly>Monthly</span>
                     {{/if}}
                 </header>
-                <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                    <div><dt class="text-text-muted">Allocation</dt><dd class="font-bold text-text-primary" data-pocket-allocation data-missing-allocation="false">Rp 0</dd></div>
-                    <div><dt class="text-text-muted">Spent</dt><dd class="font-bold text-text-primary" data-pocket-spending>Rp 0</dd></div>
-                    <div><dt class="text-text-muted">Remaining</dt><dd class="font-bold" data-pocket-remaining>Rp 0</dd></div>
-                    <div><dt class="text-text-muted">Used</dt><dd class="font-bold" data-pocket-percentage>0%</dd></div>
-                </dl>
+                <p class="journal-pocket-amount" data-pocket-allocation data-missing-allocation="false">Rp 0</p>
+                <p class="journal-pocket-amount-label" data-allocation-caption>Allocated this Budget Month</p>
                 <div class="progress-track mt-3" role="progressbar" aria-label="Pocket budget used" aria-valuemin="0" aria-valuemax="100" data-pocket-progress>
                     <div class="progress-fill" data-pocket-progress-fill style="width: 0%"></div>
                 </div>
+                <dl class="journal-pocket-facts">
+                    <div><dt>Spent</dt><dd data-pocket-spending>Rp 0</dd></div>
+                    <div><dt>Remaining</dt><dd data-pocket-remaining>Rp 0</dd></div>
+                    <div><dt>Used</dt><dd data-pocket-percentage>0%</dd></div>
+                </dl>
+                <a href="/pocket-management" class="journal-pocket-manage-link hidden" data-manage-allocation hidden
+                    aria-label="Change this allocation in Pocket Management">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">tune</span>
+                    Change in Manage Pockets
+                </a>
                 {{#if canEdit}}
                 <button type="button" class="btn-modal-save w-full mt-4" data-mutation-control data-save-monthly-allocation disabled>Save monthly allocation</button>
                 {{/if}}
@@ -138,41 +143,46 @@
         </template>
 
         <template id="weeklyPocketCardTemplate">
-            <article class="bg-bg-secondary p-4 rounded-2xl shadow-card border border-border/50" data-pocket-card data-cadence="Weekly">
-                <header class="flex items-center justify-between gap-3 mb-3">
-                    <div class="flex items-center gap-2.5">
-                        <span class="text-2xl" data-pocket-icon aria-hidden="true"></span>
-                        <h3 class="text-sm font-semibold text-text-primary" data-pocket-name></h3>
+            <article class="journal-pocket-card" data-pocket-card data-cadence="Weekly">
+                <header class="journal-pocket-head">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <span class="text-2xl leading-none" data-pocket-icon aria-hidden="true"></span>
+                        <h3 class="journal-pocket-name" data-pocket-name></h3>
                     </div>
+                    <span class="journal-cadence-chip" data-cadence-readonly>Weekly</span>
                     {{#if canEdit}}
-                    <label class="text-[10px] uppercase tracking-wide text-primary">
+                    <label class="text-[10px] uppercase tracking-wide text-primary" data-cadence-control>
                         <span class="sr-only">Budget cadence for </span>
                         <select data-cadence-select data-mutation-control disabled aria-label="Budget cadence" class="bg-transparent">
                             <option value="Monthly">Monthly</option>
                             <option value="Weekly">Weekly</option>
                         </select>
                     </label>
-                    {{else}}
-                    <span class="text-[10px] uppercase tracking-wide text-primary" data-cadence-readonly>Weekly</span>
                     {{/if}}
                 </header>
-                <div class="mb-3">
-                    <label class="text-xs font-semibold text-text-secondary">Calendar week</label>
-                    <select data-week-selector aria-label="Select one ISO calendar week" class="w-full mt-1 rounded-xl bg-bg-tertiary p-2 text-sm text-text-primary">
+                <p class="journal-pocket-amount" data-pocket-allocation data-missing-allocation="false">Rp 0</p>
+                <p class="journal-pocket-amount-label" data-allocation-caption>Allocated this calendar week</p>
+                <div class="journal-pocket-week">
+                    <label class="text-[11px] font-semibold uppercase tracking-wide" style="color: var(--journal-soft-ink);">Calendar week</label>
+                    <select data-week-selector aria-label="Select one ISO calendar week" class="w-full mt-1 rounded-xl p-2 text-sm">
                         <option value="">Loading weeks…</option>
                     </select>
-                    <p class="text-[11px] text-text-muted mt-1" data-week-label>ISO week · Monday – Sunday</p>
-                    <p class="text-[11px] text-text-muted" data-week-intersection-label>Salary-cycle intersection: —</p>
+                    <p class="text-[11px] mt-1" style="color: var(--journal-soft-ink);" data-week-label>ISO week · Monday – Sunday</p>
+                    <p class="text-[11px]" style="color: var(--journal-soft-ink);" data-week-intersection-label>Salary-cycle intersection: —</p>
                 </div>
-                <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                    <div><dt class="text-text-muted">Allocation</dt><dd class="font-bold text-text-primary" data-pocket-allocation data-missing-allocation="false">Rp 0</dd></div>
-                    <div><dt class="text-text-muted">Spent in week</dt><dd class="font-bold text-text-primary" data-pocket-spending>Rp 0</dd></div>
-                    <div><dt class="text-text-muted">Remaining</dt><dd class="font-bold" data-pocket-remaining>Rp 0</dd></div>
-                    <div><dt class="text-text-muted">Used</dt><dd class="font-bold" data-pocket-percentage>0%</dd></div>
-                </dl>
                 <div class="progress-track mt-3" role="progressbar" aria-label="Weekly pocket budget used" aria-valuemin="0" aria-valuemax="100" data-pocket-progress>
                     <div class="progress-fill" data-pocket-progress-fill style="width: 0%"></div>
                 </div>
+                <dl class="journal-pocket-facts">
+                    <div><dt>Spent in week</dt><dd data-pocket-spending>Rp 0</dd></div>
+                    <div><dt>Remaining</dt><dd data-pocket-remaining>Rp 0</dd></div>
+                    <div><dt>Used</dt><dd data-pocket-percentage>0%</dd></div>
+                </dl>
+                <a href="/pocket-management" class="journal-pocket-manage-link hidden" data-manage-allocation hidden
+                    aria-label="Change this allocation in Pocket Management">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 16px;">tune</span>
+                    Change in Manage Pockets
+                </a>
                 {{#if canEdit}}
                 <button type="button" class="btn-modal-save w-full mt-4" data-mutation-control data-save-weekly-allocation disabled>Save weekly allocation</button>
                 {{/if}}

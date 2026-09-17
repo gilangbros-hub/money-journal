@@ -81,16 +81,38 @@
             <button type="button" class="btn-modal-cancel" id="pocketGlobalRetry" data-global-retry hidden>Retry</button>
         </div>
 
+        <!--
+          Three separated steps, in the order the workflow actually runs:
+          1. define a pocket type, 2. see what is active, 3. assign pockets to a
+          Budget Month. Each step carries a numbered badge and a one-line purpose
+          so the boundary between "a pocket exists" and "a pocket is budgeted
+          this month" is visible without reading the forms (Req 11.1, 11.5).
+        -->
+        <nav class="pm-stepnav" aria-label="Pocket management steps">
+            <a href="#stepPocketTypes"><span aria-hidden="true">1</span> Pocket types</a>
+            <a href="#stepActivePockets"><span aria-hidden="true">2</span> Active pockets</a>
+            <a href="#stepAssignMonth"><span aria-hidden="true">3</span> This month</a>
+        </nav>
+
         <!-- =====================================================================
-             SECTION 1 — CREATE POCKET (Req 11.1, 11.3)
+             STEP 1 — POCKET TYPES (Req 11.1, 11.3)
              ===================================================================== -->
-        <section class="mb-6" aria-labelledby="createPocketHeading">
-            <div class="section-header">
-                <h2 class="section-title" id="createPocketHeading" style="color: var(--journal-ink);">Create pocket</h2>
+        <section class="pm-step" id="stepPocketTypes" aria-labelledby="createPocketHeading">
+            <div class="pm-step-head">
+                <span class="pm-step-badge" aria-hidden="true">1</span>
+                <div>
+                    <h2 class="section-title" id="createPocketHeading" style="color: var(--journal-ink);">Set up a pocket type</h2>
+                    <p class="pm-step-hint">Define the pocket once: emoji, name, cadence, default amount. This is the
+                        template. It does not budget anything yet.</p>
+                </div>
             </div>
 
             {{#if canEdit}}
-            <div class="journal-hero-card">
+            <details class="journal-hero-card pm-disclosure" id="createPocketDisclosure" data-create-disclosure>
+                <summary class="pm-disclosure-summary">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">add_circle</span>
+                    New pocket type
+                </summary>
                 <form id="pocketCreateForm" novalidate aria-describedby="createPocketStatus">
                     <!-- Field order per Req 11.3: Emoji, Name, Cadence, Default amount -->
                     <div class="mb-4">
@@ -147,7 +169,7 @@
                         data-mutation-control>Create pocket</button>
                     <p class="text-xs text-text-muted mt-2" id="createPocketStatus" role="status" aria-live="polite"></p>
                 </form>
-            </div>
+            </details>
             {{else}}
             <div class="journal-hero-card">
                 <p class="text-sm" style="color: var(--journal-soft-ink);">Only a Wife-role user can create pockets.</p>
@@ -155,20 +177,28 @@
             {{/if}}
         </section>
 
+        <hr class="pm-divider" aria-hidden="true">
+
         <!-- =====================================================================
-             SECTION 2 — MANAGE POCKETS (Req 11.1, 11.2, 11.11; Req 4 lifecycle)
+             STEP 2 — ACTIVE POCKETS (Req 11.1, 11.2, 11.11; Req 4 lifecycle)
              ===================================================================== -->
-        <section class="mb-6" aria-labelledby="managePocketsHeading">
-            <div class="section-header flex items-center justify-between">
-                <h2 class="section-title" id="managePocketsHeading" style="color: var(--journal-ink);">Manage pockets</h2>
+        <section class="pm-step" id="stepActivePockets" aria-labelledby="managePocketsHeading">
+            <div class="pm-step-head">
+                <span class="pm-step-badge" aria-hidden="true">2</span>
+                <div>
+                    <h2 class="section-title" id="managePocketsHeading" style="color: var(--journal-ink);">See your active pockets</h2>
+                    <p class="pm-step-hint">Everything you can budget with. Edit or archive a pocket type here; archiving
+                        never touches months already assigned.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold" style="color: var(--journal-ink);">Active pockets</h3>
                 <label class="text-xs font-semibold text-text-secondary flex items-center gap-2">
                     <input type="checkbox" id="includeArchivedToggle" data-include-archived>
                     Show archived
                 </label>
             </div>
-
-            <!-- Active pockets -->
-            <h3 class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">Active pockets</h3>
             <div class="journal-group-rows mb-4" id="activePocketList" data-active-pocket-list aria-live="polite"
                 aria-busy="true">
                 <p class="text-center py-5" style="color: var(--journal-soft-ink);">Loading pockets…</p>
@@ -193,22 +223,28 @@
             </div>
         </section>
 
+        <hr class="pm-divider" aria-hidden="true">
+
         <!-- =====================================================================
-             SECTION 3 — SET UP BUDGET MONTH (Req 11.5, 11.6, 11.12; Req 5/6)
+             STEP 3 — ASSIGN POCKETS TO A BUDGET MONTH (Req 11.5, 11.6, 11.12; Req 5/6)
              Visible + focus order: month → pockets → amount mode → allocation
              entry → summary → confirm.
              ===================================================================== -->
-        <section class="mb-6" aria-labelledby="setupHeading">
-            <div class="section-header">
-                <h2 class="section-title" id="setupHeading" style="color: var(--journal-ink);">Set up Budget Month</h2>
+        <section class="pm-step" id="stepAssignMonth" aria-labelledby="setupHeading">
+            <div class="pm-step-head">
+                <span class="pm-step-badge" aria-hidden="true">3</span>
+                <div>
+                    <h2 class="section-title" id="setupHeading" style="color: var(--journal-ink);">Assign pockets to this Budget Month</h2>
+                    <p class="pm-step-hint">Pick the month, tick which pockets are in play, set the amounts, confirm.
+                        This is what Check Pockets shows.</p>
+                </div>
             </div>
 
             <form id="assignmentSetupForm" novalidate aria-describedby="assignmentSetupStatus">
                 <!-- Step 1: Select Budget Month -->
                 <div class="journal-hero-card mb-4">
-                    <h3 class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">1. Select Budget Month</h3>
-                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="setupBudgetMonth">Budget
-                        Month</label>
+                    <h3 class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">Budget Month</h3>
+                    <label class="sr-only" for="setupBudgetMonth">Budget Month</label>
                     <select id="setupBudgetMonth" name="month" data-setup-month
                         class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
                         aria-describedby="setupBudgetMonthHint setupBudgetMonthError" aria-invalid="false">
@@ -239,7 +275,7 @@
                 {{#if canEdit}}
                 <!-- Step 2: Select pockets -->
                 <fieldset class="journal-hero-card mb-4" aria-describedby="setupPocketSelectionError">
-                    <legend class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">2. Select pockets</legend>
+                    <legend class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">Pockets this month</legend>
                     <p class="text-[11px] text-text-muted mb-3">Choose the active pockets to include this month. Each
                         pocket is selected once.</p>
                     <div id="setupPocketSelection" data-pocket-selection aria-live="polite">
@@ -253,7 +289,7 @@
                 <!-- Step 3 + 4: Amount mode + allocation entry (per selected pocket) -->
                 <div class="journal-hero-card mb-4" aria-labelledby="setupAllocationHeading">
                     <h3 class="text-sm font-semibold mb-2" id="setupAllocationHeading"
-                        style="color: var(--journal-ink);">3. Amount mode &amp; 4. Allocation entry</h3>
+                        style="color: var(--journal-ink);">Amounts</h3>
                     <p class="text-[11px] text-text-muted mb-3">For each selected pocket choose <em>Use default</em> or
                         <em>Customize</em>, then enter one monthly amount or one amount per ISO week.</p>
                     <div id="setupAllocationEntry" data-allocation-entry aria-live="polite">
@@ -265,7 +301,7 @@
                 <!-- Step 5: Assignment Summary (Req 11.6, 5.10, 6.10) -->
                 <div class="journal-hero-card mb-4" aria-labelledby="assignmentSummaryHeading">
                     <h3 class="text-sm font-semibold mb-2" id="assignmentSummaryHeading"
-                        style="color: var(--journal-ink);">5. Review summary</h3>
+                        style="color: var(--journal-ink);">Review</h3>
                     <div id="assignmentSummary" data-assignment-summary aria-live="polite">
                         <p class="text-sm" style="color: var(--journal-soft-ink);">Selected Budget Month:
                             <span data-summary-month>—</span></p>
@@ -281,7 +317,7 @@
 
                 <!-- Step 6: Confirm -->
                 <button type="submit" class="btn-modal-save w-full" id="assignmentConfirmBtn"
-                    data-mutation-control data-confirm-assignments>6. Confirm assignments</button>
+                    data-mutation-control data-confirm-assignments>Confirm assignments</button>
                 <p class="text-xs text-text-muted mt-2" id="assignmentSetupStatus" role="status"
                     aria-live="polite"></p>
                 {{else}}

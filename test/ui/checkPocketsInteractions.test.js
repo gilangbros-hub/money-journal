@@ -296,3 +296,49 @@ test('server out-of-window state disables every budget mutation control', async 
     }
     dom.window.close();
 });
+
+test('managed mode renders an information-only pocket card that points at Pocket Management', async () => {
+    const dom = await setupPage(async url => {
+        if (url === '/api/budget') {
+            return response({
+                success: true,
+                data: budgetData({ pocketManagementEnabled: true, formattedTotal: 'Rp 300' })
+            });
+        }
+        throw new Error(`Unexpected URL ${url}`);
+    });
+
+    const card = dom.window.document.querySelector('[data-pocket-card]');
+    assert.equal(card.querySelector('[data-pocket-icon]').textContent, '🛒');
+    assert.equal(card.querySelector('[data-pocket-name]').textContent, 'Groceries');
+    assert.equal(card.querySelector('[data-pocket-allocation]').textContent, 'Rp 300');
+
+    const readonlyCadence = card.querySelector('[data-cadence-readonly]');
+    assert.equal(readonlyCadence.textContent, 'Monthly');
+    assert.equal(readonlyCadence.hasAttribute('hidden'), false);
+    assert.equal(card.querySelector('[data-cadence-control]').hasAttribute('hidden'), true);
+    assert.equal(card.querySelector('[data-save-monthly-allocation]').hasAttribute('hidden'), true);
+
+    const manageLink = card.querySelector('[data-manage-allocation]');
+    assert.equal(manageLink.hasAttribute('hidden'), false);
+    assert.equal(manageLink.getAttribute('href'), '/pocket-management');
+    dom.window.close();
+});
+
+test('managed cards stay information-only for a view-only household member', async () => {
+    const dom = await setupPage(async url => {
+        if (url === '/api/budget') {
+            return response({
+                success: true,
+                data: budgetData({ pocketManagementEnabled: true, canEdit: false })
+            });
+        }
+        throw new Error(`Unexpected URL ${url}`);
+    }, { role: 'Husband', canEdit: false });
+
+    const card = dom.window.document.querySelector('[data-pocket-card]');
+    assert.equal(card.querySelector('[data-cadence-readonly]').hasAttribute('hidden'), false);
+    assert.equal(card.querySelector('[data-cadence-select]'), null);
+    assert.equal(card.querySelector('[data-manage-allocation]').hasAttribute('hidden'), true);
+    dom.window.close();
+});

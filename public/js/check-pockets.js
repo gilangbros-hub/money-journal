@@ -103,6 +103,21 @@ function setText(node, value) {
     if (node) node.textContent = value == null ? '' : String(value);
 }
 
+// Show or hide a card control. `hidden` plus the utility class keeps the node
+// out of the layout in both the app stylesheet and bare jsdom.
+function toggleNode(node, visible) {
+    if (!node) return;
+    node.classList.toggle('hidden', !visible);
+    if (visible) node.removeAttribute('hidden');
+    else node.setAttribute('hidden', '');
+}
+
+function progressBarColor(status, percentage) {
+    if (status === 'danger' || percentage >= 100) return 'bg-coral';
+    if (status === 'warning' || percentage >= 80) return 'bg-amber';
+    return 'bg-lime';
+}
+
 function setMutationControlsEnabled(enabled) {
     document.querySelectorAll('[data-mutation-control]').forEach(control => {
         control.disabled = !enabled;
@@ -299,14 +314,25 @@ function renderEnabledBudgets(data) {
         card.dataset.missingAllocation = String(pocket.missingAllocation === true || !pocket.allocation);
         setText(card.querySelector('[data-pocket-icon]'), pocket.icon || '');
         setText(card.querySelector('[data-pocket-name]'), pocket.pocket);
+        // Managed mode makes the Check Pockets card information-only: cadence and
+        // amounts are owned by Pocket Management, so the card shows the emoji,
+        // name, and amount and links to where those are changed. The
+        // salary-cycle-only path keeps its inline cadence + save controls.
+        const readonly = pocketManagementActive || !canEdit;
         const readonlyCadence = card.querySelector('[data-cadence-readonly]');
-        if (readonlyCadence) setText(readonlyCadence, pocket.cadence || 'Monthly');
+        if (readonlyCadence) {
+            setText(readonlyCadence, pocket.cadence || 'Monthly');
+            toggleNode(readonlyCadence, readonly);
+        }
+        const cadenceControl = card.querySelector('[data-cadence-control]');
         const cadenceSelect = card.querySelector('[data-cadence-select]');
+        if (cadenceControl) toggleNode(cadenceControl, !readonly);
         if (cadenceSelect) {
             cadenceSelect.value = pocket.cadence || 'Monthly';
             cadenceSelect.setAttribute('aria-label', `Budget cadence for ${pocket.pocket}`);
             cadenceSelect.addEventListener('change', event => changeCadence(pocket.pocket, event.target.value));
         }
+        toggleNode(card.querySelector('[data-manage-allocation]'), pocketManagementActive && data.canEdit === true);
         const metrics = pocket.metrics || {};
         const missingAllocation = pocket.missingAllocation === true || !pocket.allocation;
         const allocationNode = card.querySelector('[data-pocket-allocation]');
@@ -316,19 +342,30 @@ function renderEnabledBudgets(data) {
         allocationNode?.setAttribute('data-missing-allocation', String(missingAllocation));
         allocationNode?.setAttribute('aria-label', missingAllocation ? 'Missing allocation, Rp 0' : 'Active allocation');
         setText(card.querySelector('[data-pocket-spending]'), metricValue(pocket, 'spending', 'formattedSpent'));
-        setText(card.querySelector('[data-pocket-remaining]'), metricValue(pocket, 'remaining', 'formattedRemaining'));
+        const remainingNode = card.querySelector('[data-pocket-remaining]');
+        setText(remainingNode, metricValue(pocket, 'remaining', 'formattedRemaining'));
+        const remainingValue = Number(metrics.remaining ?? pocket.remaining ?? 0);
+        if (remainingNode) remainingNode.classList.toggle('text-coral', remainingValue < 0 || pocket.isOver === true);
         setText(card.querySelector('[data-pocket-percentage]'), `${metrics.percentageUsed ?? pocket.percentageUsed ?? pocket.percentage ?? 0}%`);
         const progress = card.querySelector('[data-pocket-progress]');
         const progressFill = card.querySelector('[data-pocket-progress-fill]');
         const percentage = Number(metrics.percentageUsed ?? pocket.percentageUsed ?? pocket.percentage ?? 0);
         progress?.setAttribute('aria-valuenow', String(percentage));
-        if (progressFill) progressFill.style.width = `${Math.min(Math.max(percentage, 0), 100)}%`;
+        if (progressFill) {
+            progressFill.style.width = `${Math.min(Math.max(percentage, 0), 100)}%`;
+            progressFill.className = `progress-fill ${progressBarColor(pocket.status, percentage)}`;
+        }
         if (pocket.cadence === 'Weekly') renderWeeklySelector(card, pocket);
 
         const monthlySave = card.querySelector('[data-save-monthly-allocation]');
         const weeklySave = card.querySelector('[data-save-weekly-allocation]');
         const save = pocket.cadence === 'Weekly' ? weeklySave : monthlySave;
-        save?.addEventListener('click', () => openAllocationModal(pocket, pocket.cadence === 'Weekly' ? 'weekly' : 'monthly', pocket.selectedWeek?.key || currentDataSelectedWeek()));
+        if (pocketManagementActive) {
+            toggleNode(monthlySave, false);
+            toggleNode(weeklySave, false);
+        } else {
+            save?.addEventListener('click', () => openAllocationModal(pocket, pocket.cadence === 'Weekly' ? 'weekly' : 'monthly', pocket.selectedWeek?.key || currentDataSelectedWeek()));
+        }
         card.classList.toggle('opacity-50', data.isClosed === true);
         card.setAttribute('aria-disabled', String(!canEdit));
         list.appendChild(card);
