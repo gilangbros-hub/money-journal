@@ -25,22 +25,47 @@
         </header>
 
         <!-- Month Selector -->
+        {{#if salaryCycleBudgetingEnabled}}
+        <section class="journal-hero-card mb-5 p-4 rounded-2xl" id="salaryCycleControls"
+            data-salary-cycle-enabled="true" aria-labelledby="budgetMonthHeading">
+            <div class="flex items-center justify-center gap-4">
+                <button type="button" class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="prevMonth" aria-label="Previous Budget Month">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
+                </button>
+                <div class="text-center min-w-[160px]">
+                    <p class="text-[10px] uppercase tracking-[0.18em] text-white/70" id="budgetMonthHeading">Budget Month</p>
+                    <div class="text-lg font-bold text-white" id="currentMonth" data-budget-month aria-live="polite">Loading…</div>
+                </div>
+                <button type="button" class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="nextMonth" aria-label="Next Budget Month">
+                    <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+                </button>
+            </div>
+            <p id="salaryCyclePeriod" class="text-xs text-white/70 text-center mt-3" aria-live="polite">Loading salary-cycle period…</p>
+        </section>
+        {{else}}
         <div class="journal-hero-card flex items-center justify-center gap-4 mb-5 p-4 rounded-2xl">
-            <button class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="prevMonth">
-                <span class="material-symbols-outlined">chevron_left</span>
+            <button type="button" class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="prevMonth" aria-label="Previous month">
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_left</span>
             </button>
             <div class="text-lg font-bold text-white min-w-[160px] text-center" id="currentMonth">Februari 2026</div>
-            <button class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="nextMonth">
-                <span class="material-symbols-outlined">chevron_right</span>
+            <button type="button" class="bg-white/10 border-none w-10 h-10 rounded-xl cursor-pointer flex items-center justify-center transition-colors duration-200 hover:bg-white/20 text-white" id="nextMonth" aria-label="Next month">
+                <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
             </button>
         </div>
+        {{/if}}
 
-        <!-- Role Notice -->
+        <!-- Role and server-state notices -->
         {{#unless canEdit}}
-        <div class="bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2 border border-amber/30">
-            <span>👁️</span> View-only mode. Only Wife can edit budgets.
+        <div class="bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2 border border-amber/30" role="status">
+            <span aria-hidden="true">👁️</span> View-only mode. Only Wife can edit budgets.
         </div>
         {{/unless}}
+        {{#if salaryCycleBudgetingEnabled}}
+        <div id="budgetState" class="hidden p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2" role="status" aria-live="polite">
+            <span id="closedBudgetState" class="hidden">🔒 This Budget Month is closed. Budget changes are disabled.</span>
+            <span id="outOfWindowState" class="hidden">🗓️ This Budget Month is outside the editable window. Budget changes are disabled.</span>
+        </div>
+        {{/if}}
 
         <!-- Financial Health Summary — Pie Chart -->
         <div class="journal-hero-card" id="healthCard">
@@ -67,9 +92,104 @@
         <div class="section-header">
             <h2 class="section-title" style="color: var(--journal-ink);">Pocket Breakdown</h2>
         </div>
-        <div class="journal-group-rows mb-4" id="budgetList">
+        <div class="journal-group-rows mb-4" id="budgetList" aria-live="polite" aria-busy="true">
             <p class="text-center py-5" style="color: var(--journal-soft-ink);">Loading budgets...</p>
         </div>
+
+        {{#if salaryCycleBudgetingEnabled}}
+        <!-- Card templates are populated by the server-driven Check Pockets client. -->
+        <template id="monthlyPocketCardTemplate">
+            <article class="bg-bg-secondary p-4 rounded-2xl shadow-card border border-border/50" data-pocket-card data-cadence="Monthly">
+                <header class="flex items-center justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-2xl" data-pocket-icon aria-hidden="true"></span>
+                        <h3 class="text-sm font-semibold text-text-primary" data-pocket-name></h3>
+                    </div>
+                    {{#if canEdit}}
+                    <label class="text-[10px] uppercase tracking-wide text-primary">
+                        <span class="sr-only">Budget cadence for </span>
+                        <select data-cadence-select data-mutation-control disabled aria-label="Budget cadence" class="bg-transparent">
+                            <option value="Monthly">Monthly</option>
+                            <option value="Weekly">Weekly</option>
+                        </select>
+                    </label>
+                    {{else}}
+                    <span class="text-[10px] uppercase tracking-wide text-primary" data-cadence-readonly>Monthly</span>
+                    {{/if}}
+                </header>
+                <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div><dt class="text-text-muted">Allocation</dt><dd class="font-bold text-text-primary" data-pocket-allocation data-missing-allocation="false">Rp 0</dd></div>
+                    <div><dt class="text-text-muted">Spent</dt><dd class="font-bold text-text-primary" data-pocket-spending>Rp 0</dd></div>
+                    <div><dt class="text-text-muted">Remaining</dt><dd class="font-bold" data-pocket-remaining>Rp 0</dd></div>
+                    <div><dt class="text-text-muted">Used</dt><dd class="font-bold" data-pocket-percentage>0%</dd></div>
+                </dl>
+                <div class="progress-track mt-3" role="progressbar" aria-label="Pocket budget used" aria-valuemin="0" aria-valuemax="100" data-pocket-progress>
+                    <div class="progress-fill" data-pocket-progress-fill style="width: 0%"></div>
+                </div>
+                {{#if canEdit}}
+                <button type="button" class="btn-modal-save w-full mt-4" data-mutation-control data-save-monthly-allocation disabled>Save monthly allocation</button>
+                {{/if}}
+            </article>
+        </template>
+
+        <template id="weeklyPocketCardTemplate">
+            <article class="bg-bg-secondary p-4 rounded-2xl shadow-card border border-border/50" data-pocket-card data-cadence="Weekly">
+                <header class="flex items-center justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-2xl" data-pocket-icon aria-hidden="true"></span>
+                        <h3 class="text-sm font-semibold text-text-primary" data-pocket-name></h3>
+                    </div>
+                    {{#if canEdit}}
+                    <label class="text-[10px] uppercase tracking-wide text-primary">
+                        <span class="sr-only">Budget cadence for </span>
+                        <select data-cadence-select data-mutation-control disabled aria-label="Budget cadence" class="bg-transparent">
+                            <option value="Monthly">Monthly</option>
+                            <option value="Weekly">Weekly</option>
+                        </select>
+                    </label>
+                    {{else}}
+                    <span class="text-[10px] uppercase tracking-wide text-primary" data-cadence-readonly>Weekly</span>
+                    {{/if}}
+                </header>
+                <div class="mb-3">
+                    <label class="text-xs font-semibold text-text-secondary">Calendar week</label>
+                    <select data-week-selector aria-label="Select one ISO calendar week" class="w-full mt-1 rounded-xl bg-bg-tertiary p-2 text-sm text-text-primary">
+                        <option value="">Loading weeks…</option>
+                    </select>
+                    <p class="text-[11px] text-text-muted mt-1" data-week-label>ISO week · Monday – Sunday</p>
+                    <p class="text-[11px] text-text-muted" data-week-intersection-label>Salary-cycle intersection: —</p>
+                </div>
+                <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div><dt class="text-text-muted">Allocation</dt><dd class="font-bold text-text-primary" data-pocket-allocation data-missing-allocation="false">Rp 0</dd></div>
+                    <div><dt class="text-text-muted">Spent in week</dt><dd class="font-bold text-text-primary" data-pocket-spending>Rp 0</dd></div>
+                    <div><dt class="text-text-muted">Remaining</dt><dd class="font-bold" data-pocket-remaining>Rp 0</dd></div>
+                    <div><dt class="text-text-muted">Used</dt><dd class="font-bold" data-pocket-percentage>0%</dd></div>
+                </dl>
+                <div class="progress-track mt-3" role="progressbar" aria-label="Weekly pocket budget used" aria-valuemin="0" aria-valuemax="100" data-pocket-progress>
+                    <div class="progress-fill" data-pocket-progress-fill style="width: 0%"></div>
+                </div>
+                {{#if canEdit}}
+                <button type="button" class="btn-modal-save w-full mt-4" data-mutation-control data-save-weekly-allocation disabled>Save weekly allocation</button>
+                {{/if}}
+            </article>
+        </template>
+
+        {{#if canEdit}}
+        <template id="inactiveAllocationConfirmationTemplate">
+            <div id="inactiveAllocationConfirmation" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="inactiveAllocationTitle">
+                <div class="modal-card">
+                    <h3 id="inactiveAllocationTitle">Confirm cadence change</h3>
+                    <p class="text-sm text-text-secondary mb-4">The following saved allocations will become inactive. They will be retained and can be restored by switching cadence back.</p>
+                    <ul id="inactiveAllocationList" class="text-sm text-text-secondary list-disc pl-5 mb-5"></ul>
+                    <div class="modal-actions">
+                        <button type="button" class="btn-modal-cancel" data-cancel-cadence>Cancel</button>
+                        <button type="button" class="btn-modal-save" data-confirm-cadence>Confirm change</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+        {{/if}}
+        {{/if}}
 
         <!-- History Button -->
         <button class="transaction-save-btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;" onclick="showHistory()">
@@ -109,7 +229,8 @@
     <!-- Hidden Data -->
     <input type="hidden" id="canEdit" value="{{canEdit}}">
     <input type="hidden" id="userRole" value="{{role}}">
-
+    <input type="hidden" id="salaryCycleEnabled" value="{{salaryCycleBudgetingEnabled}}">
+    <input type="hidden" id="featureEnabled" value="{{salaryCycleBudgetingEnabled}}">
     <div id="message" class="toast"></div>
 
     {{> actionHub}}

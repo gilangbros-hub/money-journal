@@ -35,14 +35,34 @@ const celebrationMessages = [
 
 let breakdownRowId = 0;
 let closedMonthKeys = [];
+let assignmentPreview = null;
+const salaryCycleEnabled = document.getElementById('salaryCycleEnabled')?.value === 'true';
+
+function localDateKey(offsetDays = 0) {
+    const date = new Date();
+    if (offsetDays) date.setDate(date.getDate() + offsetDays);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function dateOnlyToday() {
+    return localDateKey();
+}
+
+function formatDateOnlyLabel(value) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return 'Select date';
+    const [year, month, day] = value.split('-').map(Number);
+    if (month < 1 || month > 12 || day < 1 || day > 31) return 'Select date';
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${String(day).padStart(2, '0')} ${monthNames[month - 1]} ${year}`;
+}
 
 const urlParams = new URLSearchParams(window.location.search);
 const editId = urlParams.get('edit');
 
 function getStreak() {
     const data = JSON.parse(localStorage.getItem('moneyJournalStreak') || '{"count":0,"lastDate":""}');
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const today = dateOnlyToday();
+    const yesterday = localDateKey(-1);
 
     if (data.lastDate === today) return data;
     if (data.lastDate === yesterday) return { count: data.count, lastDate: data.lastDate };
@@ -50,7 +70,7 @@ function getStreak() {
 }
 
 function bumpStreak() {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = dateOnlyToday();
     const current = getStreak();
     if (current.lastDate === today) return current.count;
 
@@ -68,9 +88,13 @@ function displayStreak() {
     }
 }
 
+function canonicalExpenseDate(transaction) {
+    const value = transaction?.expenseDate ?? transaction?.date;
+    return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
+}
+
 function formatDateTimeLabel(value) {
-    const date = new Date(value);
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return formatDateOnlyLabel(value);
 }
 
 function getSelectedType() {
@@ -246,6 +270,7 @@ function updateBreakdownTotal() {
 function renderBudgetMonthOptions() {
     const select = document.getElementById('budgetMonth');
     const container = document.getElementById('budgetMonthOptions');
+    if (!select || !container) return;
     const selectedValue = select.value;
 
     container.innerHTML = Array.from(select.options).map((option) => {
@@ -266,6 +291,7 @@ function renderBudgetMonthOptions() {
 
 function populateBudgetMonthSelect(preselect) {
     const select = document.getElementById('budgetMonth');
+    if (!select) return;
     select.innerHTML = '';
     const now = new Date();
 
@@ -286,6 +312,7 @@ function populateBudgetMonthSelect(preselect) {
 }
 
 async function loadClosedMonths() {
+    if (salaryCycleEnabled) return;
     try {
         const response = await fetch('/api/budget/closed-months');
         const result = await response.json();
@@ -293,6 +320,7 @@ async function loadClosedMonths() {
         if (result.success && result.data) {
             closedMonthKeys = result.data.map((month) => month.key);
             const budgetSelect = document.getElementById('budgetMonth');
+            if (!budgetSelect) return;
             Array.from(budgetSelect.options).forEach((option) => {
                 option.disabled = closedMonthKeys.includes(option.value);
             });
@@ -313,6 +341,74 @@ function updateDateDisplay() {
     document.getElementById('dateDisplay').textContent = formatDateTimeLabel(document.getElementById('date').value);
 }
 
+let assignmentRequestSequence = 0;
+
+function setDateError(message = '') {
+    const error = document.getElementById('dateError');
+    const input = document.getElementById('date');
+    if (error) error.textContent = message;
+    if (input) {
+        if (message) input.setAttribute('aria-invalid', 'true');
+        else input.removeAttribute('aria-invalid');
+    }
+}
+
+function previewErrorMessage(result, fallback = 'Unable to resolve Budget Month') {
+    return result?.error?.message || result?.message || fallback;
+}
+
+async function loadAssignmentPreview() {
+    if (!salaryCycleEnabled) return true;
+
+    const date = document.getElementById('date').value;
+    const submit = document.getElementById('submitBtn');
+    const derived = document.getElementById('derivedBudgetMonth');
+    const period = document.getElementById('derivedBudgetPeriod');
+    const requestSequence = ++assignmentRequestSequence;
+
+    assignmentPreview = null;
+    submit.disabled = true;
+    setDateError('');
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        if (requestSequence !== assignmentRequestSequence) return false;
+        derived.textContent = 'Enter a valid date';
+        period.textContent = '';
+        setDateError('Date must be a valid YYYY-MM-DD calendar date.');
+        return false;
+    }
+
+    derived.textContent = 'Checking…';
+    period.textContent = '';
+
+    try {
+        const response = await fetch(`/api/salary-cycle/assignment?date=${encodeURIComponent(date)}`);
+        const result = await response.json();
+        if (requestSequence !== assignmentRequestSequence) return false;
+        if (!response.ok || !result.success) {
+            setDateError(previewErrorMessage(result, 'Date must be a valid calendar date.'));
+            derived.textContent = 'Unable to resolve';
+            return false;
+        }
+
+        assignmentPreview = result.data;
+        derived.textContent = result.data.budgetMonth;
+        const previewPeriod = result.data.period || result.data.salaryCyclePeriod;
+        period.textContent = previewPeriod
+            ? `${previewPeriod.startDate} – ${previewPeriod.endDate}`
+            : '';
+        submit.disabled = false;
+        return true;
+    } catch (error) {
+        if (requestSequence !== assignmentRequestSequence) return false;
+        assignmentPreview = null;
+        derived.textContent = 'Unable to resolve';
+        period.textContent = '';
+        setDateError(error.message || 'Unable to resolve Budget Month');
+        return false;
+    }
+}
+
 function openSheet(id) {
     document.getElementById(id)?.classList.add('show');
 }
@@ -322,6 +418,10 @@ function closeSheet(id) {
 }
 
 function validateForm() {
+    if (salaryCycleEnabled && !assignmentPreview) {
+        showToast('Choose a valid expense date first', 'error');
+        return false;
+    }
     const amountValue = document.getElementById('amount').value;
     if (!amountValue || parseFloat(amountValue) <= 0) {
         showToast('Amount must be greater than 0', 'error');
@@ -389,14 +489,14 @@ async function loadTransactionForEdit(id) {
         document.getElementById('ngapain').value = transaction.ngapain || '';
         document.getElementById('amount').value = transaction.amount || '';
 
-        const date = new Date(transaction.date);
-        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-        document.getElementById('date').value = date.toISOString().slice(0, 10);
+        const canonicalDate = canonicalExpenseDate(transaction);
+        document.getElementById('date').value = canonicalDate;
         updateDateDisplay();
+        if (salaryCycleEnabled) await loadAssignmentPreview();
 
         setSelectedType(transaction.type || 'Eat');
 
-        if (transaction.budgetMonth && transaction.budgetYear) {
+        if (!salaryCycleEnabled && transaction.budgetMonth && transaction.budgetYear) {
             populateBudgetMonthSelect(`${transaction.budgetYear}-${String(transaction.budgetMonth).padStart(2, '0')}`);
         }
 
@@ -420,11 +520,10 @@ async function loadTransactionForEdit(id) {
 function addAnother() {
     document.getElementById('successModal').classList.remove('show');
     document.getElementById('transactionForm').reset();
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('date').value = now.toISOString().slice(0, 10);
+    document.getElementById('date').value = dateOnlyToday();
     updateDateDisplay();
-    populateBudgetMonthSelect();
+    if (salaryCycleEnabled) loadAssignmentPreview();
+    else populateBudgetMonthSelect();
     document.getElementById('sourceTypeSingle').checked = true;
     setSelectedType('Eat');
     setSelectedPocket('Kwintals');
@@ -434,11 +533,10 @@ function addAnother() {
 document.addEventListener('DOMContentLoaded', () => {
     displayStreak();
 
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('date').value = now.toISOString().slice(0, 10);
+    document.getElementById('date').value = dateOnlyToday();
     updateDateDisplay();
-    populateBudgetMonthSelect();
+    if (salaryCycleEnabled) loadAssignmentPreview();
+    else populateBudgetMonthSelect();
     setSelectedType('Eat');
     setSelectedPocket('Kwintals');
     handleSourceTypeChange();
@@ -454,7 +552,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (getSourceType() === 'multi') updateBreakdownTotal();
     });
 
-    document.getElementById('date').addEventListener('change', updateDateDisplay);
+    document.getElementById('date').addEventListener('change', () => {
+        updateDateDisplay();
+        if (salaryCycleEnabled) loadAssignmentPreview();
+    });
 
     document.getElementById('categoryTrigger').addEventListener('click', () => openSheet('typeSheet'));
     document.getElementById('pocketTrigger').addEventListener('click', () => openSheet('pocketSheet'));
@@ -490,12 +591,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.getElementById('budgetMonthOptions').addEventListener('click', (event) => {
-        const button = event.target.closest('[data-budget-value]');
-        if (!button || button.disabled) return;
-        document.getElementById('budgetMonth').value = button.dataset.budgetValue;
-        renderBudgetMonthOptions();
-    });
+    const budgetMonthOptions = document.getElementById('budgetMonthOptions');
+    if (budgetMonthOptions) {
+        budgetMonthOptions.addEventListener('click', (event) => {
+            const button = event.target.closest('[data-budget-value]');
+            if (!button || button.disabled) return;
+            document.getElementById('budgetMonth').value = button.dataset.budgetValue;
+            renderBudgetMonthOptions();
+        });
+    }
 
     document.getElementById('transactionForm').addEventListener('submit', async (event) => {
         event.preventDefault();
@@ -504,17 +608,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const transactionId = document.getElementById('transactionId').value;
         const isEdit = !!transactionId;
         const sourceType = getSourceType();
-        const [budgetYear, budgetMonth] = document.getElementById('budgetMonth').value.split('-');
-
         const formData = {
+            expenseDate: document.getElementById('date').value,
             date: document.getElementById('date').value,
             type: getSelectedType(),
             ngapain: document.getElementById('ngapain').value,
             amount: document.getElementById('amount').value,
-            budgetMonth: parseInt(budgetMonth, 10),
-            budgetYear: parseInt(budgetYear, 10),
             sourceType
         };
+
+        if (!salaryCycleEnabled) {
+            const [budgetYear, budgetMonth] = document.getElementById('budgetMonth').value.split('-');
+            formData.budgetMonth = parseInt(budgetMonth, 10);
+            formData.budgetYear = parseInt(budgetYear, 10);
+        }
 
         if (sourceType === 'single') {
             formData.pocket = getSelectedPocket();
@@ -547,7 +654,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('successMessage').textContent = `${msg.text}${streakSuffix}`;
                 document.getElementById('successModal').classList.add('show');
             } else {
-                showToast(result.message || 'Error saving transaction', 'error');
+                if (salaryCycleEnabled && response.status === 409) {
+                    await loadAssignmentPreview();
+                }
+                showToast(previewErrorMessage(result, 'Error saving transaction'), 'error');
             }
         } catch (error) {
             console.error('Error saving transaction:', error);

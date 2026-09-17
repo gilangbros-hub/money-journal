@@ -1,0 +1,491 @@
+{
+  "pbtResults": {
+    "4.7 Write the property test for deterministic, metadata-independent assignment": {
+      "status": "passed",
+      "failingExample": "",
+      "lastRunTimestamp": 1789615283117
+    },
+    "4.8 Write the property test for time-zone-independent date-only round trips": {
+      "status": "passed",
+      "failingExample": "",
+      "lastRunTimestamp": 1789615285724
+    },
+    "9.2 Write the property test for preserving, idempotent migration": {
+      "status": "passed",
+      "lastRunTimestamp": 1789622907696
+    },
+    "5.7 Write the property test for crossing-week attribution": {
+      "status": "passed",
+      "lastRunTimestamp": 1789622379972
+    },
+    "5.6 Write the property test for cadence/allocation key isolation": {
+      "status": "passed",
+      "lastRunTimestamp": 1789622584274
+    },
+    "5.9 Write the property test for concurrent allocation integrity": {
+      "status": "passed",
+      "lastRunTimestamp": 1789622711569
+    }
+  },
+  "executionHistory": {
+    "4. Make transaction assignment authoritative and atomic": [
+      {
+        "executionId": "9a6698b6-4399-46a2-a86d-348d177de872",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789615100914
+      },
+      {
+        "executionId": "9a6698b6-4399-46a2-a86d-348d177de872",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789615353854
+      }
+    ],
+    "5. Implement cadence-aware budget calculations and guarded writes": [
+      {
+        "executionId": "4fa2972c-2bab-48d2-b2be-91e7e6c1bcca",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789615553395
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625277439
+      }
+    ],
+    "7. Integrate cadence-aware APIs and reporting": [
+      {
+        "executionId": "4fa2972c-2bab-48d2-b2be-91e7e6c1bcca",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789615922556
+      },
+      {
+        "executionId": "4fa2972c-2bab-48d2-b2be-91e7e6c1bcca",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789616290807
+      }
+    ],
+    "8. Update salary-cycle browser interfaces": [
+      {
+        "executionId": "75a8fd07-df73-4a26-b3eb-37e2bf12ddae",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789616534627
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625234975
+      }
+    ],
+    "9. Replace the immediate-write migration with a controlled lifecycle": [
+      {
+        "executionId": "75a8fd07-df73-4a26-b3eb-37e2bf12ddae",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789617008952
+      },
+      {
+        "executionId": "75a8fd07-df73-4a26-b3eb-37e2bf12ddae",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789617424827
+      }
+    ],
+    "10. Complete backward-compatible rollout and readiness automation": [
+      {
+        "executionId": "2b9d40e6-b99a-4490-8192-bdf9dacc5b85",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789618195404
+      },
+      {
+        "executionId": "2b9d40e6-b99a-4490-8192-bdf9dacc5b85",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789618986521
+      }
+    ],
+    "10.1 Implement feature-flagged compatibility readers and write behavior": [
+      {
+        "executionId": "2b9d40e6-b99a-4490-8192-bdf9dacc5b85",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789618973764
+      }
+    ],
+    "10.2 Add the feature-off/feature-on compatibility regression matrix": [
+      {
+        "executionId": "2b9d40e6-b99a-4490-8192-bdf9dacc5b85",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789618973772
+      }
+    ],
+    "10.4 Assemble and execute the complete deterministic acceptance test profile": [
+      {
+        "executionId": "2b9d40e6-b99a-4490-8192-bdf9dacc5b85",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789618973779
+      }
+    ],
+    "10.3 Add automated rollout preflight and post-migration verification commands": [
+      {
+        "executionId": "2b9d40e6-b99a-4490-8192-bdf9dacc5b85",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789618973782
+      }
+    ],
+    "5.4 Implement BudgetService salary-cycle reads": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622035631
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622238790
+      }
+    ],
+    "9.2 Write the property test for preserving, idempotent migration": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622035739
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622238794
+      }
+    ],
+    "4.5 Add transaction service/database integration tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622251323
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622495406
+      }
+    ],
+    "4.6 Add authenticated transaction and assignment route tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622251333
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622495615
+      }
+    ],
+    "5.7 Write the property test for crossing-week attribution": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622251339
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622496106
+      }
+    ],
+    "5.5 Implement BudgetService cadence, allocation, close, reopen, and delete commands": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622251344
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622495817
+      }
+    ],
+    "9.3 Implement the immutable migration preview command": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622251347
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622496109
+      }
+    ],
+    "5.6 Write the property test for cadence/allocation key isolation": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622511524
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622738637
+      }
+    ],
+    "5.8 Add budget service/database integration tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622511529
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622738643
+      }
+    ],
+    "7.1 Implement ReportingService over stored assignments and active cadence": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622511540
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622738648
+      }
+    ],
+    "9.4 Implement explicit preview approval and historical reassignment gates": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622511627
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622738653
+      }
+    ],
+    "5.9 Write the property test for concurrent allocation integrity": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622511696
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622738656
+      }
+    ],
+    "7.2 Refactor budget controllers and extend budget routes": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622755751
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623101166
+      }
+    ],
+    "7.3 Refactor dashboard and history controllers/routes to ReportingService": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622755756
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623101177
+      }
+    ],
+    "9.5 Implement stale-safe, all-or-nothing migration execution": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622755768
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623101172
+      }
+    ],
+    "8.1 Replace Log Spending's editable Budget Month with server preview": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789622755772
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623101181
+      }
+    ],
+    "8.2 Add Log Spending DOM interaction tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623120178
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623747653
+      }
+    ],
+    "8.3 Add salary-cycle and cadence controls to the Check Pockets view": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623120184
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623747668
+      }
+    ],
+    "7.4 Add budget/reporting API and service integration tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623120189
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623747659
+      }
+    ],
+    "9.6 Implement migration verification and separately approved rollback": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623120194
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623747674
+      }
+    ],
+    "8.6 Update Monthly Story and Review History for salary-cycle metadata": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623764915
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624136783
+      }
+    ],
+    "9.7 Add migration lifecycle integration and failure-injection tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623765023
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624136819
+      }
+    ],
+    "8.4 Implement server-driven Check Pockets interactions": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789623765029
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624325864
+      }
+    ],
+    "8.7 Add Monthly Story and Review History DOM tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624345967
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624504266
+      }
+    ],
+    "8.5 Add Check Pockets DOM interaction tests": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624345971
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624504261
+      }
+    ],
+    "6. Checkpoint - Ensure core service tests pass": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624525913
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625234969
+      }
+    ],
+    "11. Final checkpoint - Ensure full verification and rollout readiness": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789624911156
+      },
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625203791
+      }
+    ],
+    "5.2 Write the property test for exact Pocket_Share conservation": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625234957
+      }
+    ],
+    "5.3 Write the property test for balance and percentage arithmetic": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625234963
+      }
+    ],
+    "4.4 Refactor transaction controllers/routes and add assignment preview": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625277423
+      }
+    ],
+    "4.7 Write the property test for deterministic, metadata-independent assignment": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625277430
+      }
+    ],
+    "4.8 Write the property test for time-zone-independent date-only round trips": [
+      {
+        "executionId": "b915aadd-2370-4f14-a8f3-3dcc322c5ac9",
+        "chatSessionId": "ca1c35b8-503e-4350-b74a-1e18a480e092",
+        "timestamp": 1789625277435
+      }
+    ]
+  }
+}

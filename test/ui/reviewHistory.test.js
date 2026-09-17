@@ -1,0 +1,141 @@
+'use strict';
+
+const fs = require('node:fs');
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { JSDOM } = require('jsdom');
+const hbs = require('hbs');
+
+const viewSource = fs.readFileSync(require.resolve('../../views/review-history.hbs'), 'utf8');
+const browserSource = fs.readFileSync(require.resolve('../../public/js/review-history.js'), 'utf8');
+
+hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
+hbs.handlebars.registerPartial('actionHub', '<div id="actionHubSheet"></div>');
+const renderView = hbs.handlebars.compile(viewSource);
+
+function response(body, status = 200) {
+    return {
+        ok: status >= 200 && status < 300,
+        status,
+        async json() {
+            return body;
+        }
+    };
+}
+
+async function setupPage({ transactions } = {}) {
+    const calls = [];
+    const historyTransactions = transactions || [
+        {
+            _id: 'split',
+            expenseDate: '2027-03-02',
+            type: 'Groceries',
+            pocket: 'Groceries',
+            sourceType: 'multi',
+            sourceBreakdowns: [
+                { pocket: 'Groceries', amount: 600 },
+                { pocket: 'Kwintals', amount: 400 }
+            ],
+            amount: 1000,
+            ngapain: 'Split expense',
+            paidBy: 'Self'
+        },
+        {
+            _id: 'older',
+            expenseDate: '2027-02-28',
+            type: 'Eat',
+            pocket: 'Kwintals',
+            amount: 500,
+            ngapain: 'Older expense',
+            paidBy: 'Self'
+        }
+    ];
+    const dom = new JSDOM(renderView({ username: 'tester', avatar: '👤' }), {
+        url: 'https://money-journal.test/review-history',
+        runScripts: 'outside-only'
+    });
+    dom.window.fetch = async (url, options) => {
+        calls.push({ url, options });
+        if (url === '/api/budget') {
+            return response({
+                success: true,
+                data: { budgetMonth: '2027-03' }
+            });
+        }
+        return response({
+            success: true,
+            data: {
+                budgetMonth: '2027-03',
+                period: { startDate: '2027-02-25', endDate: '2027-03-24' },
+                transactions: historyTransactions
+            }
+        });
+    };
+    dom.window.formatRupiah = value => `Rp ${value}`;
+    dom.window.openOptions = () => {};
+    dom.window.eval(browserSource);
+    await new Promise(resolve => setImmediate(resolve));
+    return { dom, calls };
+}
+
+test('Review History uses the server month and cycle range, then filters a split transaction once', async () => {
+    const { dom, calls } = await setupPage();
+    const { document } = dom.window;
+
+    assert.equal(document.getElementById('monthFilter').value, '2027-03');
+    assert.match(document.getElementById('salaryCyclePeriod').textContent, /Budget Month 2027-03/);
+    assert.match(document.getElementById('salaryCyclePeriod').textContent, /2027-02-25 – 2027-03-24/);
+    assert.ok(calls.some(call => call.url === '/api/history?month=2027-03'));
+
+    document.querySelector('[data-pocket="Kwintals"]').click();
+    const rows = [...document.querySelectorAll('.trans-item')];
+    assert.equal(rows.length, 2);
+    assert.equal(rows.filter(row => row.textContent.includes('Split expense')).length, 1);
+    assert.match(rows.find(row => row.textContent.includes('Split expense')).textContent, /Groceries \+ Kwintals/);
+    assert.match(document.getElementById('summaryInfo').textContent, /2 transactions/);
+    assert.match(document.getElementById('summaryInfo').textContent, /Rp 1500/);
+    dom.window.close();
+});
+
+test('Review History groups and sorts canonical date strings without UTC conversion', () => {
+    assert.doesNotMatch(browserSource, /toISOString\(\)/);
+    assert.doesNotMatch(browserSource, /new Date\(\s*[at]\.?date/);
+    assert.doesNotMatch(browserSource, /new Date\(\s*dateKey/);
+    assert.match(browserSource, /transactionDateKey\(a\)/);
+    assert.match(browserSource, /sourceBreakdowns\.some/);
+});
+
+
+test('Review History groups exact canonical dates once and toggles deterministic string sorting', async () => {
+    const { dom } = await setupPage({
+        transactions: [
+            { _id: 'newer', expenseDate: '2027-03-03', date: '1999-01-01', type: 'Eat', pocket: 'Groceries', amount: 100, ngapain: 'Canonical newer' },
+            { _id: 'same-day', expenseDate: '2027-03-03', date: '2099-12-31', type: 'Eat', pocket: 'Groceries', amount: 200, ngapain: 'Same canonical day' },
+            { _id: 'older', expenseDate: '2027-02-28', date: '2099-12-31', type: 'Eat', pocket: 'Groceries', amount: 300, ngapain: 'Canonical older' }
+        ]
+    });
+    const { document } = dom.window;
+
+    assert.equal(document.querySelectorAll('.date-group-header').length, 2);
+    let listText = document.getElementById('transactionList').textContent;
+    assert.match(listText, /Canonical newer/);
+    assert.match(listText, /Same canonical day/);
+    assert.match(listText, /Canonical older/);
+
+    document.getElementById('sortBtn').click();
+    const rows = [...document.querySelectorAll('.trans-item')];
+    const sortedRowsText = rows.map(row => row.textContent).join(' ');
+    assert.equal(rows.length, 3);
+    assert.match(sortedRowsText, /Canonical older/);
+    assert.match(sortedRowsText, /Canonical newer/);
+    assert.equal(document.querySelectorAll('.date-group-header').length, 2);
+    dom.window.close();
+});
+
+test('Review History never routes date-only values through UTC serialization or compatibility instants', () => {
+    assert.doesNotMatch(browserSource, /toISOString\(\)/);
+    assert.doesNotMatch(browserSource, /new Date\(\s*[at]\.?date/);
+    assert.doesNotMatch(browserSource, /new Date\(\s*dateKey/);
+    assert.match(browserSource, /transactionDateKey\(a\)/);
+    assert.match(browserSource, /groups\[key\]/);
+});
