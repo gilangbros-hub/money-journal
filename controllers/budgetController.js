@@ -16,7 +16,13 @@ function serviceOptions(req) {
     if (req.app?.locals?.householdTimeZone) options.timeZone = req.app.locals.householdTimeZone;
     if (req.app?.locals?.nowInstant) options.nowInstant = req.app.locals.nowInstant;
     if (req.app?.locals?.configuration) {
-        options.salaryCycleBudgetingEnabled = req.app.locals.configuration.salaryCycleBudgetingEnabled;
+        const config = req.app.locals.configuration;
+        options.salaryCycleBudgetingEnabled = config.salaryCycleBudgetingEnabled;
+        // Pass the managed pocket flags so BudgetService uses managed
+        // assignment reads instead of falling closed to the legacy fixed
+        // pockets. Absent these, /api/budget renders the legacy breakdown.
+        options.pocketManagementEnabled = config.pocketManagementEnabled;
+        options.pocketManagementDualWriteEnabled = config.pocketManagementDualWriteEnabled;
     }
     if (req.app?.locals?.connection) options.connection = req.app.locals.connection;
     return options;
