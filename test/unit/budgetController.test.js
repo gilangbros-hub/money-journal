@@ -137,3 +137,30 @@ test('budget controller delegates cadence, explicit allocations, close state, an
     ]);
     assert.deepEqual(calls[3][1][0], { allocationType: 'weekly', id: 'weekly-1' });
 });
+
+test('getBudgetPage renders the salary-cycle-shaped view when the legacy flag is off but Pocket Management is on', async () => {
+    const handlers = createBudgetController({ service: {} });
+    const res = response();
+
+    await handlers.getBudgetPage(request({
+        app: { locals: { configuration: { salaryCycleBudgetingEnabled: false, pocketManagementEnabled: true } } }
+    }), res);
+
+    // Managed reads are salary-cycle aware on their own (services/budgetService.js
+    // getBudgetMonthView), so the view must render the same Budget Month header,
+    // period text, and card templates it does for the legacy flag — otherwise the
+    // client is stuck on the template's static placeholder text.
+    assert.equal(res.body.view, 'check-pockets');
+    assert.equal(res.body.data.salaryCycleBudgetingEnabled, true);
+});
+
+test('getBudgetPage keeps the legacy calendar-month view when neither flag is on', async () => {
+    const handlers = createBudgetController({ service: {} });
+    const res = response();
+
+    await handlers.getBudgetPage(request({
+        app: { locals: { configuration: { salaryCycleBudgetingEnabled: false, pocketManagementEnabled: false } } }
+    }), res);
+
+    assert.equal(res.body.data.salaryCycleBudgetingEnabled, false);
+});

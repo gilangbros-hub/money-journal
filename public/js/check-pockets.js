@@ -76,7 +76,12 @@ function monthLabel(value) {
 function updateMonthDisplay() {
     const display = element('currentMonth');
     if (!display) return;
-    if (budgetFeatureEnabled && currentBudgetMonth) {
+    // currentBudgetMonth is only ever populated by a server-driven render
+    // (salary-cycle or managed), so its presence — not the legacy
+    // budgetFeatureEnabled flag — is what tells us which value is live. Gating
+    // on the flag alone left the server-rendered placeholder text on screen
+    // forever whenever a managed view loaded without the legacy flag also on.
+    if (currentBudgetMonth) {
         display.textContent = monthLabel(currentBudgetMonth);
     } else if (currentMonth && currentYear) {
         display.textContent = `${MONTH_NAMES[currentMonth - 1]} ${currentYear}`;

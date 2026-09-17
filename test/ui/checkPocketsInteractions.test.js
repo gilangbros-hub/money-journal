@@ -342,3 +342,52 @@ test('managed cards stay information-only for a view-only household member', asy
     assert.equal(card.querySelector('[data-manage-allocation]').hasAttribute('hidden'), true);
     dom.window.close();
 });
+
+test('managed view updates the Budget Month text even when the legacy salary-cycle flag is off', async () => {
+    // Reproduces the client-side half of the production bug directly: a
+    // salary-cycle-shaped render (the controller now always produces one for
+    // managed mode) whose hidden legacy flag is nonetheless false. Before the
+    // fix, updateMonthDisplay() gated on that flag instead of on
+    // currentBudgetMonth, so the template's static placeholder text never
+    // updated through any navigation click.
+    const html = renderView({
+        username: 'tester',
+        avatar: '👤',
+        role: 'Wife',
+        canEdit: true,
+        salaryCycleBudgetingEnabled: true
+    }).replace('id="salaryCycleEnabled" value="true"', 'id="salaryCycleEnabled" value="false"');
+
+    const calls = [];
+    const dom = new JSDOM(html, { url: 'https://money-journal.test/check-pockets', runScripts: 'outside-only' });
+    dom.window.fetch = async (url, options) => {
+        calls.push({ url, options });
+        if (url === '/api/budget') {
+            return response({ success: true, data: budgetData({ pocketManagementEnabled: true }) });
+        }
+        assert.equal(url, '/api/budget?month=2027-03');
+        return response({
+            success: true,
+            data: budgetData({
+                budgetMonth: '2027-03',
+                period: { startDate: '2027-02-25', endDate: '2027-03-24' },
+                pocketManagementEnabled: true
+            })
+        });
+    };
+    dom.window.Chart = function Chart() { this.destroy = () => {}; };
+    dom.window.chartColors = ['#000'];
+    dom.window.formatRupiah = value => `Rp ${value}`;
+    dom.window.showToast = () => {};
+    dom.window.CSS = dom.window.CSS || { escape: value => value };
+    dom.window.eval(browserSource);
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(dom.window.document.getElementById('currentMonth').textContent, 'Februari 2027');
+
+    dom.window.document.getElementById('nextMonth').click();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.equal(dom.window.document.getElementById('currentMonth').textContent, 'Maret 2027');
+    dom.window.close();
+});

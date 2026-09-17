@@ -43,12 +43,24 @@ function createBudgetController({ service = budgetService } = {}) {
     const options = serviceOptions;
     return {
         getBudgetPage(req, res) {
+            const configuration = req.app?.locals?.configuration;
+            // The salary-cycle-shaped view (Budget Month header, period text,
+            // weekly/monthly card templates) is what Pocket Management's
+            // managed reads render into, regardless of the legacy salary-cycle
+            // flag (getBudgetMonthView already treats managed reads as
+            // salary-cycle aware on their own). Gating the view on the legacy
+            // flag alone left Check Pockets on its calendar-month template —
+            // whose Budget Month text is a static placeholder never updated by
+            // the managed render path — whenever Pocket Management was enabled
+            // without also flipping the legacy flag.
+            const salaryCycleBudgetingEnabled = configuration?.salaryCycleBudgetingEnabled === true
+                || configuration?.pocketManagementEnabled === true;
             res.render('check-pockets', {
                 username: req.session.username,
                 avatar: req.session.avatar || '👤',
                 role: req.session.role,
                 canEdit: req.session.role === 'Wife',
-                salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
+                salaryCycleBudgetingEnabled,
                 isBudget: true
             });
         },
