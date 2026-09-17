@@ -22,7 +22,7 @@ const transactionRoutes = require('./routes/transactions');
 const budgetRoutes = require('./routes/budget');
 const pocketRoutes = require('./routes/pockets');
 
-const { TRANSACTION_TYPES, POCKETS } = require('./utils/constants');
+const { TRANSACTION_TYPES } = require('./utils/constants');
 
 function registerViewHelpers() {
     // Register partials
@@ -35,10 +35,6 @@ function registerViewHelpers() {
 
     hbs.registerHelper('getEmoji', function (type) {
         return TRANSACTION_TYPES[type] || '📝';
-    });
-
-    hbs.registerHelper('getPocketEmoji', function (pocket) {
-        return POCKETS[pocket] || '👛';
     });
 
     hbs.registerHelper('eq', function (a, b) {

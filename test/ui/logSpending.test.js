@@ -25,6 +25,10 @@ function response(body, status = 200) {
     };
 }
 
+function pocketOptionsResponse(options = [{ pocketId: 'pocket-1', name: 'Kwintals', emoji: '💰', cadence: 'Monthly' }]) {
+    return response({ success: true, data: options });
+}
+
 async function setupPage(fetchImpl, { edit = '', showToast = () => {} } = {}) {
     const dom = new JSDOM(renderView({
         username: 'tester',
@@ -61,6 +65,7 @@ test('enabled Log Spending renders a read-only server assignment and uses raw da
                 }
             });
         }
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
         return response({ success: true });
     });
 
@@ -68,6 +73,8 @@ test('enabled Log Spending renders a read-only server assignment and uses raw da
     assert.equal(document.getElementById('budgetMonth'), null);
     assert.equal(document.getElementById('derivedBudgetMonth').textContent, '2027-02');
     assert.equal(document.getElementById('derivedBudgetPeriod').textContent, '2027-01-25 – 2027-02-24');
+
+    dom.window.selectManagedPocket('pocket-1');
 
     const date = document.getElementById('date');
     date.value = '2027-02-25';
@@ -86,6 +93,8 @@ test('enabled Log Spending renders a read-only server assignment and uses raw da
     const payload = JSON.parse(submit.options.body);
     assert.equal(payload.expenseDate, '2027-02-25');
     assert.equal(payload.date, '2027-02-25');
+    assert.equal(payload.pocketId, 'pocket-1');
+    assert.equal(payload.pocket, 'Kwintals');
     assert.equal(Object.hasOwn(payload, 'budgetMonth'), false);
     assert.equal(Object.hasOwn(payload, 'budgetYear'), false);
     dom.window.close();
@@ -108,11 +117,13 @@ test('invalid date disables submit and a 409 save refreshes the assignment previ
                 }
             });
         }
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
         saveAttempts += 1;
         return response({ error: { message: 'Assignment changed; refresh required.' } }, 409);
     });
 
     const { document } = dom.window;
+    dom.window.selectManagedPocket('pocket-1');
     const date = document.getElementById('date');
     date.value = '';
     date.dispatchEvent(new dom.window.Event('change'));
@@ -169,9 +180,11 @@ test('server preview errors show the field message and server save errors show a
                 }
             });
         }
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
         return response({ error: { message: 'Transaction service unavailable.' } }, 503);
     }, { showToast: (message, type) => toastCalls.push({ message, type }) });
 
+    saveDom.window.selectManagedPocket('pocket-1');
     saveDom.window.document.getElementById('amount').value = '1000';
     saveDom.window.document.getElementById('ngapain').value = 'Lunch';
     saveDom.window.document.getElementById('transactionForm').dispatchEvent(new saveDom.window.Event('submit', { bubbles: true, cancelable: true }));
@@ -199,9 +212,11 @@ test('edit round trip uses the API expenseDate string directly', async () => {
                 amount: 1000,
                 ngapain: 'Existing expense',
                 sourceType: 'single',
-                pocket: 'Kwintals'
+                pocket: 'Kwintals',
+                pocketId: 'pocket-1'
             });
         }
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
         if (options?.method === 'PUT') return response({ success: true });
         return response({
             success: true,
@@ -228,8 +243,48 @@ test('edit round trip uses the API expenseDate string directly', async () => {
     assert.equal(payload.ngapain, 'Existing expense');
     assert.equal(payload.amount, '1000');
     assert.equal(payload.sourceType, 'single');
+    assert.equal(payload.pocketId, 'pocket-1');
     assert.equal(payload.pocket, 'Kwintals');
     assert.equal(Object.hasOwn(payload, 'budgetMonth'), false);
     assert.equal(Object.hasOwn(payload, 'budgetYear'), false);
+    dom.window.close();
+});
+
+test('the pocket sheet never renders a fixed-pocket list, only loading then the real managed options', async () => {
+    // Reproduces the reported bug: the pocket sheet used to render a
+    // hardcoded eight-pocket grid immediately (server-rendered), then swap it
+    // for the real assignment-backed list once the fetch resolved. There is
+    // now no server-rendered grid to flash — only a loading state that the
+    // real data replaces.
+    let resolveFetch;
+    const pending = new Promise((resolve) => { resolveFetch = resolve; });
+    const dom = await setupPage(async (url) => {
+        if (url.startsWith('/api/salary-cycle/assignment')) {
+            return response({
+                success: true,
+                data: { budgetMonth: '2027-02', period: { startDate: '2027-01-25', endDate: '2027-02-24' } }
+            });
+        }
+        if (url.startsWith('/api/expense-pocket-options')) {
+            await pending;
+            return pocketOptionsResponse([
+                { pocketId: 'pocket-1', name: 'Free Monkey', emoji: '💰', cadence: 'Monthly' }
+            ]);
+        }
+        return response({ success: true });
+    });
+
+    const { document } = dom.window;
+    const grid = document.querySelector('#pocketSheet [data-pocket-grid]');
+    assert.doesNotMatch(grid.innerHTML, /Kwintals|Groceries|Weekday Transport/);
+    assert.ok(grid.querySelector('[data-pocket-loading]'));
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, 'Loading…');
+
+    resolveFetch();
+    await new Promise((resolve) => setImmediate(resolve));
+    await new Promise((resolve) => setImmediate(resolve));
+
+    assert.doesNotMatch(grid.innerHTML, /Kwintals|Groceries|Weekday Transport/);
+    assert.match(grid.innerHTML, /Free Monkey/);
     dom.window.close();
 });

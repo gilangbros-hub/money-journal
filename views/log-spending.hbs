@@ -59,7 +59,7 @@
 
                     <button type="button" class="transaction-row" id="pocketTrigger">
                         <span class="transaction-row-label">Pocket</span>
-                        <span class="transaction-row-value" id="selectedPocketDisplay">Kwintals</span>
+                        <span class="transaction-row-value" id="selectedPocketDisplay">Loading…</span>
                     </button>
 
                     <div class="transaction-breakdown-panel" id="multiPocketSection" style="display:none;">
@@ -87,11 +87,7 @@
                         </div>
                     </div>
 
-                    <div id="singlePocketSection" style="display:none;">
-                        {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Bandung,Sedeqah,IPL")}}
-                        <input type="radio" name="pocket" value="{{this}}" class="option-input pocket-hidden-input" data-pocket-label="{{this}}">
-                        {{/each}}
-                    </div>
+                    <div id="singlePocketSection" style="display:none;"></div>
 
                     <div class="transaction-row relative" id="dateTrigger" style="position: relative; cursor: pointer;">
                         <span class="transaction-row-label">Date</span>
@@ -154,13 +150,14 @@
                     <button type="button" class="picker-sheet-close" data-close-sheet="pocketSheet">Close</button>
                 </div>
             </div>
-            <div class="picker-grid">
-                {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Bandung,Sedeqah,IPL")}}
-                <button type="button" class="picker-grid-item" data-pocket-option="{{this}}">
-                    <span class="picker-grid-icon">{{getPocketEmoji this}}</span>
-                    <span>{{this}}</span>
-                </button>
-                {{/each}}
+            <!-- Populated exclusively by the assignment-backed pocket options
+                 fetched in /js/log-spending.js. There is no server-rendered
+                 fallback grid: showing one first and swapping it a moment
+                 later is exactly the stale-then-correct flash this avoids. -->
+            <div class="picker-grid" data-pocket-grid>
+                <div class="col-span-full text-center py-4" data-pocket-loading>
+                    <p class="text-sm" style="color: var(--journal-soft-ink, inherit);">Loading pockets…</p>
+                </div>
             </div>
         </div>
     </div>

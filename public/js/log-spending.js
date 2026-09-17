@@ -13,19 +13,6 @@ const TYPE_META = {
     Others: { icon: '\u{1F4E6}' }
 };
 
-const POCKET_META = {
-    Kwintals: { icon: '\u{1F4B0}' },
-    Groceries: { icon: '\u{1F966}' },
-    'Weekday Transport': { icon: '\u{1F68C}' },
-    'Weekend Transport': { icon: '\u{1F697}' },
-    Investasi: { icon: '\u{1F4C8}' },
-    Bandung: { icon: '\u26F0\uFE0F' },
-    Sedeqah: { icon: '\u{1F932}' },
-    IPL: { icon: '\u{1F3D8}\uFE0F' }
-};
-
-const POCKET_LIST = Object.keys(POCKET_META).map((key) => ({ key, emoji: POCKET_META[key].icon }));
-
 const celebrationMessages = [
     { emoji: '\u{1F389}', text: 'Great job tracking!' },
     { emoji: '\u{1F4AA}', text: 'Discipline = freedom!' },
@@ -38,14 +25,13 @@ let closedMonthKeys = [];
 let assignmentPreview = null;
 const salaryCycleEnabled = document.getElementById('salaryCycleEnabled')?.value === 'true';
 
-// Managed Pocket Management state. Detection is runtime: the assignment-backed
-// /api/expense-pocket-options endpoint is only available when the feature is
-// enabled, so a valid array response is what flips `pocketManagementActive` on.
-// The probe is triggered exclusively by pocket-selection interactions (opening
-// the pocket sheet or switching to multi mode), which keeps every feature-off
-// interaction byte-for-byte unchanged.
-let pocketManagementActive = false;
-let pocketManagementChecked = false;
+// Pocket source is always assignment-backed: fetched from
+// /api/expense-pocket-options as soon as the Budget Month is known (page
+// load, then again on every date/edit change), never from a hardcoded list.
+// `pocketOptionsLoaded`/`pocketOptionsError` drive the sheet's loading, error,
+// and empty states — there is no fixed-pocket fallback to flash in behind.
+let pocketOptionsLoaded = false;
+let pocketOptionsError = false;
 let managedPocketOptions = [];
 const managedPocketById = new Map();
 let selectedManagedPocketId = '';
@@ -124,20 +110,10 @@ function getSelectedType() {
     return document.querySelector('input[name="type"]:checked')?.value || 'Eat';
 }
 
-function getSelectedPocket() {
-    return document.querySelector('input[name="pocket"]:checked')?.value || 'Kwintals';
-}
-
 function setSelectedType(type) {
     const input = document.querySelector(`input[name="type"][value="${CSS.escape(type)}"]`);
     if (input) input.checked = true;
     updateTypeDisplay();
-}
-
-function setSelectedPocket(pocket) {
-    const input = document.querySelector(`input[name="pocket"][value="${CSS.escape(pocket)}"]`);
-    if (input) input.checked = true;
-    updatePocketDisplay();
 }
 
 function updateTypeDisplay() {
@@ -150,20 +126,8 @@ function updateTypeDisplay() {
     });
 }
 
-function updatePocketDisplay() {
-    const pocket = getSelectedPocket();
-    const display = document.getElementById('selectedPocketDisplay');
-    display.textContent = `${POCKET_META[pocket]?.icon || ''} ${pocket}`;
-
-    document.querySelectorAll('[data-pocket-option]').forEach((button) => {
-        button.classList.toggle('is-selected', button.dataset.pocketOption === pocket);
-    });
-}
-
 // ---------------------------------------------------------------------------
-// Managed pocket options (assignment-backed). Everything below only runs after
-// `pocketManagementActive` has been confirmed by a valid endpoint response, so
-// the legacy fixed-pocket flow is never altered when the feature is off.
+// Pocket source options (assignment-backed).
 // ---------------------------------------------------------------------------
 
 function expensePocketOptionsQuery() {
@@ -186,35 +150,29 @@ async function loadManagedPocketOptions() {
     try {
         const response = await fetch(`/api/expense-pocket-options?${query}`);
         if (!response.ok) {
-            // Feature disabled (or unavailable): keep the fixed-pocket UI intact.
-            pocketManagementChecked = true;
+            pocketOptionsError = true;
+            renderManagedPocketSheet();
+            renderManagedSingleDisplay();
             return false;
         }
         result = await response.json();
     } catch (error) {
-        pocketManagementChecked = true;
+        pocketOptionsError = true;
+        renderManagedPocketSheet();
+        renderManagedSingleDisplay();
         return false;
     }
     if (!result || result.success !== true || !Array.isArray(result.data)) {
-        pocketManagementChecked = true;
+        pocketOptionsError = true;
+        renderManagedPocketSheet();
+        renderManagedSingleDisplay();
         return false;
     }
     applyManagedPocketOptions(result.data);
     return true;
 }
 
-function applyManagedPocketOptions(options) {
-    pocketManagementActive = true;
-    pocketManagementChecked = true;
-    managedPocketOptions = options.map((option) => ({
-        pocketId: String(option.pocketId),
-        name: option.name || '',
-        emoji: option.emoji || '',
-        cadence: option.cadence || 'Monthly'
-    }));
-    managedPocketById.clear();
-    managedPocketOptions.forEach((option) => managedPocketById.set(option.pocketId, option));
-
+function restorePendingEditPocketSelections() {
     // Preserve a still-valid selection; otherwise fall back to a pending edit
     // reference so re-opening the picker restores the saved pocket.
     if (selectedManagedPocketId && !managedPocketById.has(selectedManagedPocketId)) {
@@ -234,6 +192,21 @@ function applyManagedPocketOptions(options) {
         }
         pendingEditBreakdowns = null;
     }
+}
+
+function applyManagedPocketOptions(options) {
+    pocketOptionsLoaded = true;
+    pocketOptionsError = false;
+    managedPocketOptions = options.map((option) => ({
+        pocketId: String(option.pocketId),
+        name: option.name || '',
+        emoji: option.emoji || '',
+        cadence: option.cadence || 'Monthly'
+    }));
+    managedPocketById.clear();
+    managedPocketOptions.forEach((option) => managedPocketById.set(option.pocketId, option));
+
+    restorePendingEditPocketSelections();
 
     renderManagedPocketSheet();
     renderManagedSingleDisplay();
@@ -248,6 +221,19 @@ function pocketSheetGrid() {
 function renderManagedPocketSheet() {
     const grid = pocketSheetGrid();
     if (!grid) return;
+    if (pocketOptionsError) {
+        grid.innerHTML = '<div class="col-span-full text-center py-4" data-pocket-error>'
+            + '<p class="text-sm font-semibold">Could not load pockets.</p>'
+            + '<button type="button" class="btn-ghost inline-flex items-center justify-center gap-1 mt-3" data-retry-pockets>Retry</button>'
+            + '</div>';
+        return;
+    }
+    if (!pocketOptionsLoaded) {
+        grid.innerHTML = '<div class="col-span-full text-center py-4" data-pocket-loading>'
+            + '<p class="text-sm" style="color: var(--journal-soft-ink, inherit);">Loading pockets…</p>'
+            + '</div>';
+        return;
+    }
     if (!managedPocketOptions.length) {
         // Zero assignments for the derived Budget_Month: show a Start setup
         // action instead of substituting fixed pockets (Requirements 5.14-5.15).
@@ -269,8 +255,15 @@ function renderManagedSingleDisplay() {
     const display = document.getElementById('selectedPocketDisplay');
     if (!display) return;
     const option = managedPocketById.get(selectedManagedPocketId);
-    if (option) display.textContent = `${option.emoji} ${option.name}`.trim();
-    else display.textContent = managedPocketOptions.length ? 'Select pocket…' : 'No pockets assigned';
+    if (option) {
+        display.textContent = `${option.emoji} ${option.name}`.trim();
+    } else if (pocketOptionsError) {
+        display.textContent = 'Could not load pockets';
+    } else if (!pocketOptionsLoaded) {
+        display.textContent = 'Loading…';
+    } else {
+        display.textContent = managedPocketOptions.length ? 'Select pocket…' : 'No pockets assigned';
+    }
 
     document.querySelectorAll('#pocketSheet [data-managed-pocket-option]').forEach((button) => {
         button.classList.toggle('is-selected', button.dataset.managedPocketOption === selectedManagedPocketId);
@@ -306,10 +299,7 @@ function handleSourceTypeChange() {
         singleSection.style.display = 'none';
         multiSection.style.display = 'block';
         pocketTrigger.style.display = 'none';
-        document.querySelectorAll('input[name="pocket"]').forEach((input) => { input.checked = false; });
-        // Load assignment-backed options on demand so the breakdown selects can
-        // show managed pockets; a feature-off response leaves them unchanged.
-        if (!pocketManagementChecked || pocketManagementActive) loadManagedPocketOptions();
+        if (!pocketOptionsLoaded) loadManagedPocketOptions();
         if (!document.getElementById('breakdownRows').children.length) addBreakdownRow();
     }
 }
@@ -332,19 +322,12 @@ function updateAddPocketBtnVisibility() {
 function buildPocketOptions(selectedValue) {
     const used = getUsedPockets();
     const options = ['<option value="">Select pocket...</option>'];
-    if (pocketManagementActive) {
-        // Managed selects are keyed by immutable pocketId and labelled from the
-        // assignment snapshot (archived-but-assigned pockets are included by the
-        // server exactly once).
-        managedPocketOptions.forEach((pocket) => {
-            const disabled = used.includes(pocket.pocketId) && pocket.pocketId !== selectedValue;
-            options.push(`<option value="${escapeHtml(pocket.pocketId)}" ${pocket.pocketId === selectedValue ? 'selected' : ''} ${disabled ? 'disabled' : ''}>${escapeHtml(`${pocket.emoji} ${pocket.name}`.trim())}</option>`);
-        });
-        return options.join('');
-    }
-    POCKET_LIST.forEach((pocket) => {
-        const disabled = used.includes(pocket.key) && pocket.key !== selectedValue;
-        options.push(`<option value="${pocket.key}" ${pocket.key === selectedValue ? 'selected' : ''} ${disabled ? 'disabled' : ''}>${pocket.emoji} ${pocket.key}</option>`);
+    // Selects are keyed by immutable pocketId and labelled from the assignment
+    // snapshot (archived-but-assigned pockets are included by the server
+    // exactly once).
+    managedPocketOptions.forEach((pocket) => {
+        const disabled = used.includes(pocket.pocketId) && pocket.pocketId !== selectedValue;
+        options.push(`<option value="${escapeHtml(pocket.pocketId)}" ${pocket.pocketId === selectedValue ? 'selected' : ''} ${disabled ? 'disabled' : ''}>${escapeHtml(`${pocket.emoji} ${pocket.name}`.trim())}</option>`);
     });
     return options.join('');
 }
@@ -596,16 +579,9 @@ function validateForm() {
     }
 
     const sourceType = getSourceType();
-    if (sourceType === 'single') {
-        if (pocketManagementActive) {
-            if (!selectedManagedPocketId) {
-                showToast('Please select a pocket source', 'error');
-                return false;
-            }
-        } else if (!getSelectedPocket()) {
-            showToast('Please select a pocket source', 'error');
-            return false;
-        }
+    if (sourceType === 'single' && !selectedManagedPocketId) {
+        showToast('Please select a pocket source', 'error');
+        return false;
     }
 
     if (sourceType === 'multi') {
@@ -630,7 +606,7 @@ function validateForm() {
                 return false;
             }
             if (selectedPockets.includes(pocket)) {
-                const duplicateLabel = pocketManagementActive ? (managedPocketName(pocket) || 'pocket') : pocket;
+                const duplicateLabel = managedPocketName(pocket) || 'pocket';
                 showToast(`Duplicate pocket: ${duplicateLabel}`, 'error');
                 return false;
             }
@@ -690,7 +666,15 @@ async function loadTransactionForEdit(id) {
         } else {
             document.getElementById('sourceTypeSingle').checked = true;
             handleSourceTypeChange();
-            setSelectedPocket(transaction.pocket || 'Kwintals');
+        }
+        // The eager fetch kicked off at page load may already have resolved by
+        // the time this transaction fetch completes; if so, restore the saved
+        // pocket now instead of waiting on a load that already happened.
+        if (pocketOptionsLoaded) {
+            restorePendingEditPocketSelections();
+            renderManagedPocketSheet();
+            renderManagedSingleDisplay();
+            refreshAllDropdowns();
         }
     } catch (error) {
         console.error('Error loading transaction:', error);
@@ -707,12 +691,9 @@ function addAnother() {
     else populateBudgetMonthSelect();
     document.getElementById('sourceTypeSingle').checked = true;
     setSelectedType('Eat');
-    setSelectedPocket('Kwintals');
     handleSourceTypeChange();
-    if (pocketManagementActive) {
-        selectedManagedPocketId = '';
-        renderManagedSingleDisplay();
-    }
+    selectedManagedPocketId = '';
+    renderManagedSingleDisplay();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -723,9 +704,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (salaryCycleEnabled) loadAssignmentPreview();
     else populateBudgetMonthSelect();
     setSelectedType('Eat');
-    setSelectedPocket('Kwintals');
     handleSourceTypeChange();
     loadClosedMonths();
+    // Fetch pocket options immediately so the sheet has real data by the time
+    // anyone could plausibly open it, instead of waiting for that interaction.
+    renderManagedPocketSheet();
+    renderManagedSingleDisplay();
+    loadManagedPocketOptions();
 
     if (editId) loadTransactionForEdit(editId);
 
@@ -740,18 +725,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('date').addEventListener('change', () => {
         updateDateDisplay();
         if (salaryCycleEnabled) loadAssignmentPreview();
-        // Refresh assignment-backed options for the new Budget_Month only once
-        // managed mode is active, so feature-off date changes are unchanged.
-        if (pocketManagementActive) loadManagedPocketOptions();
+        // The Budget_Month may have changed; refresh pocket options for it.
+        loadManagedPocketOptions();
     });
 
     document.getElementById('categoryTrigger').addEventListener('click', () => openSheet('typeSheet'));
-    document.getElementById('pocketTrigger').addEventListener('click', () => {
-        openSheet('pocketSheet');
-        // Detect managed mode on demand; a feature-off response is a no-op and
-        // leaves the server-rendered fixed-pocket grid untouched.
-        if (!pocketManagementChecked || pocketManagementActive) loadManagedPocketOptions();
-    });
+    document.getElementById('pocketTrigger').addEventListener('click', () => openSheet('pocketSheet'));
     
     document.getElementById('dateTrigger').addEventListener('click', (e) => {
         const dateInput = document.getElementById('date');
@@ -777,20 +756,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    document.querySelectorAll('[data-pocket-option]').forEach((button) => {
-        button.addEventListener('click', () => {
-            setSelectedPocket(button.dataset.pocketOption);
-            closeSheet('pocketSheet');
-        });
-    });
-
-    // Delegated handler for assignment-backed options, which replace the fixed
-    // grid contents when managed mode is active.
+    // Delegated so it keeps working as the grid's contents are replaced by
+    // loading/error/empty/populated renders.
     document.getElementById('pocketSheet')?.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-managed-pocket-option]');
-        if (!button) return;
-        selectManagedPocket(button.dataset.managedPocketOption);
-        closeSheet('pocketSheet');
+        const managedButton = event.target.closest('[data-managed-pocket-option]');
+        if (managedButton) {
+            selectManagedPocket(managedButton.dataset.managedPocketOption);
+            closeSheet('pocketSheet');
+            return;
+        }
+        if (event.target.closest('[data-retry-pockets]')) {
+            pocketOptionsError = false;
+            renderManagedPocketSheet();
+            loadManagedPocketOptions();
+        }
     });
 
     const budgetMonthOptions = document.getElementById('budgetMonthOptions');
@@ -826,16 +805,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (sourceType === 'single') {
-            if (pocketManagementActive) {
-                // Submit the immutable assignment identifier; keep the snapshot
-                // name as the legacy compatibility projection the server retains.
-                formData.pocketId = selectedManagedPocketId;
-                formData.pocket = managedPocketName(selectedManagedPocketId);
-            } else {
-                formData.pocket = getSelectedPocket();
-            }
+            // Submit the immutable assignment identifier; keep the snapshot
+            // name as the legacy compatibility projection the server retains.
+            formData.pocketId = selectedManagedPocketId;
+            formData.pocket = managedPocketName(selectedManagedPocketId);
             formData.sourceBreakdowns = [];
-        } else if (pocketManagementActive) {
+        } else {
             const breakdowns = Array.from(document.querySelectorAll('#breakdownRows .breakdown-row')).map((row) => {
                 const pocketId = row.querySelector('select').value;
                 return {
@@ -844,14 +819,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     amount: parseFloat(row.querySelector('.breakdown-amount').value) || 0
                 };
             }).filter((item) => item.pocketId && item.amount > 0);
-
-            formData.pocket = breakdowns[0]?.pocket || '';
-            formData.sourceBreakdowns = breakdowns;
-        } else {
-            const breakdowns = Array.from(document.querySelectorAll('#breakdownRows .breakdown-row')).map((row) => ({
-                pocket: row.querySelector('select').value,
-                amount: parseFloat(row.querySelector('.breakdown-amount').value) || 0
-            })).filter((item) => item.pocket && item.amount > 0);
 
             formData.pocket = breakdowns[0]?.pocket || '';
             formData.sourceBreakdowns = breakdowns;
