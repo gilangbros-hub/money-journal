@@ -1,6 +1,8 @@
 let dashboardData = null;
 let monthTransactions = [];
-let currentMonth = new Date().toISOString().slice(0, 7);
+// The server owns the active Budget_Month. Keep this empty until the budget
+// endpoint supplies a strict YYYY-MM value instead of using the device clock.
+let currentMonth = '';
 
 const typeEmojis = {
     Eat: '🍽️',
@@ -18,44 +20,18 @@ const typeEmojis = {
 };
 
 async function determineDefaultMonth() {
-    const now = new Date();
-    let targetMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    
-    try {
-        const response = await fetch('/api/budget/closed-months');
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-            const closedKeys = result.data.map(m => m.key);
-            
-            if (closedKeys.includes(targetMonth)) {
-                let found = false;
-                for (let i = 1; i <= 12; i++) {
-                    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                    if (!closedKeys.includes(key)) {
-                        targetMonth = key;
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    for (let i = 1; i <= 12; i++) {
-                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                        if (!closedKeys.includes(key)) {
-                            targetMonth = key;
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    } catch (e) {
-        console.error('Error fetching closed months:', e);
+    const requested = new URLSearchParams(window.location.search).get('month');
+    if (requested !== null) return requested;
+
+    const response = await fetch('/api/budget');
+    const result = await response.json();
+    if (!response.ok || !result.success || !result.data?.budgetMonth) {
+        throw new Error('Failed to load active Budget Month');
     }
-    return targetMonth;
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(result.data.budgetMonth)) {
+        throw new Error('Server returned an invalid Budget Month');
+    }
+    return result.data.budgetMonth;
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -98,8 +74,9 @@ async function loadJournalData() {
 
         dashboardData = summaryResult.data;
         monthTransactions = Array.isArray(txResult) ? txResult : [];
-        monthTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        monthTransactions.sort((a, b) => transactionDateKey(b).localeCompare(transactionDateKey(a)));
 
+        renderPeriodMetadata();
         renderHero();
         renderStoryCards();
         renderTodayTimeline();
@@ -112,6 +89,13 @@ async function loadJournalData() {
     }
 }
 
+function renderPeriodMetadata() {
+    const period = dashboardData.period || dashboardData.salaryCyclePeriod;
+    const target = document.getElementById('salaryCyclePeriod');
+    if (!target || !period) return;
+    target.textContent = `Budget Month ${dashboardData.budgetMonth} · Salary cycle ${period.startDate} – ${period.endDate}`;
+}
+
 function renderHero() {
     const totalEl = document.getElementById('totalAmount');
     const todayEl = document.getElementById('todayAmount');
@@ -120,8 +104,8 @@ function renderHero() {
 
     totalEl.textContent = dashboardData.total.formatted;
 
-    const todayKey = getLocalDateKey(new Date());
-    const todayTx = monthTransactions.filter((item) => getLocalDateKey(new Date(item.date)) === todayKey);
+    const todayKey = householdTodayKey(dashboardData.timeZone);
+    const todayTx = monthTransactions.filter((item) => transactionDateKey(item) === todayKey);
     const todayTotal = todayTx.reduce((sum, item) => sum + (item.amount || 0), 0);
 
     todayEl.textContent = formatRupiah(todayTotal);
@@ -160,8 +144,8 @@ function renderStoryCards() {
 
 function renderTodayTimeline() {
     const target = document.getElementById('todayTimeline');
-    const todayKey = getLocalDateKey(new Date());
-    const todayTx = monthTransactions.filter((item) => getLocalDateKey(new Date(item.date)) === todayKey);
+    const todayKey = householdTodayKey(dashboardData.timeZone);
+    const todayTx = monthTransactions.filter((item) => transactionDateKey(item) === todayKey);
 
     if (todayTx.length === 0) {
         target.innerHTML = '<p class="text-center text-text-muted py-5">No entries yet today. Add one while it is fresh.</p>';
@@ -243,12 +227,20 @@ function renderPocketPulse() {
 
     target.innerHTML = alerts
         .slice(0, 4)
-        .map((alert) => `
-            <article class="journal-pulse-item ${alert.status}">
-                <p class="journal-pulse-title">${safeText(alert.pocket)}</p>
-                <p class="journal-pulse-copy">${safeText(alert.message)}</p>
+        .map((alert) => {
+            const scope = alert.scopeLabel || (
+                alert.cadence === 'Weekly'
+                    ? `Weekly · ${alert.selectedWeek || 'selected week'}`
+                    : 'Monthly · salary cycle'
+            );
+            const title = `${alert.pocket} · ${scope}`;
+            return `
+            <article class="journal-pulse-item ${safeText(alert.status || '')}">
+                <p class="journal-pulse-title">${safeText(title)}</p>
+                <p class="journal-pulse-copy">${safeText(alert.message || `${alert.percentage || 0}% used`)}</p>
             </article>
-        `)
+        `;
+        })
         .join('');
 }
 
@@ -318,37 +310,70 @@ function renderSpendingChart() {
         .join('');
 }
 
+function transactionDateKey(transaction) {
+    const value = transaction?.expenseDate || transaction?.date || '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
+}
+
+function householdTodayKey(timeZone) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timeZone || 'UTC',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map(part => [part.type, part.value]));
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
 function groupByDate(transactions) {
     return transactions.reduce((acc, item) => {
-        const key = getLocalDateKey(new Date(item.date));
+        const key = transactionDateKey(item);
+        if (!key) return acc;
         if (!acc[key]) acc[key] = [];
         acc[key].push(item);
         return acc;
     }, {});
 }
 
-function getLocalDateKey(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
 function formatDateGroupLabel(dateKey) {
-    const today = getLocalDateKey(new Date());
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterday = getLocalDateKey(yesterdayDate);
+    const [year, month, day] = dateKey.split('-').map(Number);
+    if (!year || !month || !day) return dateKey;
+    // Construct from explicit local components for presentation only. The
+    // canonical grouping/sorting key remains the server-provided date string;
+    // this never parses a date-only value as a UTC instant.
+    const date = new Date(year, month - 1, day);
+    const today = householdTodayKey(dashboardData?.timeZone);
+    const yesterday = previousDateKey(today);
 
     if (dateKey === today) return 'Today';
     if (dateKey === yesterday) return 'Yesterday';
 
-    const date = new Date(`${dateKey}T00:00:00`);
     return date.toLocaleDateString('en-GB', {
         weekday: 'short',
         day: '2-digit',
         month: 'short'
     });
+}
+
+function previousDateKey(dateKey) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return '';
+    let [year, month, day] = dateKey.split('-').map(Number);
+    if (day > 1) day -= 1;
+    else {
+        month -= 1;
+        if (month < 1) {
+            month = 12;
+            year -= 1;
+        }
+        day = daysInMonth(year, month);
+    }
+    return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function daysInMonth(year, month) {
+    if (month === 2) return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
+    return [4, 6, 9, 11].includes(month) ? 30 : 31;
 }
 
 // Time formatting removed as requested

@@ -1,11 +1,49 @@
 const mongoose = require('mongoose');
+const { Temporal } = require('@js-temporal/polyfill');
 
 const { TRANSACTION_TYPES, POCKETS } = require('../utils/constants');
 
+const EXPENSE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const ASSIGNMENT_VERSIONS = ['salary-cycle-v1', 'legacy-preserved'];
+const SCHEMA_VERSIONS = [1, 2];
+
+/**
+ * Expense_Date is a calendar date, not an instant. Keep validation here strict
+ * so a canonical value cannot be silently changed by a JavaScript Date parse.
+ */
+const isCanonicalExpenseDate = (value) => {
+    if (typeof value !== 'string' || !EXPENSE_DATE_PATTERN.test(value)) return false;
+
+    try {
+        return Temporal.PlainDate.from(value, { overflow: 'reject' }).toString() === value;
+    } catch {
+        return false;
+    }
+};
+
+const integerField = (message) => ({
+    validator: Number.isInteger,
+    message
+});
+
 const transactionSchema = new mongoose.Schema({
+    // Canonical date-only representation. Legacy documents may not have this
+    // field until the additive migration has been approved and executed.
+    expenseDate: {
+        type: String,
+        required: function requiredForCanonicalSchema() {
+            return this.schemaVersion >= 2;
+        },
+        validate: {
+            validator: isCanonicalExpenseDate,
+            message: 'expenseDate must be a valid YYYY-MM-DD calendar date.'
+        }
+    },
+    // The BSON Date remains a compatibility field for existing readers. It is
+    // never the source of salary-cycle classification.
     date: {
         type: Date,
-        required: true,
+        required: false,
         default: Date.now
     },
     type: {
@@ -38,15 +76,33 @@ const transactionSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    // These numeric fields remain the stored, authoritative assignment for
+    // compatibility readers and reporting queries.
     budgetMonth: {
         type: Number,
         required: true,
         min: 1,
-        max: 12
+        max: 12,
+        validate: integerField('budgetMonth must be an integer.')
     },
     budgetYear: {
         type: Number,
-        required: true
+        required: true,
+        validate: integerField('budgetYear must be an integer.')
+    },
+    assignmentVersion: {
+        type: String,
+        enum: ASSIGNMENT_VERSIONS,
+        default: function assignmentVersionDefault() {
+            return this.expenseDate ? 'salary-cycle-v1' : 'legacy-preserved';
+        }
+    },
+    schemaVersion: {
+        type: Number,
+        enum: SCHEMA_VERSIONS,
+        default: function schemaVersionDefault() {
+            return this.expenseDate ? 2 : 1;
+        }
     },
     sourceType: {
         type: String,
@@ -62,11 +118,15 @@ const transactionSchema = new mongoose.Schema({
             type: Number,
             min: 0
         }
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+    }]
+}, {
+    timestamps: true
 });
+
+// Reporting and pocket-attribution reads use the stored Budget_Month and the
+// canonical date when available. Keep the split-pocket index additive.
+transactionSchema.index({ budgetYear: 1, budgetMonth: 1, expenseDate: -1 });
+transactionSchema.index({ budgetYear: 1, budgetMonth: 1, pocket: 1 });
+transactionSchema.index({ budgetYear: 1, budgetMonth: 1, 'sourceBreakdowns.pocket': 1, expenseDate: 1 });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

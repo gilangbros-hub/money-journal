@@ -23,9 +23,9 @@ let currentType = 'all';
 let currentPocket = 'all';
 let sortDesc = true;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const params = new URLSearchParams(window.location.search);
-    currentMonth = params.get('month') || new Date().toISOString().slice(0, 7);
+    currentMonth = params.has('month') ? params.get('month') : await determineDefaultMonth();
 
     const monthFilter = document.getElementById('monthFilter');
     monthFilter.value = currentMonth;
@@ -47,6 +47,22 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchTransactions();
     });
 });
+
+async function determineDefaultMonth() {
+    const response = await fetch('/api/budget');
+    const result = await response.json();
+    if (!response.ok || !result.success || !/^\d{4}-(0[1-9]|1[0-2])$/.test(result.data?.budgetMonth || '')) {
+        throw new Error('Failed to load active Budget Month');
+    }
+    return result.data.budgetMonth;
+}
+
+function renderPeriodMetadata(history) {
+    const target = document.getElementById('salaryCyclePeriod');
+    const period = history?.period || history?.salaryCyclePeriod;
+    if (!target || !period) return;
+    target.textContent = `Budget Month ${history.budgetMonth} · Salary cycle ${period.startDate} – ${period.endDate}`;
+}
 
 function buildFilterPills() {
     const container = document.getElementById('filterPills');
@@ -109,8 +125,11 @@ async function fetchTransactions() {
     list.innerHTML = Array(5).fill('<div class="loading-placeholder"></div>').join('');
 
     try {
-        const response = await fetch(`/api/transactions?month=${currentMonth}`);
-        allTransactions = await response.json();
+        const response = await fetch(`/api/history?month=${encodeURIComponent(currentMonth)}`);
+        const result = await response.json();
+        if (!response.ok || !result.success || !result.data) throw new Error('Failed to load history');
+        allTransactions = Array.isArray(result.data.transactions) ? result.data.transactions : [];
+        renderPeriodMetadata(result.data);
         applyFilterAndRender();
     } catch (error) {
         console.error('Error fetching transactions:', error);
@@ -118,17 +137,28 @@ async function fetchTransactions() {
     }
 }
 
+function isSplitTransaction(transaction) {
+    return transaction?.sourceType === 'multi' ||
+        (Array.isArray(transaction?.sourceBreakdowns) && transaction.sourceBreakdowns.length > 1);
+}
+
+function transactionHasPocket(transaction, pocket) {
+    if (pocket === 'all') return true;
+    return transaction?.pocket === pocket ||
+        (Array.isArray(transaction?.sourceBreakdowns) && transaction.sourceBreakdowns.some(share => share?.pocket === pocket));
+}
+
 function applyFilterAndRender() {
     filteredTransactions = allTransactions.filter(t => {
         const typeMatch = currentType === 'all' || t.type === currentType;
-        const pocketMatch = currentPocket === 'all' || t.pocket === currentPocket;
+        const pocketMatch = transactionHasPocket(t, currentPocket);
         return typeMatch && pocketMatch;
     });
 
     filteredTransactions.sort((a, b) => {
-        const dateA = new Date(a.date).getTime();
-        const dateB = new Date(b.date).getTime();
-        return sortDesc ? dateB - dateA : dateA - dateB;
+        const dateA = transactionDateKey(a);
+        const dateB = transactionDateKey(b);
+        return sortDesc ? dateB.localeCompare(dateA) : dateA.localeCompare(dateB);
     });
 
     updateSummary();
@@ -148,6 +178,23 @@ function updateSummary() {
 
 // formatRupiah is now in common.js
 
+function transactionDateKey(transaction) {
+    const value = transaction?.expenseDate || transaction?.date || '';
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
+}
+
+function formatDateGroupLabel(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    if (!year || !month || !day) return dateKey;
+    const date = new Date(year, month - 1, day);
+    return date.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+    });
+}
+
 function renderTransactions() {
     const list = document.getElementById('transactionList');
 
@@ -163,8 +210,8 @@ function renderTransactions() {
 
     const groups = {};
     filteredTransactions.forEach(t => {
-        const date = new Date(t.date);
-        const key = date.toISOString().slice(0, 10);
+        const key = transactionDateKey(t);
+        if (!key) return;
         if (!groups[key]) groups[key] = [];
         groups[key].push(t);
     });
@@ -173,13 +220,7 @@ function renderTransactions() {
     const sortedKeys = Object.keys(groups).sort((a, b) => sortDesc ? b.localeCompare(a) : a.localeCompare(b));
 
     sortedKeys.forEach(dateKey => {
-        const date = new Date(dateKey + 'T00:00:00');
-        const dateLabel = date.toLocaleDateString('en-GB', {
-            weekday: 'long',
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        });
+        const dateLabel = formatDateGroupLabel(dateKey);
         html += `<div class="date-group-header">${dateLabel}</div>`;
 
         groups[dateKey].forEach(t => {
@@ -190,12 +231,16 @@ function renderTransactions() {
                 : '';
             const safeNote = (t.ngapain || '').replace(/'/g, "\\'");
 
-            // Multi-pocket badge
+            // Render one row for the transaction. A split is filtered by its
+            // shares, but its parent amount is still displayed exactly once.
             let pocketDisplay = t.pocket || 'Unknown';
             let multiBadge = '';
-            if (t.sourceType === 'multi' && t.sourceBreakdowns && t.sourceBreakdowns.length > 1) {
-                pocketDisplay = t.sourceBreakdowns.map(b => b.pocket).join(' + ');
-                multiBadge = `<span class="text-[10px] bg-primary/15 text-primary py-0.5 px-1.5 rounded font-semibold ml-1">🔀 Multi (${t.sourceBreakdowns.length})</span>`;
+            if (isSplitTransaction(t)) {
+                const shares = Array.isArray(t.sourceBreakdowns) ? t.sourceBreakdowns : [];
+                pocketDisplay = shares.map(b => b.pocket).filter(Boolean).join(' + ') || pocketDisplay;
+                if (shares.length > 1) {
+                    multiBadge = `<span class="text-[10px] bg-primary/15 text-primary py-0.5 px-1.5 rounded font-semibold ml-1">🔀 Multi (${shares.length})</span>`;
+                }
             }
 
             html += `
