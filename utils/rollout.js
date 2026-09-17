@@ -26,4 +26,51 @@ function requireSalaryCycleEnabled(options = {}, actor = {}) {
     return true;
 }
 
-module.exports = { isSalaryCycleEnabled, requireSalaryCycleEnabled };
+/**
+ * Pocket Management is a new, migration-gated capability, so its rollout flag
+ * fails closed: absent an explicit boolean it resolves to disabled. HTTP
+ * adapters inject the validated application setting; managed routes and reads
+ * must stay unavailable while this primary flag is false.
+ */
+function isPocketManagementEnabled(options = {}, actor = {}) {
+    if (typeof options.pocketManagementEnabled === 'boolean') {
+        return options.pocketManagementEnabled;
+    }
+    if (typeof actor.pocketManagementEnabled === 'boolean') {
+        return actor.pocketManagementEnabled;
+    }
+    return false;
+}
+
+function requirePocketManagementEnabled(options = {}, actor = {}) {
+    if (!isPocketManagementEnabled(options, actor)) {
+        throw new FeatureDisabledError('pocket management');
+    }
+    return true;
+}
+
+/**
+ * The dual-write compatibility stage only has meaning once the primary Pocket
+ * Management flag is enabled, so it fails closed and stays off whenever the
+ * primary flag is off.
+ */
+function isPocketManagementDualWriteEnabled(options = {}, actor = {}) {
+    if (!isPocketManagementEnabled(options, actor)) {
+        return false;
+    }
+    if (typeof options.pocketManagementDualWriteEnabled === 'boolean') {
+        return options.pocketManagementDualWriteEnabled;
+    }
+    if (typeof actor.pocketManagementDualWriteEnabled === 'boolean') {
+        return actor.pocketManagementDualWriteEnabled;
+    }
+    return false;
+}
+
+module.exports = {
+    isSalaryCycleEnabled,
+    requireSalaryCycleEnabled,
+    isPocketManagementEnabled,
+    requirePocketManagementEnabled,
+    isPocketManagementDualWriteEnabled
+};

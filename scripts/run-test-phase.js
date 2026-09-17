@@ -7,12 +7,25 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const phase = process.argv[2] || 'unit';
 const filesByPhase = {
-    unit: ['test/unit'],
+    // The unit phase discovers the test/unit directory plus root-level unit
+    // suites that exercise shared primitives (e.g. sanitized domain errors used
+    // by pocket management). List the root file explicitly so this phase mirrors
+    // the acceptance profile's unit phase without pulling in service/database or
+    // rollout root suites that own their own isolated phases.
+    unit: ['test/unit', 'test/domainErrors.test.js'],
     property: ['test/property', 'test/salaryCycleIsoWeek.property.test.js'],
     integration: ['test/integration'],
     ui: ['test/ui'],
     migration: ['test/migration'],
-    concurrency: ['test/concurrency']
+    concurrency: ['test/concurrency'],
+    // Rollout/compatibility suites live at the test root (they exercise the
+    // release scripts and flag-off/flag-on behavior). List them explicitly so
+    // they are discoverable as their own named phase rather than being missed.
+    rollout: [
+        'test/rolloutCompatibility.test.js',
+        'test/rolloutReadiness.test.js',
+        'test/rollout.test.js'
+    ]
 };
 
 function collect(entry) {

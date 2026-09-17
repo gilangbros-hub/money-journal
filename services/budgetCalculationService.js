@@ -88,27 +88,55 @@ function createItem(transaction, pocket, amount, sourceIndex, sourceType) {
 }
 
 /**
+ * Resolve one record's pocket identity from the configured pocket field.
+ *
+ * The default field is the legacy `pocket` name string, which preserves every
+ * existing (feature-off and salary-cycle) calculation exactly. When callers
+ * attribute spending by managed identity they pass `pocketField: 'pocketId'`;
+ * the immutable ObjectId reference is normalized to its canonical string so it
+ * compares cleanly against a stringified assignment `pocketId`. `undefined`
+ * values are skipped exactly as before so an unreferenced share is never
+ * emitted; `null` is preserved to match the prior single-record behavior.
+ */
+function pocketIdentityOf(record, pocketField) {
+    const raw = record[pocketField];
+    if (raw === undefined) return undefined;
+    if (raw !== null && typeof raw === 'object') return String(raw);
+    return raw;
+}
+
+/**
  * Expand transactions into countable spending items. A single-pocket record
  * contributes its full amount once. A split record contributes only its
  * individual sourceBreakdowns; its parent amount is never emitted.
  *
  * `options` may contain `budgetMonth`, `pocket`, and/or `intersection` to
- * return only items eligible for that target. Without options all expanded
+ * return only items eligible for that target. Without those keys all expanded
  * items are returned, allowing callers to reuse one expansion for several
- * pocket calculations.
+ * pocket calculations. `options.pocketField` selects which record field holds
+ * the pocket identity: the default `pocket` name string preserves legacy
+ * attribution, while managed budget reads pass `pocketId` to attribute spending
+ * by immutable assignment identity. `pocketField` is not itself an eligibility
+ * filter.
  */
 function expandEligibleSpendingItems(transactions = [], options = {}) {
+    const pocketField = (options && typeof options === 'object' && options.pocketField) || 'pocket';
     const expanded = [];
     for (const transaction of transactions || []) {
         const value = valueOf(transaction);
         const sourceType = sourceTypeFor(value);
         if (sourceType === 'multi') {
             for (const [sourceIndex, share] of (value.sourceBreakdowns || []).entries()) {
-                if (!share || share.pocket === undefined) continue;
-                expanded.push(createItem(value, share.pocket, share.amount, sourceIndex, sourceType));
+                if (!share) continue;
+                const pocket = pocketIdentityOf(share, pocketField);
+                if (pocket === undefined) continue;
+                expanded.push(createItem(value, pocket, share.amount, sourceIndex, sourceType));
             }
-        } else if (value.pocket !== undefined) {
-            expanded.push(createItem(value, value.pocket, value.amount, 0, sourceType));
+        } else {
+            const pocket = pocketIdentityOf(value, pocketField);
+            if (pocket !== undefined) {
+                expanded.push(createItem(value, pocket, value.amount, 0, sourceType));
+            }
         }
     }
 

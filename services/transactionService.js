@@ -3,6 +3,7 @@
 const mongoose = require('mongoose');
 const Transaction = require('../models/transaction');
 const ClosedMonth = require('../models/closedMonth');
+const PocketAssignment = require('../models/pocketAssignment');
 const { formatCurrency } = require('../utils/formatters');
 const { TRANSACTION_TYPES } = require('../utils/constants');
 const {
@@ -26,9 +27,11 @@ const {
     AuthenticationError,
     AssignmentConflictError,
     DomainValidationError,
+    PocketValidationError,
     RecordNotFoundError
 } = require('../utils/domainErrors');
-const { isSalaryCycleEnabled } = require('../utils/rollout');
+const { isSalaryCycleEnabled, isPocketManagementEnabled } = require('../utils/rollout');
+const { isDualReadActive, resolveTracker } = require('./pocketCompatibility');
 
 /**
  * Aggregates transactions by category for the dashboard.
@@ -274,6 +277,141 @@ async function findById(model, id, session, { lean = false } = {}) {
     return executeQuery(query);
 }
 
+// ---------------------------------------------------------------------------
+// Managed pocket integration (gated by POCKET_MANAGEMENT_ENABLED)
+//
+// When the feature is off none of the helpers below run, so single/split
+// expense handling and the DTO remain byte-for-byte the legacy behavior. When
+// on, every referenced Pocket_Identifier is validated against the
+// PocketAssignment for the transaction's server-derived Budget_Month, and
+// existing labels are resolved from assignment snapshots.
+// ---------------------------------------------------------------------------
+
+function assignmentModelFor(options, actor) {
+    return getOption(options, actor, 'assignmentModel', PocketAssignment);
+}
+
+/**
+ * Collect every managed Pocket_Identifier referenced by a mapped command:
+ * the single-pocket `pocketId` and each split share's `pocketId`. The field
+ * path is retained so a validation failure names the exact offending field.
+ */
+function collectReferencedPocketIds(mapped) {
+    const references = [];
+    if (mapped.pocketId !== undefined && mapped.pocketId !== null) {
+        references.push({ field: 'pocketId', pocketId: String(mapped.pocketId) });
+    }
+    if (Array.isArray(mapped.sourceBreakdowns)) {
+        mapped.sourceBreakdowns.forEach((share, index) => {
+            if (share && share.pocketId !== undefined && share.pocketId !== null) {
+                references.push({
+                    field: `sourceBreakdowns.${index}.pocketId`,
+                    pocketId: String(share.pocketId)
+                });
+            }
+        });
+    }
+    return references;
+}
+
+/**
+ * Reject a new or updated expense that references a Pocket_Identifier without a
+ * Pocket_Assignment in the expense Budget_Month. Every unassigned reference
+ * (single and each split share) yields one field-specific error in the same
+ * response; the throw happens before any write so expense state is preserved.
+ */
+async function assertReferencedPocketsAssigned(mapped, actor, options, session) {
+    const references = collectReferencedPocketIds(mapped);
+    if (references.length === 0) return;
+
+    const Assignment = assignmentModelFor(options, actor);
+    const uniqueIds = [...new Set(references.map((reference) => reference.pocketId))];
+    const query = withSession(Assignment.find({
+        pocketId: { $in: uniqueIds },
+        budgetMonth: mapped.budgetMonth,
+        budgetYear: mapped.budgetYear
+    }), session);
+    const assignments = await executeQuery(query);
+    const assignedIds = new Set((assignments || []).map((doc) => String(doc.pocketId)));
+
+    const budgetMonthKey = `${String(mapped.budgetYear).padStart(4, '0')}-${String(mapped.budgetMonth).padStart(2, '0')}`;
+    const errors = references
+        .filter((reference) => !assignedIds.has(reference.pocketId))
+        .map((reference) => new DomainValidationError(
+            reference.field,
+            `${reference.field} must reference a pocket assigned to the expense Budget Month.`,
+            { budgetMonth: budgetMonthKey }
+        ));
+
+    if (errors.length > 0) throw new PocketValidationError(errors);
+}
+
+/**
+ * Build a resolver from stored transaction records to the Pocket_Assignment
+ * snapshot for each record's Budget_Month, so read DTOs render labels from the
+ * snapshot even when the current definition is archived or renamed. Returns
+ * undefined when the feature is off or no managed identifiers are present, in
+ * which case the DTO renders legacy fields unchanged.
+ */
+async function buildPocketSnapshotResolver(records, actor, options) {
+    if (!isPocketManagementEnabled(options, actor)) return undefined;
+
+    const list = Array.isArray(records) ? records : [records];
+    const ids = new Set();
+    for (const record of list) {
+        if (record?.pocketId !== undefined && record?.pocketId !== null) {
+            ids.add(String(record.pocketId));
+        }
+        if (Array.isArray(record?.sourceBreakdowns)) {
+            for (const share of record.sourceBreakdowns) {
+                if (share?.pocketId !== undefined && share?.pocketId !== null) {
+                    ids.add(String(share.pocketId));
+                }
+            }
+        }
+    }
+    if (ids.size === 0) return undefined;
+
+    const Assignment = assignmentModelFor(options, actor);
+    const assignments = await executeQuery(Assignment.find({ pocketId: { $in: [...ids] } }));
+
+    const snapshots = new Map();
+    for (const doc of assignments || []) {
+        const dto = typeof doc?.toDTO === 'function' ? doc.toDTO() : doc;
+        const key = `${dto.budgetYear}-${dto.budgetMonth}-${String(dto.pocketId)}`;
+        snapshots.set(key, {
+            pocketId: String(dto.pocketId),
+            pocketName: dto.pocketName ?? dto.pocketNameSnapshot,
+            pocketEmoji: dto.pocketEmoji ?? dto.pocketEmojiSnapshot,
+            cadence: dto.cadence ?? dto.cadenceSnapshot,
+            budgetMonth: dto.budgetMonth,
+            budgetYear: dto.budgetYear
+        });
+    }
+
+    // Guarded dual-read: when the compatibility flag is on, a referenced
+    // Pocket_Identifier without a managed snapshot means the record has not been
+    // migrated, so the DTO renders the legacy `pocket` label. Track that
+    // fallback (and each managed hit) so zero-fallback can be verified before
+    // legacy retirement. Managed-only mode returns the plain resolver unchanged.
+    if (!isDualReadActive(options, actor)) {
+        return (pocketId, { budgetMonth, budgetYear }) =>
+            snapshots.get(`${budgetYear}-${budgetMonth}-${pocketId}`) || null;
+    }
+
+    const tracker = resolveTracker(options, actor);
+    return (pocketId, { budgetMonth, budgetYear }) => {
+        const snapshot = snapshots.get(`${budgetYear}-${budgetMonth}-${pocketId}`) || null;
+        const budgetMonthKey = `${String(budgetYear).padStart(4, '0')}-${String(budgetMonth).padStart(2, '0')}`;
+        if (snapshot) {
+            tracker.observeManaged({ source: 'managed', collection: 'transactions', pocketId, budgetMonth: budgetMonthKey });
+        } else {
+            tracker.observeFallback({ source: 'legacy', collection: 'transactions', pocketId, budgetMonth: budgetMonthKey });
+        }
+        return snapshot;
+    };
+}
+
 async function queueNotification(event, options, actor) {
     const queue = getOption(options, actor, 'notificationQueue', null);
     if (!queue) return;
@@ -314,18 +452,29 @@ async function createExpense(command, actor, options = {}) {
         { enabled }
     );
 
-    const created = await runInTransaction(async session => protectPeriods(
-        [{ month: mapped.budgetMonth, year: mapped.budgetYear, label: 'destination' }],
-        session,
-        actor,
-        options,
-        async () => {
-            const transaction = new transactionModel({ ...mapped, by: actorId });
-            return transaction.save({ session });
-        }
-    ), options);
+    const pocketManagementEnabled = isPocketManagementEnabled(options, actor);
 
-    const dto = toTransactionDto(created, { timeZone });
+    const created = await runInTransaction(async session => {
+        // Validate referenced Pocket_Identifiers against the Budget_Month
+        // assignment inside the transaction so a rejection leaves nothing
+        // written.
+        if (pocketManagementEnabled) {
+            await assertReferencedPocketsAssigned(mapped, actor, options, session);
+        }
+        return protectPeriods(
+            [{ month: mapped.budgetMonth, year: mapped.budgetYear, label: 'destination' }],
+            session,
+            actor,
+            options,
+            async () => {
+                const transaction = new transactionModel({ ...mapped, by: actorId });
+                return transaction.save({ session });
+            }
+        );
+    }, options);
+
+    const resolvePocketSnapshot = await buildPocketSnapshotResolver(created, actor, options);
+    const dto = toTransactionDto(created, { timeZone, resolvePocketSnapshot });
     await queueNotification({
         type: 'expense-created',
         transactionId: created._id,
@@ -341,6 +490,7 @@ async function updateExpense(id, command, actor, options = {}) {
     const transactionModel = getOption(options, actor, 'transactionModel', Transaction);
     const actorId = actorIdFor(actor);
     const enabled = isSalaryCycleEnabled(options, actor);
+    const pocketManagementEnabled = isPocketManagementEnabled(options, actor);
 
     let updated;
     await runInTransaction(async session => {
@@ -358,6 +508,14 @@ async function updateExpense(id, command, actor, options = {}) {
             timeZone,
             { enabled, fallbackAssignment: assignmentPeriod(existing, timeZone) }
         );
+
+        // An update that introduces a Pocket_Identifier without a Budget_Month
+        // assignment is rejected before any write, preserving the complete
+        // stored expense.
+        if (pocketManagementEnabled) {
+            await assertReferencedPocketsAssigned(mapped, actor, options, session);
+        }
+
         const source = assignmentPeriod(existing, timeZone);
         const destination = { month: mapped.budgetMonth, year: mapped.budgetYear };
 
@@ -376,7 +534,8 @@ async function updateExpense(id, command, actor, options = {}) {
         );
     }, options);
 
-    const dto = toTransactionDto(updated, { timeZone });
+    const resolvePocketSnapshot = await buildPocketSnapshotResolver(updated, actor, options);
+    const dto = toTransactionDto(updated, { timeZone, resolvePocketSnapshot });
     await queueNotification({
         type: 'expense-updated',
         transactionId: updated._id,
@@ -429,7 +588,8 @@ async function getExpense(id, actor, options = {}) {
     const transactionModel = getOption(options, actor, 'transactionModel', Transaction);
     const transaction = await findById(transactionModel, normalizedId, null, { lean: true });
     if (!transaction) throw new RecordNotFoundError('transaction');
-    return toTransactionDto(transaction, { timeZone });
+    const resolvePocketSnapshot = await buildPocketSnapshotResolver(transaction, actor, options);
+    return toTransactionDto(transaction, { timeZone, resolvePocketSnapshot });
 }
 
 function buildListFilter(filters = {}) {
@@ -458,7 +618,18 @@ function buildListFilter(filters = {}) {
 
     if (filters.by && filters.by !== 'all') filter.by = validateIdentifier(filters.by, 'by');
     if (filters.type && filters.type !== 'all') filter.type = filters.type;
-    if (filters.pocket && filters.pocket !== 'all') {
+
+    // Managed filtering resolves by immutable Pocket_Identifier across the
+    // single-pocket reference and every split share. It is additive and only
+    // active when a caller supplies `pocketId`; legacy `pocket`-name filtering
+    // is preserved unchanged for compatibility callers that omit it.
+    if (filters.pocketId && filters.pocketId !== 'all') {
+        const pocketId = validateIdentifier(filters.pocketId, 'pocketId');
+        filter.$or = [
+            { pocketId },
+            { 'sourceBreakdowns.pocketId': pocketId }
+        ];
+    } else if (filters.pocket && filters.pocket !== 'all') {
         filter.$or = [
             { pocket: String(filters.pocket).trim() },
             { 'sourceBreakdowns.pocket': String(filters.pocket).trim() }
@@ -475,7 +646,8 @@ async function listExpenses(filters = {}, actor, options = {}) {
     if (typeof query.sort === 'function') query = query.sort({ expenseDate: -1, date: -1, createdAt: -1 });
     if (typeof query.lean === 'function') query = query.lean();
     const transactions = await executeQuery(query);
-    return transactions.map(transaction => toTransactionDto(transaction, { timeZone }));
+    const resolvePocketSnapshot = await buildPocketSnapshotResolver(transactions, actor, options);
+    return transactions.map(transaction => toTransactionDto(transaction, { timeZone, resolvePocketSnapshot }));
 }
 
 /**

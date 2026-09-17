@@ -16,6 +16,12 @@ let budgetPieChart = null;
 let currentBudgetData = null;
 let pendingCadenceChange = null;
 let budgetLoadSequence = 0;
+// Managed Pocket Management state. `pocketManagementActive` flips on only when a
+// server budget view reports `pocketManagementEnabled`, so every feature-off
+// (fixed-pocket) interaction below stays byte-for-byte unchanged.
+let pocketManagementActive = false;
+let activeBudgetMonth = null;
+let initialBudgetLoad = true;
 
 const MONTH_NAMES = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -273,7 +279,12 @@ function renderEnabledBudgets(data) {
     if (!list) return;
     const pockets = Array.isArray(data.pockets) ? data.pockets : [];
     if (!pockets.length) {
-        list.innerHTML = '<p class="text-center text-text-muted py-5">No pockets configured</p>';
+        // Managed mode treats zero assignments as an intentional empty state:
+        // zero assigned pockets, a combined total of zero, no fixed-pocket
+        // substitution, and a Start setup action on the active month
+        // (Requirements 5.14, 5.15, 7.12). Feature-off keeps the legacy copy.
+        if (data.pocketManagementEnabled === true) renderManagedEmptyState(list, data);
+        else list.innerHTML = '<p class="text-center text-text-muted py-5">No pockets configured</p>';
         return;
     }
     const monthlyTemplate = element('monthlyPocketCardTemplate');
@@ -360,8 +371,40 @@ function renderLegacyBudgets(data) {
         </div>`).join('');
 }
 
+// Render the managed zero-assignment empty state. The health summary already
+// shows the zero combined total from the server aggregate; here we add a text
+// status and, for the active Budget_Month a Wife can edit, a Start setup action
+// that links to the Pocket Management page (Requirements 5.14, 5.15).
+function renderManagedEmptyState(list, data) {
+    const monthKey = responseDataMonth(data) || currentBudgetMonth;
+    const isActiveMonth = !!activeBudgetMonth && monthKey === activeBudgetMonth;
+    const showStartSetup = data.canEdit === true && isActiveMonth;
+    const parts = [
+        '<div class="text-center py-6" data-managed-empty>',
+        '<p class="text-sm font-semibold" style="color: var(--journal-ink);">No pockets assigned for this Budget Month yet.</p>',
+        '<p class="text-xs mt-1" style="color: var(--journal-soft-ink);">The combined allocation total stays Rp 0 until assignments are set up.</p>'
+    ];
+    if (showStartSetup) {
+        parts.push('<a href="/pocket-management" class="btn-modal-save inline-flex items-center justify-center gap-1 mt-4" data-start-setup aria-label="Start Budget Month pocket setup"><span class="material-symbols-outlined" aria-hidden="true">tune</span>Start setup</a>');
+    }
+    parts.push('</div>');
+    list.innerHTML = parts.join('');
+}
+
 function renderBudgets(data) {
-    if (budgetFeatureEnabled) renderEnabledBudgets(data);
+    const managed = !!data && data.pocketManagementEnabled === true;
+    if (managed) pocketManagementActive = true;
+    if (initialBudgetLoad) {
+        // The first view is loaded without an explicit month, so it reflects the
+        // active Budget_Month. Retaining it lets the managed empty state offer
+        // Start setup only for the active month (Requirement 5.15).
+        activeBudgetMonth = responseDataMonth(data);
+        initialBudgetLoad = false;
+    }
+    // Managed budget views are already salary-cycle aware and carry the same
+    // server-driven shape as the enabled path, so they use it regardless of the
+    // legacy salary-cycle flag; feature-off (neither flag) stays legacy.
+    if (budgetFeatureEnabled || managed) renderEnabledBudgets(data);
     else renderLegacyBudgets(data);
 }
 
@@ -369,7 +412,7 @@ async function loadBudgets(monthKey, weekKey) {
     const requestSequence = ++budgetLoadSequence;
     try {
         let url = '/api/budget';
-        if (!budgetFeatureEnabled) {
+        if (!budgetFeatureEnabled && !pocketManagementActive) {
             const requested = monthKey || (
                 Number.isInteger(currentYear) && Number.isInteger(currentMonth)
                     ? `${currentYear}-${String(currentMonth).padStart(2, '0')}`
@@ -407,7 +450,7 @@ async function loadBudgets(monthKey, weekKey) {
 }
 
 function navigateMonth(direction) {
-    if (budgetFeatureEnabled) {
+    if (budgetFeatureEnabled || pocketManagementActive) {
         if (!currentBudgetMonth) return;
         currentSelectedWeek = null;
         loadBudgets(moveMonthKey(currentBudgetMonth, direction));

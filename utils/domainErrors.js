@@ -41,10 +41,21 @@ class AuthorizationError extends DomainError {
     }
 }
 
+// Each rollout-gated capability owns a distinct feature-disabled code so
+// clients and route tests can tell one disabled feature from another. The
+// salary-cycle default is retained for existing callers; new capabilities add
+// their own mapping. An unrecognized feature falls back to the salary-cycle
+// code to preserve the historical default behavior.
+const FEATURE_DISABLED_CODES = {
+    'salary-cycle budgeting': 'SALARY_CYCLE_FEATURE_DISABLED',
+    'pocket management': 'POCKET_MANAGEMENT_FEATURE_DISABLED'
+};
+
 class FeatureDisabledError extends DomainError {
     constructor(feature = 'salary-cycle budgeting') {
+        const code = FEATURE_DISABLED_CODES[feature] || 'SALARY_CYCLE_FEATURE_DISABLED';
         super('This feature is not enabled.', {
-            code: 'SALARY_CYCLE_FEATURE_DISABLED',
+            code,
             status: 404,
             details: { feature }
         });
@@ -114,7 +125,9 @@ class MigrationConflictError extends DomainError {
 
 const RECORD_CODES = {
     transaction: 'TRANSACTION_NOT_FOUND',
-    allocation: 'ALLOCATION_NOT_FOUND'
+    allocation: 'ALLOCATION_NOT_FOUND',
+    pocket: 'POCKET_NOT_FOUND',
+    'pocket assignment': 'POCKET_ASSIGNMENT_NOT_FOUND'
 };
 
 class RecordNotFoundError extends DomainError {
@@ -157,18 +170,168 @@ class ConfigurationError extends DomainError {
     }
 }
 
+/**
+ * Normalize an accumulated field failure into a safe, self-describing entry.
+ * Only recovery-oriented metadata is retained: the field path, an optional
+ * machine code, a human-readable reason, and, for batch (assignment) commands,
+ * the ordinal position of the offending entry. Submitted values, record names,
+ * and any other payload data are never carried onto the entry.
+ */
+function toFieldError(entry) {
+    if (entry instanceof DomainError) {
+        const fieldError = { reason: entry.message };
+        if (entry.field !== undefined) fieldError.field = entry.field;
+        if (entry.code) fieldError.code = entry.code;
+        const index = entry.details && entry.details.entryIndex;
+        if (Number.isInteger(index)) fieldError.entryIndex = index;
+        return fieldError;
+    }
+    const source = entry && typeof entry === 'object' ? entry : {};
+    const fieldError = { reason: source.reason || source.message || 'The supplied value is invalid.' };
+    if (source.field !== undefined) fieldError.field = source.field;
+    if (source.code !== undefined) fieldError.code = source.code;
+    if (Number.isInteger(source.entryIndex)) fieldError.entryIndex = source.entryIndex;
+    return fieldError;
+}
+
+/**
+ * Aggregate multi-field validation error. Carries an ordered array of
+ * field-specific errors so a single response can report every invalid field
+ * (definition attributes) or every independently evaluable invalid entry
+ * (assignment confirmation) without disclosing submitted values.
+ */
+class PocketValidationError extends DomainError {
+    constructor(errors = [], reason = 'One or more supplied fields are invalid.') {
+        const list = (Array.isArray(errors) ? errors : [errors])
+            .filter(entry => entry !== undefined && entry !== null)
+            .map(toFieldError);
+        const singleField = list.length === 1 ? list[0].field : undefined;
+        super(reason, {
+            code: 'VALIDATION_ERROR',
+            status: 400,
+            field: singleField,
+            details: { errors: list }
+        });
+        this.errors = list;
+    }
+}
+
+const POCKET_LIFECYCLE_CODES = new Set([
+    'POCKET_ARCHIVED_CONFLICT',
+    'POCKET_ACTIVE_CONFLICT',
+    'POCKET_ASSIGNMENT_SPENDING_CONFLICT'
+]);
+
+/**
+ * Lifecycle conflict for operations rejected by the current state of a pocket
+ * or its assignments: editing/assigning an archived pocket, restoring an
+ * already-active pocket, or removing an assignment that has attributed
+ * spending. Safe details carry only the authorized pocket id and Budget Month;
+ * pocket names and spending values are never included.
+ */
+class PocketLifecycleConflictError extends DomainError {
+    constructor(code = 'POCKET_ARCHIVED_CONFLICT', details = {}) {
+        const safeCode = POCKET_LIFECYCLE_CODES.has(code) ? code : 'POCKET_ARCHIVED_CONFLICT';
+        super('The pocket lifecycle state does not permit this operation.', {
+            code: safeCode,
+            status: 409,
+            details
+        });
+    }
+}
+
+/**
+ * Explicit-confirmation-required error for destructive lifecycle commands
+ * (archive, assignment removal) submitted without the confirmation flag for the
+ * identified target.
+ */
+class ConfirmationRequiredError extends DomainError {
+    constructor(details = {}) {
+        super('Explicit confirmation is required to complete this action.', {
+            code: 'POCKET_CONFIRMATION_REQUIRED',
+            status: 400,
+            field: 'confirmed',
+            details
+        });
+    }
+}
+
+/**
+ * Optimistic-concurrency conflict. The submitted Record_Version no longer
+ * matches the stored version, so the write is rejected. The current stored
+ * version is surfaced as safe recovery metadata so the interface can offer a
+ * keep/load recovery; no record values are disclosed.
+ */
+class VersionConflictError extends DomainError {
+    constructor(currentVersion, details = {}) {
+        const safeDetails = { ...details };
+        if (Number.isInteger(currentVersion)) safeDetails.currentVersion = currentVersion;
+        super('The record was changed by another accepted update. Please reload and retry.', {
+            code: 'VERSION_CONFLICT',
+            status: 409,
+            details: safeDetails
+        });
+    }
+}
+
+/**
+ * Normalized-name uniqueness conflict for a pocket definition. The colliding
+ * name value is never echoed back; only the offending field path is reported.
+ */
+class PocketNameConflictError extends DomainError {
+    constructor(details = {}) {
+        super('A pocket with the same name already exists.', {
+            code: 'POCKET_NAME_CONFLICT',
+            status: 409,
+            field: 'name',
+            details
+        });
+    }
+}
+
+const POCKET_ASSIGNMENT_CONFLICT_CODES = new Set([
+    'POCKET_ASSIGNMENT_DUPLICATE',
+    'POCKET_ASSIGNMENT_CONFLICT'
+]);
+
+/**
+ * Assignment-specific conflict, e.g. a confirmation batch that references the
+ * same pocket id more than once. Safe details identify the offending pocket id
+ * and, for batch commands, the entry index; no allocation or spending values
+ * are disclosed.
+ */
+class PocketAssignmentConflictError extends DomainError {
+    constructor(code = 'POCKET_ASSIGNMENT_DUPLICATE', details = {}) {
+        const safeCode = POCKET_ASSIGNMENT_CONFLICT_CODES.has(code)
+            ? code
+            : 'POCKET_ASSIGNMENT_DUPLICATE';
+        super('The pocket assignment request contains a conflict.', {
+            code: safeCode,
+            status: 409,
+            details
+        });
+    }
+}
+
 module.exports = {
     DomainError,
     DomainValidationError,
+    PocketValidationError,
     AuthenticationError,
     AuthorizationError,
     FeatureDisabledError,
     ClosedBudgetPeriodError,
     EditableWindowError,
     AssignmentConflictError,
+    PocketAssignmentConflictError,
+    PocketLifecycleConflictError,
+    ConfirmationRequiredError,
+    VersionConflictError,
+    PocketNameConflictError,
     ConcurrentWriteConflictError,
     MigrationConflictError,
     RecordNotFoundError,
     StorageError,
-    ConfigurationError
+    ConfigurationError,
+    toFieldError
 };

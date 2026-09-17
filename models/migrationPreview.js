@@ -137,6 +137,28 @@ const migrationPreviewSchema = new mongoose.Schema({
         type: String,
         trim: true,
         immutable: true
+    },
+    // Verification is a required lifecycle gate between an Applied/RolledBack
+    // migration and enabling the feature flag. These fields record the most
+    // recent verification outcome on the header so an operator (and the rollout
+    // tooling) can gate activation without re-running verification. They are
+    // intentionally mutable because verification may run repeatedly. The stored
+    // result is a compact machine-readable summary only: it never contains
+    // record values, names, emoji, amounts, or other financial detail.
+    verifiedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    verifiedAt: {
+        type: Date
+    },
+    verification: {
+        type: mongoose.Schema.Types.Mixed,
+        validate: {
+            validator: value => value === undefined || value === null ||
+                (typeof value === 'object' && !Array.isArray(value)),
+            message: 'verification must be an object summary'
+        }
     }
 }, {
     collection: 'migrationpreviews',

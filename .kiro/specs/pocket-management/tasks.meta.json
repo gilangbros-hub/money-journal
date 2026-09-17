@@ -1,0 +1,483 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Add `POCKET_MANAGEMENT_ENABLED` and `POCKET_MANAGEMENT_DUAL_WRITE` configuration parsing, safe defaults, and feature helpers in `config.js`, `.env.example`, and `utils/rollout.js`.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181962
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634190770
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634476473
+      }
+    ],
+    "1.2 Create `models/pocketDefinition.js` and `models/pocketAssignment.js` with the approved schemas, audit/version/timestamp fields, embedded allocation validation, and required unique/sort indexes.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181966
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634192216
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634478367
+      }
+    ],
+    "1.3 Evolve `models/transaction.js` additively with `pocketId` and `sourceBreakdowns[].pocketId`, compatibility fields, and managed-mode indexes while retaining legacy documents during rollout.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181969
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634193546
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634479533
+      }
+    ],
+    "2.1 Implement `services/pocketValidation.js` for name normalization, grapheme-aware emoji validation, cadence/rupiah validation, deterministic multi-field errors, assignment canonical equality, and DTO serialization helpers.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181972
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634484294
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634988493
+      }
+    ],
+    "2.2 Implement `services/pocketAssignmentPlanner.js` to derive salary-cycle ISO weeks, canonicalize monthly/weekly `Use_Default` and `Customize` plans, validate keys/amounts, and calculate assignment totals.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181981
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634993324
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635221654
+      }
+    ],
+    "2.3 Extend `utils/domainErrors.js` and `middleware/errorHandler.js` with sanitized multi-error validation, lifecycle, version, feature-disabled, and assignment errors.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181985
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634485414
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634989542
+      }
+    ],
+    "3.1 Create `services/pocketManagementService.js` with injected models/clock/connection and commands to create, list, patch, archive, restore, load setup, confirm assignments, remove assignments, and list assignment-backed expense options.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181988
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635229060
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635827109
+      }
+    ],
+    "4.1 Refactor `services/budgetService.js` and `services/budgetCalculationService.js` to prefer managed assignment snapshots when enabled and return only assignments for the selected Budget Month.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181991
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635867546
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636868035
+      }
+    ],
+    "4.7 Update `services/transactionService.js`, `utils/transactionDto.js`, and transaction validation/filtering paths to validate new and updated single/split expense IDs against the server-derived month assignment and render existing labels from snapshots.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181995
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635869010
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636869933
+      }
+    ],
+    "4.8 Update `services/reportingService.js`, transaction/history/dashboard adapters, and relevant controllers to filter/manage pockets by IDs while preserving legacy aliases and historical snapshot presentation.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634181998
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636891670
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637678829
+      }
+    ],
+    "5.1 Create `controllers/pocketController.js` and `routes/pockets.js`; register them in `app.js` using the existing actor/options/`asyncHandler` factories and explicit authenticated/Wife middleware.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182004
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635870848
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636871334
+      }
+    ],
+    "6.1 Create `views/pocket-management.hbs` and add navigation/action entry points from `views/check-pockets.hbs`, `views/log-spending.hbs`, and applicable existing page shells.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182007
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636894967
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637682135
+      }
+    ],
+    "6.2 Implement `public/js/pocket-management.js` as an ID-keyed staged state module for loading definitions/setup, selection deduplication, default/custom allocation toggles, summaries, requests, field errors, retry, and version-conflict keep/load recovery.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182010
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637694783
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789638796547
+      }
+    ],
+    "6.3 Update `public/js/check-pockets.js`, `public/js/log-spending.js`, and their templates to consume assignment-backed `pocketId` options and managed budget DTOs without changing feature-off interactions.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182015
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637696689
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789638798441
+      }
+    ],
+    "6.4 Extend `src/input.css` and rebuild source styles for responsive, high-contrast, reduced-motion-aware management cards, inputs, dialogs, focus rings, and 44px mobile primary targets.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182018
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637698535
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789638799842
+      }
+    ],
+    "7.1 Integrate the managed service with `services/budgetPeriodGuard.js`, salary-cycle resolution, and structured safe operation events to recheck active/next open months, lifecycle, versions, and references inside each transaction.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182021
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635872303
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636873241
+      }
+    ],
+    "8.1 Extend `services/migrationTransformService.js` with the `pocket-management-v1` transform: deterministic normalized-name IDs, latest-cadence resolution, active zero-default definitions, period snapshots, transaction/split associations, blockers, and preservation checks.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182024
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635873713
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636874962
+      }
+    ],
+    "8.2 Extend `services/migrationService.js`, `models/migrationPreview.js`, and `models/migrationPreviewItem.js` to approve, execute, verify, and rollback the new managed preview within the existing fingerprint/current-value safeguards.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182027
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636893566
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637680282
+      }
+    ],
+    "8.3 Implement compatibility dual-read/dual-write projection adapters in the managed service, budget/transaction/reporting services, and migration reads.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182030
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637699518
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789638801147
+      }
+    ],
+    "9.1 Extend `scripts/rollout-preflight.js` to require managed schema paths/indexes, transaction support, normalized-name/composite-key duplicate checks, flag-safe route smoke coverage, and managed-without-fixed-constants readiness.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182033
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636896381
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637683757
+      }
+    ],
+    "9.2 Extend `scripts/rollout-verify.js`, `scripts/run-acceptance-profile.js`, and `scripts/run-test-phase.js` with managed migration verification, pre/post budget/transaction/report equivalence, zero-fallback observation checks, and phase coverage for new suites.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182035
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789638809615
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639158258
+      }
+    ],
+    "10. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182040
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639169356
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639260940
+      }
+    ],
+    "11.1 Update the acceptance-profile manifests and feature test registration so all new unit, property, integration, UI, migration, concurrency, and rollout suites are executed by their existing named phases.": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182043
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639264563
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639427910
+      }
+    ],
+    "12. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634182047
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639432397
+      },
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639563448
+      }
+    ],
+    "1. Establish the managed-pocket persistence and feature-flag foundation": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789634479537
+      }
+    ],
+    "2. Build pure pocket canonicalization, planning, and safe error primitives": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635221657
+      }
+    ],
+    "3. Implement the Pocket Management aggregate service": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789635827113
+      }
+    ],
+    "5. Add the managed Pocket HTTP/page surface and contract safeguards": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636871338
+      }
+    ],
+    "7. Enforce editable-window, authorization, and concurrency policies across managed mutations": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789636873244
+      }
+    ],
+    "4. Integrate managed assignments into budget, transaction, and reporting reads/writes": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789637678833
+      }
+    ],
+    "6. Deliver the accessible Pocket Management interface and wire existing pages": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789638799845
+      }
+    ],
+    "8. Extend the controlled migration and compatibility lifecycle": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789638801151
+      }
+    ],
+    "9. Add activation verification and release safeguards in executable tooling": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639158261
+      }
+    ],
+    "11. Final verification wiring": [
+      {
+        "executionId": "20caaa2e-8fd1-4413-99cc-9e414c39260b",
+        "chatSessionId": "c4256ca1-755b-4b67-ac14-60fd2255fc96",
+        "timestamp": 1789639427913
+      }
+    ]
+  }
+}

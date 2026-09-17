@@ -38,6 +38,29 @@ let closedMonthKeys = [];
 let assignmentPreview = null;
 const salaryCycleEnabled = document.getElementById('salaryCycleEnabled')?.value === 'true';
 
+// Managed Pocket Management state. Detection is runtime: the assignment-backed
+// /api/expense-pocket-options endpoint is only available when the feature is
+// enabled, so a valid array response is what flips `pocketManagementActive` on.
+// The probe is triggered exclusively by pocket-selection interactions (opening
+// the pocket sheet or switching to multi mode), which keeps every feature-off
+// interaction byte-for-byte unchanged.
+let pocketManagementActive = false;
+let pocketManagementChecked = false;
+let managedPocketOptions = [];
+const managedPocketById = new Map();
+let selectedManagedPocketId = '';
+let pendingEditSinglePocketId = '';
+let pendingEditBreakdowns = null;
+
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function localDateKey(offsetDays = 0) {
     const date = new Date();
     if (offsetDays) date.setDate(date.getDate() + offsetDays);
@@ -137,6 +160,132 @@ function updatePocketDisplay() {
     });
 }
 
+// ---------------------------------------------------------------------------
+// Managed pocket options (assignment-backed). Everything below only runs after
+// `pocketManagementActive` has been confirmed by a valid endpoint response, so
+// the legacy fixed-pocket flow is never altered when the feature is off.
+// ---------------------------------------------------------------------------
+
+function expensePocketOptionsQuery() {
+    // The server derives the Budget_Month from a salary-cycle expense date or,
+    // in legacy budgeting, from the selected Budget_Month.
+    if (salaryCycleEnabled) {
+        const date = document.getElementById('date')?.value || '';
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+        return `date=${encodeURIComponent(date)}`;
+    }
+    const month = document.getElementById('budgetMonth')?.value || '';
+    if (!/^\d{4}-\d{2}$/.test(month)) return null;
+    return `month=${encodeURIComponent(month)}`;
+}
+
+async function loadManagedPocketOptions() {
+    const query = expensePocketOptionsQuery();
+    if (!query) return false;
+    let result;
+    try {
+        const response = await fetch(`/api/expense-pocket-options?${query}`);
+        if (!response.ok) {
+            // Feature disabled (or unavailable): keep the fixed-pocket UI intact.
+            pocketManagementChecked = true;
+            return false;
+        }
+        result = await response.json();
+    } catch (error) {
+        pocketManagementChecked = true;
+        return false;
+    }
+    if (!result || result.success !== true || !Array.isArray(result.data)) {
+        pocketManagementChecked = true;
+        return false;
+    }
+    applyManagedPocketOptions(result.data);
+    return true;
+}
+
+function applyManagedPocketOptions(options) {
+    pocketManagementActive = true;
+    pocketManagementChecked = true;
+    managedPocketOptions = options.map((option) => ({
+        pocketId: String(option.pocketId),
+        name: option.name || '',
+        emoji: option.emoji || '',
+        cadence: option.cadence || 'Monthly'
+    }));
+    managedPocketById.clear();
+    managedPocketOptions.forEach((option) => managedPocketById.set(option.pocketId, option));
+
+    // Preserve a still-valid selection; otherwise fall back to a pending edit
+    // reference so re-opening the picker restores the saved pocket.
+    if (selectedManagedPocketId && !managedPocketById.has(selectedManagedPocketId)) {
+        selectedManagedPocketId = '';
+    }
+    if (!selectedManagedPocketId && pendingEditSinglePocketId && managedPocketById.has(pendingEditSinglePocketId)) {
+        selectedManagedPocketId = pendingEditSinglePocketId;
+    }
+
+    // Rebuild split rows keyed by pocketId when editing an existing managed
+    // split expense so each row restores its saved assignment.
+    if (pendingEditBreakdowns && getSourceType() === 'multi') {
+        const rows = document.getElementById('breakdownRows');
+        if (rows) {
+            rows.innerHTML = '';
+            pendingEditBreakdowns.forEach((item) => addBreakdownRow(item.pocketId || '', item.amount));
+        }
+        pendingEditBreakdowns = null;
+    }
+
+    renderManagedPocketSheet();
+    renderManagedSingleDisplay();
+    refreshAllDropdowns();
+    updateBreakdownTotal();
+}
+
+function pocketSheetGrid() {
+    return document.querySelector('#pocketSheet .picker-grid');
+}
+
+function renderManagedPocketSheet() {
+    const grid = pocketSheetGrid();
+    if (!grid) return;
+    if (!managedPocketOptions.length) {
+        // Zero assignments for the derived Budget_Month: show a Start setup
+        // action instead of substituting fixed pockets (Requirements 5.14-5.15).
+        grid.innerHTML = '<div class="col-span-full text-center py-4" data-managed-empty>'
+            + '<p class="text-sm font-semibold">No pockets assigned for this Budget Month yet.</p>'
+            + '<a href="/pocket-management" class="btn-neon inline-flex items-center justify-center gap-1 mt-3" data-start-setup aria-label="Start Budget Month pocket setup">Start setup</a>'
+            + '</div>';
+        return;
+    }
+    grid.innerHTML = managedPocketOptions.map((option) => (
+        `<button type="button" class="picker-grid-item" data-managed-pocket-option="${escapeHtml(option.pocketId)}">`
+        + `<span class="picker-grid-icon">${escapeHtml(option.emoji)}</span>`
+        + `<span>${escapeHtml(option.name)}</span>`
+        + '</button>'
+    )).join('');
+}
+
+function renderManagedSingleDisplay() {
+    const display = document.getElementById('selectedPocketDisplay');
+    if (!display) return;
+    const option = managedPocketById.get(selectedManagedPocketId);
+    if (option) display.textContent = `${option.emoji} ${option.name}`.trim();
+    else display.textContent = managedPocketOptions.length ? 'Select pocket…' : 'No pockets assigned';
+
+    document.querySelectorAll('#pocketSheet [data-managed-pocket-option]').forEach((button) => {
+        button.classList.toggle('is-selected', button.dataset.managedPocketOption === selectedManagedPocketId);
+    });
+}
+
+function selectManagedPocket(pocketId) {
+    selectedManagedPocketId = pocketId;
+    renderManagedSingleDisplay();
+}
+
+function managedPocketName(pocketId) {
+    return managedPocketById.get(pocketId)?.name || '';
+}
+
 function getSourceType() {
     return document.querySelector('input[name="sourceType"]:checked')?.value || 'single';
 }
@@ -158,6 +307,9 @@ function handleSourceTypeChange() {
         multiSection.style.display = 'block';
         pocketTrigger.style.display = 'none';
         document.querySelectorAll('input[name="pocket"]').forEach((input) => { input.checked = false; });
+        // Load assignment-backed options on demand so the breakdown selects can
+        // show managed pockets; a feature-off response leaves them unchanged.
+        if (!pocketManagementChecked || pocketManagementActive) loadManagedPocketOptions();
         if (!document.getElementById('breakdownRows').children.length) addBreakdownRow();
     }
 }
@@ -180,6 +332,16 @@ function updateAddPocketBtnVisibility() {
 function buildPocketOptions(selectedValue) {
     const used = getUsedPockets();
     const options = ['<option value="">Select pocket...</option>'];
+    if (pocketManagementActive) {
+        // Managed selects are keyed by immutable pocketId and labelled from the
+        // assignment snapshot (archived-but-assigned pockets are included by the
+        // server exactly once).
+        managedPocketOptions.forEach((pocket) => {
+            const disabled = used.includes(pocket.pocketId) && pocket.pocketId !== selectedValue;
+            options.push(`<option value="${escapeHtml(pocket.pocketId)}" ${pocket.pocketId === selectedValue ? 'selected' : ''} ${disabled ? 'disabled' : ''}>${escapeHtml(`${pocket.emoji} ${pocket.name}`.trim())}</option>`);
+        });
+        return options.join('');
+    }
     POCKET_LIST.forEach((pocket) => {
         const disabled = used.includes(pocket.key) && pocket.key !== selectedValue;
         options.push(`<option value="${pocket.key}" ${pocket.key === selectedValue ? 'selected' : ''} ${disabled ? 'disabled' : ''}>${pocket.emoji} ${pocket.key}</option>`);
@@ -434,9 +596,16 @@ function validateForm() {
     }
 
     const sourceType = getSourceType();
-    if (sourceType === 'single' && !getSelectedPocket()) {
-        showToast('Please select a pocket source', 'error');
-        return false;
+    if (sourceType === 'single') {
+        if (pocketManagementActive) {
+            if (!selectedManagedPocketId) {
+                showToast('Please select a pocket source', 'error');
+                return false;
+            }
+        } else if (!getSelectedPocket()) {
+            showToast('Please select a pocket source', 'error');
+            return false;
+        }
     }
 
     if (sourceType === 'multi') {
@@ -461,7 +630,8 @@ function validateForm() {
                 return false;
             }
             if (selectedPockets.includes(pocket)) {
-                showToast(`Duplicate pocket: ${pocket}`, 'error');
+                const duplicateLabel = pocketManagementActive ? (managedPocketName(pocket) || 'pocket') : pocket;
+                showToast(`Duplicate pocket: ${duplicateLabel}`, 'error');
                 return false;
             }
 
@@ -500,6 +670,17 @@ async function loadTransactionForEdit(id) {
             populateBudgetMonthSelect(`${transaction.budgetYear}-${String(transaction.budgetMonth).padStart(2, '0')}`);
         }
 
+        // Retain any managed identifiers so the assignment-backed picker can
+        // restore the saved pocket once options load (managed mode only).
+        pendingEditSinglePocketId = transaction.pocketId ? String(transaction.pocketId) : '';
+        pendingEditBreakdowns = Array.isArray(transaction.sourceBreakdowns)
+            ? transaction.sourceBreakdowns.map((item) => ({
+                pocketId: item.pocketId ? String(item.pocketId) : '',
+                pocket: item.pocket,
+                amount: item.amount
+            }))
+            : null;
+
         if (transaction.sourceType === 'multi' && transaction.sourceBreakdowns?.length) {
             document.getElementById('sourceTypeMulti').checked = true;
             handleSourceTypeChange();
@@ -528,6 +709,10 @@ function addAnother() {
     setSelectedType('Eat');
     setSelectedPocket('Kwintals');
     handleSourceTypeChange();
+    if (pocketManagementActive) {
+        selectedManagedPocketId = '';
+        renderManagedSingleDisplay();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -555,10 +740,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('date').addEventListener('change', () => {
         updateDateDisplay();
         if (salaryCycleEnabled) loadAssignmentPreview();
+        // Refresh assignment-backed options for the new Budget_Month only once
+        // managed mode is active, so feature-off date changes are unchanged.
+        if (pocketManagementActive) loadManagedPocketOptions();
     });
 
     document.getElementById('categoryTrigger').addEventListener('click', () => openSheet('typeSheet'));
-    document.getElementById('pocketTrigger').addEventListener('click', () => openSheet('pocketSheet'));
+    document.getElementById('pocketTrigger').addEventListener('click', () => {
+        openSheet('pocketSheet');
+        // Detect managed mode on demand; a feature-off response is a no-op and
+        // leaves the server-rendered fixed-pocket grid untouched.
+        if (!pocketManagementChecked || pocketManagementActive) loadManagedPocketOptions();
+    });
     
     document.getElementById('dateTrigger').addEventListener('click', (e) => {
         const dateInput = document.getElementById('date');
@@ -589,6 +782,15 @@ document.addEventListener('DOMContentLoaded', () => {
             setSelectedPocket(button.dataset.pocketOption);
             closeSheet('pocketSheet');
         });
+    });
+
+    // Delegated handler for assignment-backed options, which replace the fixed
+    // grid contents when managed mode is active.
+    document.getElementById('pocketSheet')?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-managed-pocket-option]');
+        if (!button) return;
+        selectManagedPocket(button.dataset.managedPocketOption);
+        closeSheet('pocketSheet');
     });
 
     const budgetMonthOptions = document.getElementById('budgetMonthOptions');
@@ -624,8 +826,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (sourceType === 'single') {
-            formData.pocket = getSelectedPocket();
+            if (pocketManagementActive) {
+                // Submit the immutable assignment identifier; keep the snapshot
+                // name as the legacy compatibility projection the server retains.
+                formData.pocketId = selectedManagedPocketId;
+                formData.pocket = managedPocketName(selectedManagedPocketId);
+            } else {
+                formData.pocket = getSelectedPocket();
+            }
             formData.sourceBreakdowns = [];
+        } else if (pocketManagementActive) {
+            const breakdowns = Array.from(document.querySelectorAll('#breakdownRows .breakdown-row')).map((row) => {
+                const pocketId = row.querySelector('select').value;
+                return {
+                    pocketId,
+                    pocket: managedPocketName(pocketId),
+                    amount: parseFloat(row.querySelector('.breakdown-amount').value) || 0
+                };
+            }).filter((item) => item.pocketId && item.amount > 0);
+
+            formData.pocket = breakdowns[0]?.pocket || '';
+            formData.sourceBreakdowns = breakdowns;
         } else {
             const breakdowns = Array.from(document.querySelectorAll('#breakdownRows .breakdown-row')).map((row) => ({
                 pocket: row.querySelector('select').value,

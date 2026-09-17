@@ -1,6 +1,9 @@
 'use strict';
 
 const Transaction = require('../models/transaction');
+const PocketAssignment = require('../models/pocketAssignment');
+const { isPocketManagementEnabled } = require('../utils/rollout');
+const { isDualReadActive, resolveTracker } = require('./pocketCompatibility');
 const { formatCurrency } = require('../utils/formatters');
 const {
     DEFAULT_HOUSEHOLD_TIME_ZONE,
@@ -136,6 +139,130 @@ function reportedTransaction(transaction, timeZone) {
     };
 }
 
+// ---------------------------------------------------------------------------
+// Managed pocket presentation (gated by POCKET_MANAGEMENT_ENABLED)
+//
+// Reporting never reads the current PocketDefinition. When the feature is off
+// none of the helpers below run, so every report stays byte-for-byte the legacy
+// behavior. When on, historical presentation (labels, emoji, cadence) is
+// resolved from the immutable PocketAssignment snapshot for each record's
+// stored Budget_Month, so a later rename/archive/cadence/amount change on a
+// definition can never overwrite a saved report label. Pocket metrics and
+// totals are delegated to BudgetService, whose managed view is already built
+// from the same snapshots.
+// ---------------------------------------------------------------------------
+
+function assignmentModelFor(options, actor) {
+    return options?.assignmentModel ?? actor?.assignmentModel ?? PocketAssignment;
+}
+
+/**
+ * Build a resolver mapping a stored Pocket_Identifier to the PocketAssignment
+ * snapshot for a record's Budget_Month. Returns undefined when the feature is
+ * off or no managed identifiers are present, in which case reports render the
+ * legacy `pocket` fields unchanged. Resolution is keyed by (year, month, id) so
+ * each id renders the label saved for that specific month.
+ */
+async function buildPocketSnapshotResolver(records, actor, options = {}) {
+    if (!isPocketManagementEnabled(options, actor)) return undefined;
+
+    const list = Array.isArray(records) ? records : [records];
+    const ids = new Set();
+    for (const record of list) {
+        if (record?.pocketId !== undefined && record?.pocketId !== null) {
+            ids.add(String(record.pocketId));
+        }
+        if (Array.isArray(record?.sourceBreakdowns)) {
+            for (const share of record.sourceBreakdowns) {
+                if (share?.pocketId !== undefined && share?.pocketId !== null) {
+                    ids.add(String(share.pocketId));
+                }
+            }
+        }
+    }
+    if (ids.size === 0) return undefined;
+
+    const Assignment = assignmentModelFor(options, actor);
+    const query = withSession(Assignment.find({ pocketId: { $in: [...ids] } }), options.session);
+    const assignments = await executeQuery(query);
+
+    const snapshots = new Map();
+    for (const doc of assignments || []) {
+        const dto = typeof doc?.toDTO === 'function' ? doc.toDTO() : doc;
+        const key = `${dto.budgetYear}-${dto.budgetMonth}-${String(dto.pocketId)}`;
+        snapshots.set(key, {
+            pocketId: String(dto.pocketId),
+            pocketName: dto.pocketName ?? dto.pocketNameSnapshot,
+            pocketEmoji: dto.pocketEmoji ?? dto.pocketEmojiSnapshot,
+            cadence: dto.cadence ?? dto.cadenceSnapshot,
+            budgetMonth: dto.budgetMonth,
+            budgetYear: dto.budgetYear
+        });
+    }
+
+    // Guarded dual-read: track each managed hit and each legacy fallback (a
+    // referenced Pocket_Identifier with no managed snapshot, rendered from the
+    // legacy `pocket` label) so a zero-fallback observation window can be
+    // verified before legacy retirement. Managed-only mode is unchanged.
+    if (!isDualReadActive(options, actor)) {
+        return (pocketId, { budgetMonth, budgetYear }) =>
+            snapshots.get(`${budgetYear}-${budgetMonth}-${pocketId}`) || null;
+    }
+
+    const tracker = resolveTracker(options, actor);
+    return (pocketId, { budgetMonth, budgetYear }) => {
+        const snapshot = snapshots.get(`${budgetYear}-${budgetMonth}-${pocketId}`) || null;
+        const budgetMonthKey = `${String(budgetYear).padStart(4, '0')}-${String(budgetMonth).padStart(2, '0')}`;
+        if (snapshot) {
+            tracker.observeManaged({ source: 'managed', collection: 'transactions', pocketId, budgetMonth: budgetMonthKey });
+        } else {
+            tracker.observeFallback({ source: 'legacy', collection: 'transactions', pocketId, budgetMonth: budgetMonthKey });
+        }
+        return snapshot;
+    };
+}
+
+/**
+ * Additively enrich a reported transaction with assignment-snapshot labels for
+ * its managed Pocket_Identifiers. The legacy `pocket` compatibility projection
+ * is left untouched; only snapshot-sourced fields are added, so an archived or
+ * renamed definition never rewrites the saved presentation. A missing resolver
+ * (feature off) returns the reported record unchanged.
+ */
+function applyReportedPocketSnapshot(reported, resolve) {
+    if (typeof resolve !== 'function') return reported;
+
+    const context = { budgetMonth: reported.budgetMonth, budgetYear: reported.budgetYear };
+    const result = { ...reported };
+
+    if (reported.pocketId !== undefined && reported.pocketId !== null) {
+        const snapshot = resolve(String(reported.pocketId), context);
+        if (snapshot) {
+            result.pocketName = snapshot.pocketName;
+            result.pocketEmoji = snapshot.pocketEmoji;
+            result.pocketCadence = snapshot.cadence;
+        }
+    }
+
+    if (Array.isArray(result.sourceBreakdowns) && result.sourceBreakdowns.length > 0) {
+        result.sourceBreakdowns = result.sourceBreakdowns.map((share) => {
+            if (share && share.pocketId !== undefined && share.pocketId !== null) {
+                const snapshot = resolve(String(share.pocketId), context);
+                if (snapshot) {
+                    return {
+                        ...share,
+                        pocketName: snapshot.pocketName,
+                        pocketEmoji: snapshot.pocketEmoji
+                    };
+                }
+            }
+            return share;
+        });
+    }
+
+    return result;
+}
+
 function safeSubmitterName(value) {
     if (value && typeof value === 'object') return value.username || 'Unknown';
     // Populated model adapters expose an object. Treat raw ObjectId strings as
@@ -145,7 +272,17 @@ function safeSubmitterName(value) {
     return value || 'Unknown';
 }
 
-function transactionPocketMatches(transaction, pocket) {
+function transactionPocketMatches(transaction, pocket, { pocketId } = {}) {
+    // Managed identity filtering takes precedence when a Pocket_Identifier is
+    // supplied: match the single-pocket reference or any split share by the
+    // immutable id, never the legacy name string.
+    if (pocketId && pocketId !== 'all') {
+        const id = String(pocketId);
+        return String(transaction.pocketId) === id ||
+            (transaction.sourceBreakdowns || []).some(share => String(share.pocketId) === id);
+    }
+    // Legacy name alias preserved unchanged for compatibility callers that
+    // still filter by pocket name.
     if (!pocket || pocket === 'all') return true;
     return transaction.pocket === pocket || (transaction.sourceBreakdowns || []).some(share => share.pocket === pocket);
 }
@@ -214,8 +351,16 @@ async function getDashboardSummary(input = {}, actor, options = {}) {
         hasLastMonth: previousTotal > 0,
         previousBudgetMonth: previous.key
     };
+    // Historical presentation for the recent list comes from assignment
+    // snapshots when Pocket Management is enabled, matching the snapshot-backed
+    // labels the transaction list already renders. Feature-off, the resolver is
+    // undefined and recent items keep their exact legacy fields.
+    const resolvePocketSnapshot = await buildPocketSnapshotResolver(transactions, actor, options);
     const recent = transactions.slice(0, 5).map(transaction => {
-        const reported = reportedTransaction(transaction, timeZone);
+        const reported = applyReportedPocketSnapshot(
+            reportedTransaction(transaction, timeZone),
+            resolvePocketSnapshot
+        );
         return {
             ...reported,
             by: safeSubmitterName(reported.by)

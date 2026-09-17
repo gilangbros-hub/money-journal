@@ -1316,3 +1316,214 @@ body {
     width: 360px;
   }
 }
+
+
+/* ============================================
+   POCKET MANAGEMENT INTERFACE (Task 6.4)
+   Responsive, high-contrast, reduced-motion-aware
+   management cards, inputs, dialogs, focus rings,
+   and 44px mobile primary targets.
+   Requirements: 11.13–11.25
+
+   Scope is limited to the Pocket Management page
+   ([data-pocket-management]) and its four dialogs
+   (edit / archive / assignment-removal / version-
+   conflict), so shared journal components used by
+   other pages are left untouched. Established
+   journal tokens, shape, spacing, dialog, and
+   status patterns are preserved.
+   ============================================ */
+
+/* --- No horizontal page scrolling at 320–767px (Req 11.13, 11.14) ---
+   The page-container already has side padding; clip is a safety net and
+   min-width:0 lets flex/grid children shrink so values wrap instead of
+   forcing the page wider. */
+[data-pocket-management] {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+[data-pocket-management] * {
+  min-width: 0;
+}
+
+/* Long labels, names, and rupiah totals wrap rather than overflow. */
+[data-pocket-management] .journal-row-title,
+[data-pocket-management] [data-pocket-name],
+[data-pocket-management] [data-summary-total],
+[data-pocket-management] [data-zero-total],
+[data-pocket-management] [data-summary-month],
+[data-pocket-management] .field-error,
+[data-pocket-management] [role="status"],
+[data-pocket-management] [role="alert"] {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* --- Management cards: high-contrast light surface (Req 11.22, 11.25) ---
+   The view reuses .journal-hero-card as the generic management-card wrapper
+   and places journal-ink / secondary / muted text inside it. On this page we
+   render that wrapper as a light journal panel (matching the Check Pockets
+   journal-surface treatment) so all enclosed text sits on a light surface at
+   >=4.5:1. Tokens, radius, and spacing from the journal scale are preserved. */
+[data-pocket-management] .journal-hero-card {
+  background: var(--journal-panel);
+  border: 1px solid var(--journal-line);
+  color: var(--journal-ink);
+  box-shadow: 0 8px 20px rgba(23, 33, 58, 0.06);
+}
+
+[data-pocket-management] .journal-hero-card legend,
+[data-pocket-management] .journal-hero-card h3 {
+  color: var(--journal-ink);
+}
+
+/* Single-column management cards at mobile widths (Req 11.13, 11.14). */
+@media (max-width: 767px) {
+  [data-pocket-management] .journal-story-grid,
+  [data-pocket-management] .grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* The definition card's two-column detail list is compact enough to keep,
+     but ensure its cells can shrink without overflow. */
+  [data-pocket-management] [data-pocket-card] dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* --- Text contrast: muted / hint / status to AA (Req 11.22) ---
+   Journal muted (#6B7B96) is ~4.0:1 on the light surface; nudge it darker so
+   hints and status text clear 4.5:1 while staying within the journal palette. */
+[data-pocket-management] .text-text-muted {
+  color: #55627A;
+}
+
+[data-pocket-management] [role="status"] {
+  color: #35405B;
+}
+
+/* Warning/notice banners use text-amber (#F9A41E ~2:1). Darken the text to an
+   AA-compliant amber; the amber border/background remains the >=3:1 non-text
+   status cue (Req 11.22). */
+[data-pocket-management] .text-amber {
+  color: #8A5A0B;
+}
+
+/* --- Field-level error text (Req 11.7, 11.22) ---
+   text-journal-danger is a design alias with no Tailwind utility, so error
+   text would otherwise inherit body color. Define the AA-compliant danger
+   *text* color here (matches the design's semantic danger text #B82F1D). */
+[data-pocket-management] .field-error {
+  color: #B82F1D;
+  font-weight: 600;
+}
+
+/* --- Form controls: visible >=3:1 boundary + legible text (Req 11.22) ---
+   Every input/select and every rupiah-amount wrapper carries .bg-bg-tertiary,
+   whose fill is nearly identical to the card surface (~1.1:1). Add a boundary
+   that clears 3:1 against the light surface so controls are distinguishable. */
+[data-pocket-management] .bg-bg-tertiary {
+  border: 1.5px solid #6B7B96;
+}
+
+[data-pocket-management] input,
+[data-pocket-management] select,
+[data-pocket-management] textarea {
+  color: var(--journal-ink);
+}
+
+/* --- Primary action buttons: journal blue CTA (Req 11.22, 11.25) ---
+   .btn-modal-save defaults to the amber gradient with white text (~2:1). On the
+   management page and its dialogs use the journal primary CTA (blue gradient,
+   white text ~7:1), which is the journal design language's primary control. */
+[data-pocket-management] .btn-modal-save,
+#pocketEditModal .btn-modal-save,
+#pocketArchiveModal .btn-modal-save,
+#assignmentRemovalModal .btn-modal-save,
+#versionConflictModal .btn-modal-save {
+  background: linear-gradient(135deg, var(--journal-cta-start) 0%, var(--journal-cta-end) 100%);
+  color: #FFFFFF;
+  border: 1px solid var(--journal-cta-end);
+}
+
+/* --- Visible focus indicator, >=3:1 vs adjacent (Req 11.20, 11.22) ---
+   All management surfaces and dialogs are light, so a dark journal-blue ring
+   with an offset (revealing the light surface behind CTA buttons) is visible
+   on every focusable control. */
+[data-pocket-management] a:focus-visible,
+[data-pocket-management] button:focus-visible,
+[data-pocket-management] input:focus-visible,
+[data-pocket-management] select:focus-visible,
+[data-pocket-management] textarea:focus-visible,
+[data-pocket-management] [tabindex]:focus-visible,
+#pocketEditModal a:focus-visible,
+#pocketEditModal button:focus-visible,
+#pocketEditModal input:focus-visible,
+#pocketEditModal select:focus-visible,
+#pocketEditModal textarea:focus-visible,
+#pocketArchiveModal button:focus-visible,
+#assignmentRemovalModal button:focus-visible,
+#versionConflictModal button:focus-visible {
+  outline: 3px solid #143765;
+  outline-offset: 2px;
+}
+
+/* Disabled (pending) controls read as inactive without relying on motion. */
+[data-pocket-management] button:disabled,
+#pocketEditModal button:disabled,
+#pocketArchiveModal button:disabled,
+#assignmentRemovalModal button:disabled,
+#versionConflictModal button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- 44x44 CSS-pixel primary-action targets at 320–767px (Req 11.21) --- */
+@media (max-width: 767px) {
+  [data-pocket-management] button,
+  [data-pocket-management] [type="submit"],
+  #pocketEditModal button,
+  #pocketArchiveModal button,
+  #assignmentRemovalModal button,
+  #versionConflictModal button {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* --- Motion (Req 11.23, 11.24) ---
+   With reduced motion, decorative animation/transition is removed. Otherwise
+   decorative state transitions are capped at 200ms. Focus movement and status
+   text never depend on animation. */
+@media (prefers-reduced-motion: reduce) {
+  [data-pocket-management] *,
+  [data-pocket-management] *::before,
+  [data-pocket-management] *::after,
+  #pocketEditModal *,
+  #pocketArchiveModal *,
+  #assignmentRemovalModal *,
+  #versionConflictModal * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-pocket-management] *,
+  [data-pocket-management] *::before,
+  [data-pocket-management] *::after,
+  #pocketEditModal *,
+  #pocketArchiveModal *,
+  #assignmentRemovalModal *,
+  #versionConflictModal * {
+    transition-duration: 200ms !important;
+    animation-duration: 200ms !important;
+  }
+}

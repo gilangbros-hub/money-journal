@@ -20,6 +20,10 @@ function serviceOptions(req) {
     if (req.app?.locals?.nowInstant) options.nowInstant = req.app.locals.nowInstant;
     if (req.app?.locals?.configuration) {
         options.salaryCycleBudgetingEnabled = req.app.locals.configuration.salaryCycleBudgetingEnabled;
+        // Managed reads/filtering activate only when the validated primary flag
+        // is enabled. Absent or false leaves reporting, transaction, and
+        // delegated budget behavior byte-for-byte the legacy path.
+        options.pocketManagementEnabled = req.app.locals.configuration.pocketManagementEnabled === true;
     }
     if (req.app?.locals?.connection) options.connection = req.app.locals.connection;
     return options;

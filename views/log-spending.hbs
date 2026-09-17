@@ -147,7 +147,12 @@
         <div class="picker-sheet-card">
             <div class="picker-sheet-head">
                 <h3>Pocket Source</h3>
-                <button type="button" class="picker-sheet-close" data-close-sheet="pocketSheet">Close</button>
+                <div class="flex items-center gap-3">
+                    <a href="/pocket-management" class="text-xs font-semibold"
+                        style="color: var(--journal-accent, #6366f1);"
+                        aria-label="Manage pockets and Budget Month setup">Manage Pockets</a>
+                    <button type="button" class="picker-sheet-close" data-close-sheet="pocketSheet">Close</button>
+                </div>
             </div>
             <div class="picker-grid">
                 {{#each (split "Kwintals,Groceries,Weekday Transport,Weekend Transport,Investasi,Bandung,Sedeqah,IPL")}}

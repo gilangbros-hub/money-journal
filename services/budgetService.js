@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const PocketBudget = require('../models/pocketBudget');
 const PocketBudgetCadence = require('../models/pocketBudgetCadence');
 const WeeklyAllocation = require('../models/weeklyAllocation');
+const PocketAssignment = require('../models/pocketAssignment');
 const ClosedMonth = require('../models/closedMonth');
 const Transaction = require('../models/transaction');
 const { POCKETS } = require('../utils/constants');
@@ -31,7 +32,18 @@ const {
     EditableWindowError,
     RecordNotFoundError
 } = require('../utils/domainErrors');
-const { isSalaryCycleEnabled, requireSalaryCycleEnabled } = require('../utils/rollout');
+const {
+    isSalaryCycleEnabled,
+    requireSalaryCycleEnabled,
+    isPocketManagementEnabled
+} = require('../utils/rollout');
+const {
+    isDualReadActive,
+    resolveTracker,
+    reconcilePocketSources
+} = require('./pocketCompatibility');
+const { normalizePocketName } = require('./pocketValidation');
+const { pocketDefinitionId } = require('./migrationTransformService');
 const {
     expenseDateFromCompatibilityDate,
     validateIdentifier,
@@ -219,6 +231,202 @@ function assertEditable(month, actor, options) {
     return active;
 }
 
+/**
+ * Normalize one Pocket_Assignment record (a lean document, a hydrated Mongoose
+ * document, or an already-serialized DTO from an injected test double) into the
+ * snapshot fields the managed budget view needs. Only snapshot values are read
+ * here; the current Pocket_Definition is never consulted, so later definition
+ * edits cannot rewrite a saved month (Requirements 7.11, 7.12).
+ */
+function managedAssignmentView(record) {
+    const value = asPlain(record) || {};
+    return {
+        value,
+        id: value._id != null ? String(value._id) : (value.id != null ? String(value.id) : null),
+        pocketId: value.pocketId != null ? String(value.pocketId) : '',
+        name: value.pocketNameSnapshot ?? value.pocketName ?? '',
+        normalizedName: value.pocketNormalizedNameSnapshot ?? value.pocketNormalizedName ?? '',
+        emoji: value.pocketEmojiSnapshot ?? value.pocketEmoji ?? '',
+        cadence: (value.cadenceSnapshot ?? value.cadence) === 'Weekly' ? 'Weekly' : 'Monthly',
+        amountMode: value.amountMode,
+        allocations: Array.isArray(value.allocations) ? value.allocations : [],
+        version: value.version
+    };
+}
+
+/**
+ * Build the Budget_Month view from managed Pocket_Assignment snapshots.
+ *
+ * Only assignments for the selected Budget_Month are returned (Requirement
+ * 8.1). Monthly cadence uses the sole `monthly` allocation and full
+ * salary-cycle spending; Weekly cadence exposes each intersecting Calendar_Week
+ * exactly once and attributes spending only within the week/cycle intersection
+ * (Requirements 8.2, 8.3). Remaining and percentage retain the existing pure
+ * formulas, split shares contribute only their own share, and every allocation
+ * and eligible spending item is counted exactly once (Requirements 8.4-8.6,
+ * 8.13-8.14). A month with no assignments yields an empty pocket list and zero
+ * totals with no fixed-pocket substitution (Requirements 5.14, 7.12).
+ */
+async function buildManagedBudgetMonthView(context) {
+    const { actor, options, month, period, timeZone, availableWeeks, selectedWeek, enabled } = context;
+    const assignmentModelRef = option(options, actor, 'assignmentModel', PocketAssignment);
+    const transactionModel = option(options, actor, 'transactionModel', Transaction);
+    const guardModel = option(options, actor, 'guardModel', ClosedMonth);
+
+    const [assignments, transactions, guard] = await Promise.all([
+        findMany(assignmentModelRef, { budgetMonth: month.month, budgetYear: month.year }, {
+            session: options.session,
+            sort: { pocketNormalizedNameSnapshot: 1, pocketId: 1 }
+        }),
+        findMany(transactionModel, { budgetMonth: month.month, budgetYear: month.year }, { session: options.session }),
+        findOne(guardModel, periodParts(month), { session: options.session, lean: true })
+    ]);
+
+    // Attribute spending by immutable managed identity (pocketId), never the
+    // legacy pocket-name string. A single record counts once; a split record
+    // contributes only its shares and never its parent amount.
+    const expanded = expandEligibleSpendingItems(
+        transactions.map(transaction => transactionForCalculation(transaction, timeZone)),
+        { pocketField: 'pocketId' }
+    );
+
+    const pockets = [];
+    for (const record of assignments) {
+        const assignment = managedAssignmentView(record);
+        const cadence = assignment.cadence;
+        const allocationByKey = new Map(assignment.allocations.map(allocation => [allocation.key, allocation]));
+        const filterOptions = { budgetMonth: month.key, pocket: assignment.pocketId };
+
+        const monthlyEntry = allocationByKey.get('monthly') || null;
+        const monthlyAllocation = monthlyEntry
+            ? { amount: monthlyEntry.amount, budget: monthlyEntry.amount }
+            : null;
+        const periodMetrics = calculatePocketPeriod(expanded, monthlyAllocation, filterOptions);
+
+        const pocketWeeks = availableWeeks.map(week => {
+            const entry = allocationByKey.get(week.key);
+            return {
+                ...week,
+                allocation: entry ? { amount: entry.amount, budget: entry.amount } : null
+            };
+        });
+        const chosenWeek = selectedWeek || (cadence === 'Weekly' ? availableWeeks[0] : null);
+        const selectedEntry = chosenWeek ? allocationByKey.get(chosenWeek.key) : null;
+        const selectedAllocation = selectedEntry
+            ? { amount: selectedEntry.amount, budget: selectedEntry.amount }
+            : null;
+        const selectedMetrics = chosenWeek
+            ? calculatePocketWeek(expanded, selectedAllocation, chosenWeek, filterOptions)
+            : null;
+
+        const activeAllocation = cadence === 'Weekly'
+            ? pocketWeeks.reduce((sum, week) => sum + (week.allocation?.amount || 0), 0)
+            : (monthlyAllocation?.amount || 0);
+        const activeAggregateMetrics = calculatePocketPeriod(expanded, { amount: activeAllocation }, filterOptions);
+
+        const allocation = cadence === 'Weekly' ? selectedAllocation : monthlyAllocation;
+        const metrics = cadence === 'Weekly' ? selectedMetrics : periodMetrics;
+        const plainAllocation = allocation
+            ? { ...allocation, amount: allocation.amount, budget: allocation.amount }
+            : null;
+
+        pockets.push({
+            // `pocket` remains the display alias (snapshot name) for existing
+            // Check Pockets consumers; managed identity and snapshot fields are
+            // included explicitly.
+            pocket: assignment.name,
+            pocketId: assignment.pocketId,
+            pocketName: assignment.name,
+            pocketNormalizedName: assignment.normalizedName,
+            pocketEmoji: assignment.emoji,
+            assignmentId: assignment.id,
+            assignmentVersion: assignment.version,
+            amountMode: assignment.amountMode,
+            icon: assignment.emoji,
+            cadence,
+            cadenceRecord: null,
+            allocation: plainAllocation,
+            allocationId: assignment.id,
+            _id: assignment.id,
+            missingAllocation: !allocation,
+            budget: metrics.allocation,
+            spent: metrics.spending,
+            formattedBudget: formatCurrency(metrics.allocation),
+            formattedSpent: formatCurrency(metrics.spending),
+            remaining: metrics.remaining,
+            formattedRemaining: formatCurrency(Math.abs(metrics.remaining)),
+            percentage: metrics.percentageUsed,
+            percentageUsed: metrics.percentageUsed,
+            status: metrics.status,
+            alertStatus: metrics.alertStatus,
+            isOver: metrics.remaining < 0,
+            metrics,
+            periodMetrics: activeAggregateMetrics,
+            availableWeeks: cadence === 'Weekly' ? pocketWeeks : [],
+            selectedWeek: cadence === 'Weekly' && chosenWeek ? {
+                ...chosenWeek,
+                allocation: plainAllocation,
+                metrics
+            } : null,
+            monthlyAllocation,
+            weeklyAllocations: cadence === 'Weekly' ? pocketWeeks : []
+        });
+    }
+
+    // Deterministic order by normalized snapshot name then pocket identifier,
+    // matching the assignment month-view index and definition listing order.
+    pockets.sort((a, b) => (
+        String(a.pocketNormalizedName || '').localeCompare(String(b.pocketNormalizedName || ''))
+        || String(a.pocketId).localeCompare(String(b.pocketId))
+    ));
+
+    const aggregate = calculateBudgetAggregate(pockets.map(pocket => ({
+        allocation: pocket.periodMetrics.allocation,
+        spending: pocket.periodMetrics.spending
+    })));
+    const active = getActiveBudgetMonth({
+        nowInstant: option(options, actor, 'nowInstant', new Date().toISOString()),
+        timeZone
+    });
+    const isClosed = guard ? guard.isClosed !== false : false;
+    const canEdit = actor?.role === 'Wife' && !isClosed && editableMonths(active).includes(month.key);
+
+    return {
+        budgetMonth: month.key,
+        month: month.month,
+        year: month.year,
+        featureEnabled: enabled,
+        pocketManagementEnabled: true,
+        // Zero assignments is an intentional empty state; consumers use these to
+        // present a "Start setup" affordance without substituting active pockets.
+        hasAssignments: pockets.length > 0,
+        assignmentCount: pockets.length,
+        timeZone,
+        period,
+        salaryCyclePeriod: period,
+        availableWeeks,
+        selectedWeek: selectedWeek?.key || null,
+        isClosed,
+        canEdit,
+        pockets,
+        aggregate,
+        totalBudget: aggregate.allocation,
+        combinedAllocationTotal: aggregate.allocation,
+        formattedTotal: formatCurrency(aggregate.allocation),
+        totalSpent: aggregate.spending,
+        formattedSpent: formatCurrency(aggregate.spending),
+        totalRemaining: aggregate.remaining,
+        formattedRemaining: formatCurrency(Math.abs(aggregate.remaining)),
+        overallPercentage: aggregate.percentageUsed,
+        isOverBudget: aggregate.remaining < 0,
+        health: {
+            status: aggregate.status,
+            emoji: aggregate.status === 'danger' ? '🔴' : aggregate.status === 'warning' ? '🟡' : '🟢',
+            label: aggregate.status === 'danger' ? 'Over Budget' : aggregate.status === 'warning' ? 'Caution' : 'On Track'
+        }
+    };
+}
+
 async function getBudgetMonthView(input = {}, actor, options = {}) {
     if (typeof input === 'string') input = { budgetMonth: input };
     const timeZone = option(options, actor, 'timeZone', DEFAULT_HOUSEHOLD_TIME_ZONE);
@@ -241,7 +449,11 @@ async function getBudgetMonthView(input = {}, actor, options = {}) {
                 : monthFromInput(input);
     const period = getSalaryCyclePeriod({ budgetMonth: month, timeZone });
     const enabled = isSalaryCycleEnabled(options, actor);
-    const availableWeeks = enabled ? listIntersectingIsoWeeks({ period }) : [];
+    const pocketManaged = isPocketManagementEnabled(options, actor);
+    // Managed reads are salary-cycle aware regardless of the legacy salary-cycle
+    // flag; when Pocket Management is off, `enabled || false` leaves the legacy
+    // week derivation exactly as before.
+    const availableWeeks = (enabled || pocketManaged) ? listIntersectingIsoWeeks({ period }) : [];
     const selectedRaw = input.selectedWeek ?? input.week;
     let selectedWeek = selectedRaw ? normalizeWeek(selectedRaw) : null;
     if (selectedWeek && !availableWeeks.some(week => week.key === selectedWeek.key)) {
@@ -253,6 +465,63 @@ async function getBudgetMonthView(input = {}, actor, options = {}) {
         selectedWeek = availableWeeks.find(week => week.key === selectedWeek.key);
     }
 
+    // Pocket Management source-of-truth switch: when enabled, the Budget_Month
+    // view is built exclusively from immutable Pocket_Assignment snapshots for
+    // the selected month, never from the fixed POCKETS catalogue or the legacy
+    // allocation collections, and a month with zero assignments is an
+    // intentional empty state rather than a fixed-pocket substitution.
+    if (pocketManaged) {
+        // Guarded dual-read stage: when the dual-write compatibility flag is on
+        // (only meaningful while the primary flag is on), a verified managed
+        // assignment is preferred, the legacy source is consulted only for
+        // records not yet migrated, fallback use is tracked, and ambiguous
+        // double sources are flagged. When the compatibility flag is off, the
+        // read is managed-only exactly as before.
+        if (isDualReadActive(options, actor)) {
+            return buildDualReadBudgetMonthView({
+                actor,
+                options,
+                month,
+                period,
+                timeZone,
+                availableWeeks,
+                selectedWeek,
+                enabled
+            });
+        }
+        return buildManagedBudgetMonthView({
+            actor,
+            options,
+            month,
+            period,
+            timeZone,
+            availableWeeks,
+            selectedWeek,
+            enabled
+        });
+    }
+
+    return buildLegacyBudgetMonthView({
+        actor,
+        options,
+        month,
+        period,
+        timeZone,
+        availableWeeks,
+        selectedWeek,
+        enabled
+    });
+}
+
+/**
+ * Build the Budget_Month view from the fixed POCKETS catalogue and the legacy
+ * allocation collections. This is the exact behavior used when Pocket
+ * Management is off, and the source consulted for records not yet migrated
+ * during the guarded dual-read stage. Its output is unchanged from the previous
+ * inline implementation.
+ */
+async function buildLegacyBudgetMonthView(context) {
+    const { actor, options, month, period, timeZone, availableWeeks, selectedWeek, enabled } = context;
     const cadenceModel = option(options, actor, 'cadenceModel', PocketBudgetCadence);
     const monthlyModel = option(options, actor, 'monthlyModel', PocketBudget);
     const weeklyModel = option(options, actor, 'weeklyModel', WeeklyAllocation);
@@ -392,6 +661,169 @@ async function getBudgetMonthView(input = {}, actor, options = {}) {
             label: aggregate.status === 'danger' ? 'Over Budget' : aggregate.status === 'warning' ? 'Caution' : 'On Track'
         }
     };
+}
+
+/**
+ * Sum the active legacy allocation for one pocket name in a month, using the
+ * legacy cadence to decide whether the monthly amount or the sum of the
+ * intersecting weekly amounts is the active allocation. Used only to compare a
+ * managed assignment against its legacy projection during the dual-read stage.
+ */
+function legacyActiveAllocation(name, { monthlyByName, weeklyByName, cadenceByName, enabled }) {
+    const cadence = enabled ? (cadenceByName.get(name)?.cadence || 'Monthly') : 'Monthly';
+    if (cadence === 'Weekly') {
+        return (weeklyByName.get(name) || []).reduce((sum, record) => sum + (record.budget || 0), 0);
+    }
+    return monthlyByName.get(name)?.budget || 0;
+}
+
+/**
+ * Attach the dual-read compatibility summary to a Budget_Month view. Only the
+ * additive `compatibility` block and the `pocketManagementEnabled` marker are
+ * added; every existing field is preserved so downstream consumers keep
+ * working. This block appears only on the guarded dual-read path, so the
+ * managed-only and feature-off views stay byte-for-byte unchanged.
+ */
+function annotateDualReadView(view, tracker, source) {
+    return {
+        ...view,
+        pocketManagementEnabled: true,
+        compatibility: {
+            dualRead: true,
+            source,
+            fallbackCount: tracker.counts.fallback,
+            ambiguousCount: tracker.counts.ambiguous,
+            hasFallback: tracker.counts.fallback > 0,
+            hasAmbiguous: tracker.counts.ambiguous > 0
+        }
+    };
+}
+
+/**
+ * Guarded dual-read Budget_Month view.
+ *
+ * Managed Pocket_Assignment snapshots are authoritative and preferred. The
+ * legacy allocation collections are read only to (a) serve a month that has no
+ * managed assignments yet because it has not been migrated, and (b) detect an
+ * ambiguous double source where a managed assignment and a legacy allocation
+ * for the same pocket identity disagree. Every legacy fallback and every
+ * ambiguity is tracked so a zero-fallback / zero-ambiguity observation window
+ * can be verified before legacy retirement and before final activation.
+ */
+async function buildDualReadBudgetMonthView(context) {
+    const { actor, options, month, enabled } = context;
+    const tracker = resolveTracker(options, actor);
+
+    const managedView = await buildManagedBudgetMonthView(context);
+
+    const monthlyModel = option(options, actor, 'monthlyModel', PocketBudget);
+    const weeklyModel = option(options, actor, 'weeklyModel', WeeklyAllocation);
+    const cadenceModel = option(options, actor, 'cadenceModel', PocketBudgetCadence);
+    const [monthly, weekly, cadences] = await Promise.all([
+        findMany(monthlyModel, periodParts(month), { session: options.session }),
+        findMany(weeklyModel, periodParts(month), { session: options.session }),
+        findMany(cadenceModel, periodParts(month), { session: options.session })
+    ]);
+
+    const legacyNames = new Set();
+    const monthlyByName = new Map();
+    const cadenceByName = new Map();
+    const weeklyByName = new Map();
+    for (const record of monthly) {
+        legacyNames.add(record.pocket);
+        monthlyByName.set(record.pocket, record);
+    }
+    for (const record of cadences) {
+        legacyNames.add(record.pocket);
+        cadenceByName.set(record.pocket, record);
+    }
+    for (const record of weekly) {
+        legacyNames.add(record.pocket);
+        if (!weeklyByName.has(record.pocket)) weeklyByName.set(record.pocket, []);
+        weeklyByName.get(record.pocket).push(record);
+    }
+
+    // No legacy allocation data: the managed month is authoritative. Managed
+    // pockets are observed for the managed-read counter so a healthy dual-read
+    // window shows managed reads with zero fallback.
+    if (legacyNames.size === 0) {
+        for (const pocket of managedView.pockets) {
+            tracker.observeManaged({ source: 'managed', budgetMonth: month.key, pocketId: pocket.pocketId });
+        }
+        return annotateDualReadView(managedView, tracker, 'managed');
+    }
+
+    // A month with no managed assignments but present legacy allocations has
+    // not been migrated: fall back to the complete legacy view and track one
+    // fallback per legacy pocket so the fallback is observable for retirement.
+    if (managedView.assignmentCount === 0) {
+        for (const name of legacyNames) {
+            const normalizedName = normalizePocketName(typeof name === 'string' ? name : '').normalizedName;
+            tracker.observeFallback({
+                source: 'legacy',
+                collection: 'pocketbudgets',
+                budgetMonth: month.key,
+                pocketId: String(pocketDefinitionId(normalizedName))
+            });
+        }
+        const legacyView = await buildLegacyBudgetMonthView(context);
+        return annotateDualReadView(legacyView, tracker, 'legacy');
+    }
+
+    // Managed assignments exist: prefer them. Map each legacy pocket name to the
+    // deterministic managed pocketId the migration would assign, then reconcile.
+    // A legacy pocket whose id is managed and whose active legacy allocation
+    // differs from the managed allocation is an ambiguous double source; a
+    // legacy pocket whose id is not managed is an unmigrated fallback.
+    const managedActiveById = new Map(
+        managedView.pockets.map(pocket => [String(pocket.pocketId), pocket.periodMetrics?.allocation ?? 0])
+    );
+    for (const pocket of managedView.pockets) {
+        tracker.observeManaged({ source: 'managed', budgetMonth: month.key, pocketId: pocket.pocketId });
+    }
+
+    const legacyRecords = [];
+    for (const name of legacyNames) {
+        const normalizedName = normalizePocketName(typeof name === 'string' ? name : '').normalizedName;
+        const id = String(pocketDefinitionId(normalizedName));
+        legacyRecords.push({
+            pocketId: id,
+            pocket: name,
+            activeAllocation: legacyActiveAllocation(name, { monthlyByName, weeklyByName, cadenceByName, enabled })
+        });
+    }
+
+    const { ambiguous } = reconcilePocketSources({
+        managed: managedView.pockets,
+        legacy: legacyRecords,
+        keyOf: (record) => String(record.pocketId),
+        // A legacy projection equal to the managed active allocation is the
+        // expected compatibility state (the migration keeps legacy fields), not
+        // an ambiguity. Only a disagreeing legacy record is flagged.
+        isEquivalent: (managedPocket, legacyRecord) =>
+            (managedActiveById.get(String(managedPocket.pocketId)) ?? 0) === (legacyRecord.activeAllocation ?? 0),
+        // Managed pockets are already observed above; reconcile only needs to
+        // classify legacy records, so use a scoped tracker that forwards only
+        // fallback and ambiguity to the shared tracker.
+        tracker: {
+            observeManaged() {},
+            observeFallback: (meta) => tracker.observeFallback({ ...meta, budgetMonth: month.key }),
+            observeAmbiguous: (meta) => tracker.observeAmbiguous({ ...meta, budgetMonth: month.key }),
+            counts: tracker.counts
+        },
+        metaOf: (record) => ({
+            source: 'legacy',
+            collection: 'pocketbudgets',
+            budgetMonth: month.key,
+            pocketId: record.pocketId
+        })
+    });
+
+    const annotated = annotateDualReadView(managedView, tracker, 'managed');
+    if (ambiguous.length > 0) {
+        annotated.compatibility.ambiguousPocketIds = ambiguous.map(entry => entry.key);
+    }
+    return annotated;
 }
 
 async function protectWrite(month, actor, options, operation) {
@@ -613,16 +1045,32 @@ async function toggleBudgetMonthClosed(command, actor, options = {}) {
 
 async function getBudgetHistory(actor, options = {}) {
     const timeZone = option(options, actor, 'timeZone', DEFAULT_HOUSEHOLD_TIME_ZONE);
-    const [monthly, cadences, weekly] = await Promise.all([
-        findMany(option(options, actor, 'monthlyModel', PocketBudget), {}, { session: options.session }),
-        findMany(option(options, actor, 'cadenceModel', PocketBudgetCadence), {}, { session: options.session }),
-        findMany(option(options, actor, 'weeklyModel', WeeklyAllocation), {}, { session: options.session })
-    ]);
-    const keys = new Set([
-        ...monthly.map(value => `${value.year}-${String(value.month).padStart(2, '0')}`),
-        ...cadences.map(value => `${value.year}-${String(value.month).padStart(2, '0')}`),
-        ...weekly.map(value => `${value.year}-${String(value.month).padStart(2, '0')}`)
-    ]);
+    let keys;
+    if (isPocketManagementEnabled(options, actor)) {
+        // Managed history is enumerated from Pocket_Assignment months only, so a
+        // legacy allocation collection can never resurrect a month that has no
+        // managed assignments.
+        const assignments = await findMany(
+            option(options, actor, 'assignmentModel', PocketAssignment),
+            {},
+            { session: options.session }
+        );
+        keys = new Set(assignments.map(record => {
+            const value = asPlain(record) || {};
+            return `${String(value.budgetYear).padStart(4, '0')}-${String(value.budgetMonth).padStart(2, '0')}`;
+        }));
+    } else {
+        const [monthly, cadences, weekly] = await Promise.all([
+            findMany(option(options, actor, 'monthlyModel', PocketBudget), {}, { session: options.session }),
+            findMany(option(options, actor, 'cadenceModel', PocketBudgetCadence), {}, { session: options.session }),
+            findMany(option(options, actor, 'weeklyModel', WeeklyAllocation), {}, { session: options.session })
+        ]);
+        keys = new Set([
+            ...monthly.map(value => `${value.year}-${String(value.month).padStart(2, '0')}`),
+            ...cadences.map(value => `${value.year}-${String(value.month).padStart(2, '0')}`),
+            ...weekly.map(value => `${value.year}-${String(value.month).padStart(2, '0')}`)
+        ]);
+    }
     const result = [];
     for (const key of [...keys].sort().reverse()) {
         const view = await getBudgetMonthView({ budgetMonth: key }, actor, options);

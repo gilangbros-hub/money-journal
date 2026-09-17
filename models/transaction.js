@@ -56,6 +56,16 @@ const transactionSchema = new mongoose.Schema({
         required: true,
         enum: Object.keys(POCKETS)
     },
+    // Managed immutable Pocket_Identifier reference. Optional during the
+    // additive rollout so legacy documents remain valid; TransactionService
+    // requires it for managed single-pocket records and resolves it against the
+    // Pocket_Assignment for the stored Budget_Month. The legacy `pocket` string
+    // is retained as a compatibility snapshot projection.
+    pocketId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'PocketDefinition',
+        required: false
+    },
     ngapain: {              // Notes
         type: String,
         required: true,
@@ -114,6 +124,15 @@ const transactionSchema = new mongoose.Schema({
             type: String,
             enum: Object.keys(POCKETS)
         },
+        // Managed immutable Pocket_Identifier reference for a split share.
+        // Optional during rollout; required for each managed split share and
+        // validated against the Budget_Month Pocket_Assignment. The legacy
+        // `pocket` string is retained as a compatibility snapshot projection.
+        pocketId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'PocketDefinition',
+            required: false
+        },
         amount: {
             type: Number,
             min: 0
@@ -128,5 +147,11 @@ const transactionSchema = new mongoose.Schema({
 transactionSchema.index({ budgetYear: 1, budgetMonth: 1, expenseDate: -1 });
 transactionSchema.index({ budgetYear: 1, budgetMonth: 1, pocket: 1 });
 transactionSchema.index({ budgetYear: 1, budgetMonth: 1, 'sourceBreakdowns.pocket': 1, expenseDate: 1 });
+
+// Managed-mode reads resolve pocket attribution by the stored Budget_Month and
+// canonical expense date using immutable Pocket_Identifiers. These indexes are
+// additive and coexist with the legacy pocket-string indexes during rollout.
+transactionSchema.index({ budgetYear: 1, budgetMonth: 1, pocketId: 1, expenseDate: 1 });
+transactionSchema.index({ budgetYear: 1, budgetMonth: 1, 'sourceBreakdowns.pocketId': 1, expenseDate: 1 });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

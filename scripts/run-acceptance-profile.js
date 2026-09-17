@@ -19,8 +19,13 @@ function filesInDirectory(relative) {
     return filesIn(path.join(testDir, relative));
 }
 
+// Rollout/compatibility suites run in their own named phase (below) so they are
+// never silently dropped and never double-executed by the unit phase.
+const rolloutFileNames = ['rolloutCompatibility.test.js', 'rolloutReadiness.test.js', 'rollout.test.js'];
 const rootFiles = filesIn(testDir).filter(file => !file.endsWith('transactionService.test.js') &&
-    !file.endsWith('reportingService.test.js') && !file.endsWith('salaryCycleIsoWeek.property.test.js'));
+    !file.endsWith('reportingService.test.js') && !file.endsWith('salaryCycleIsoWeek.property.test.js') &&
+    !rolloutFileNames.some(name => file.endsWith(name)));
+const rolloutFiles = rolloutFileNames.map(name => path.join(testDir, name));
 const phases = [
     ['unit', rootFiles.concat(filesInDirectory('unit'))],
     ['property', [path.join(testDir, 'salaryCycleIsoWeek.property.test.js')].concat(filesInDirectory('property'))],
@@ -29,6 +34,7 @@ const phases = [
     ['migration', filesInDirectory('migration')],
     ['concurrency', filesInDirectory('concurrency')],
     ['ui', filesInDirectory('ui')],
+    ['rollout', rolloutFiles],
     ['smoke', filesInDirectory('smoke')]
 ];
 

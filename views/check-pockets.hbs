@@ -89,8 +89,13 @@
         </div>
 
         <!-- Budget List -->
-        <div class="section-header">
+        <div class="section-header flex items-center justify-between">
             <h2 class="section-title" style="color: var(--journal-ink);">Pocket Breakdown</h2>
+            <a href="/pocket-management" class="text-xs font-semibold flex items-center gap-1"
+                style="color: var(--journal-accent, #6366f1);" aria-label="Manage pockets and Budget Month setup">
+                <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">tune</span>
+                Manage Pockets
+            </a>
         </div>
         <div class="journal-group-rows mb-4" id="budgetList" aria-live="polite" aria-busy="true">
             <p class="text-center py-5" style="color: var(--journal-soft-ink);">Loading budgets...</p>

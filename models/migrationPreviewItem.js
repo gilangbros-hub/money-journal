@@ -2,12 +2,19 @@
 
 const mongoose = require('mongoose');
 
+// Collections a preview item may target. The first five are the legacy source
+// collections read by every migration transform. `pocketdefinitions` and
+// `pocketassignments` are the managed target collections the pocket-management
+// transform creates; a single immutable preview may therefore mix legacy
+// source records and managed target documents.
 const SOURCE_COLLECTIONS = [
     'pocketbudgets',
     'pocketbudgetcadences',
     'weeklyallocations',
     'transactions',
-    'closedmonths'
+    'closedmonths',
+    'pocketdefinitions',
+    'pocketassignments'
 ];
 
 const isExtendedJsonDocument = value => (
@@ -89,6 +96,15 @@ const migrationPreviewItemSchema = new mongoose.Schema({
     sourceRecordFingerprint: {
         type: String,
         required: true,
+        trim: true,
+        immutable: true
+    },
+    // Safe, sanitized source pocket value for a managed (pocket-management)
+    // preview item. It lets an operator recognize which legacy pocket a blocked
+    // or migrated record belongs to without exposing amounts, notes, or other
+    // financial detail. Optional because legacy salary-cycle items never set it.
+    sourcePocket: {
+        type: String,
         trim: true,
         immutable: true
     }

@@ -22,7 +22,17 @@ const SAFE_DETAIL_KEYS = new Set([
     'editableBudgetMonths',
     'resource',
     'field',
-    'reason'
+    'reason',
+    // Pocket Management recovery metadata. These carry only non-sensitive
+    // identifiers and revision numbers a client needs to recover from a
+    // rejected mutation; record names, amounts, and payloads remain excluded
+    // by the sensitive-key blocklist and the allowlist itself.
+    'pocketId',
+    'entryIndex',
+    'currentVersion',
+    'expectedVersion',
+    'errors',
+    'code'
 ]);
 
 function createRequestId() {

@@ -30,6 +30,35 @@ test('configuration canonicalizes valid zones and enables the flag only explicit
     assert.equal(validateHouseholdTimeZone('Asia/Jakarta'), 'Asia/Jakarta');
 });
 
+test('pocket management flags default to disabled', () => {
+    const configuration = createConfiguration({});
+
+    assert.equal(configuration.pocketManagementEnabled, false);
+    assert.equal(configuration.pocketManagementDualWriteEnabled, false);
+    assert.equal(configuration.featureFlags.pocketManagement, false);
+    assert.equal(configuration.featureFlags.pocketManagementDualWrite, false);
+});
+
+test('pocket management flags enable only on recognized truthy values', () => {
+    const enabled = createConfiguration({
+        POCKET_MANAGEMENT_ENABLED: 'on',
+        POCKET_MANAGEMENT_DUAL_WRITE: '1'
+    });
+
+    assert.equal(enabled.pocketManagementEnabled, true);
+    assert.equal(enabled.pocketManagementDualWriteEnabled, true);
+    assert.equal(enabled.featureFlags.pocketManagement, true);
+    assert.equal(enabled.featureFlags.pocketManagementDualWrite, true);
+
+    const unexpected = createConfiguration({
+        POCKET_MANAGEMENT_ENABLED: 'unexpected',
+        POCKET_MANAGEMENT_DUAL_WRITE: 'maybe'
+    });
+
+    assert.equal(unexpected.pocketManagementEnabled, false);
+    assert.equal(unexpected.pocketManagementDualWriteEnabled, false);
+});
+
 test('invalid or fixed-offset zones fail with a field-specific configuration error', () => {
     for (const value of ['Not/AZone', '+07:00', '', null]) {
         assert.throws(

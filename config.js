@@ -3,6 +3,8 @@ const { ConfigurationError } = require('./utils/domainErrors');
 
 const DEFAULT_HOUSEHOLD_TIME_ZONE = 'Asia/Jakarta';
 const FEATURE_FLAG_ENV_NAME = 'SALARY_CYCLE_BUDGETING_ENABLED';
+const POCKET_MANAGEMENT_FLAG_ENV_NAME = 'POCKET_MANAGEMENT_ENABLED';
+const POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME = 'POCKET_MANAGEMENT_DUAL_WRITE';
 const ENABLED_FLAG_VALUES = new Set(['1', 'true', 'yes', 'on']);
 
 function invalidTimeZoneError(message, cause) {
@@ -49,13 +51,29 @@ function validateHouseholdTimeZone(value) {
 
 /**
  * Feature flags are opt-in. Unknown or empty values remain disabled so a
- * malformed deployment variable cannot enable salary-cycle writes.
+ * malformed deployment variable cannot enable a gated behavior.
  */
-function parseSalaryCycleFeatureFlag(value) {
+function parseFeatureFlag(value) {
     if (typeof value !== 'string') {
         return false;
     }
     return ENABLED_FLAG_VALUES.has(value.trim().toLowerCase());
+}
+
+/**
+ * Salary-cycle writes stay disabled unless a recognized truthy flag is set.
+ */
+function parseSalaryCycleFeatureFlag(value) {
+    return parseFeatureFlag(value);
+}
+
+/**
+ * Pocket Management (and its dual-write compatibility stage) is disabled by
+ * default. The primary flag gates the managed routes and reads; the dual-write
+ * flag only has meaning once the primary flag is enabled.
+ */
+function parsePocketManagementFeatureFlag(value) {
+    return parseFeatureFlag(value);
 }
 
 function createConfiguration(environment = process.env) {
@@ -68,14 +86,24 @@ function createConfiguration(environment = process.env) {
     const salaryCycleBudgetingEnabled = parseSalaryCycleFeatureFlag(
         environment[FEATURE_FLAG_ENV_NAME]
     );
+    const pocketManagementEnabled = parsePocketManagementFeatureFlag(
+        environment[POCKET_MANAGEMENT_FLAG_ENV_NAME]
+    );
+    const pocketManagementDualWriteEnabled = parsePocketManagementFeatureFlag(
+        environment[POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME]
+    );
 
     const featureFlags = Object.freeze({
-        salaryCycleBudgeting: salaryCycleBudgetingEnabled
+        salaryCycleBudgeting: salaryCycleBudgetingEnabled,
+        pocketManagement: pocketManagementEnabled,
+        pocketManagementDualWrite: pocketManagementDualWriteEnabled
     });
 
     return Object.freeze({
         householdTimeZone,
         salaryCycleBudgetingEnabled,
+        pocketManagementEnabled,
+        pocketManagementDualWriteEnabled,
         featureFlags
     });
 }
@@ -83,8 +111,11 @@ function createConfiguration(environment = process.env) {
 module.exports = {
     DEFAULT_HOUSEHOLD_TIME_ZONE,
     FEATURE_FLAG_ENV_NAME,
+    POCKET_MANAGEMENT_FLAG_ENV_NAME,
+    POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME,
     ConfigurationError,
     createConfiguration,
     parseSalaryCycleFeatureFlag,
+    parsePocketManagementFeatureFlag,
     validateHouseholdTimeZone
 };

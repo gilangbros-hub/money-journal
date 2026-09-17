@@ -8,6 +8,8 @@ const PocketBudgetCadence = require('../models/pocketBudgetCadence');
 const WeeklyAllocation = require('../models/weeklyAllocation');
 const Transaction = require('../models/transaction');
 const ClosedMonth = require('../models/closedMonth');
+const PocketDefinition = require('../models/pocketDefinition');
+const PocketAssignment = require('../models/pocketAssignment');
 const {
     AuthorizationError,
     DomainValidationError,
@@ -23,8 +25,13 @@ const {
 } = require('./migrationFingerprint');
 const {
     checkPreservation,
-    createMigrationPreview
+    checkTransactionAssociationPreservation,
+    createMigrationPreview,
+    pocketDefinitionId,
+    POCKET_MANAGEMENT_MIGRATION_VERSION
 } = require('./migrationTransformService');
+const { normalizePocketName } = require('./pocketValidation');
+const { createFallbackTracker, reconcilePocketSources } = require('./pocketCompatibility');
 const {
     parseExpenseDate,
     parseIsoWeek,
@@ -52,7 +59,13 @@ const MODEL_BY_COLLECTION = {
     pocketbudgetcadences: PocketBudgetCadence,
     weeklyallocations: WeeklyAllocation,
     transactions: Transaction,
-    closedmonths: ClosedMonth
+    closedmonths: ClosedMonth,
+    // Managed target collections written by the pocket-management transform.
+    // They are read/inserted/updated through the same execute/verify/rollback
+    // primitives as the legacy source collections; they are never part of the
+    // legacy source-fingerprint set (SOURCE_COLLECTIONS).
+    pocketdefinitions: PocketDefinition,
+    pocketassignments: PocketAssignment
 };
 
 // These are the persistent uniqueness guards that make a verified migration
@@ -80,6 +93,57 @@ const PRESERVATION_KIND = {
     transactionAssignmentMetadata: 'transaction',
     closedMonthPreservation: 'closedMonth'
 };
+
+// The pocket-management transform creates managed definition/assignment
+// documents and associates transactions with a deterministic pocketId. The
+// managed uniqueness guards mirror the model-declared indexes so verification
+// proves normalized-name and (pocketId, budgetMonth) uniqueness. Only the
+// transaction-association change adds fields to an existing record, so it is
+// the only managed change with a preservation kind.
+const POCKET_REQUIRED_UNIQUE_INDEXES = {
+    pocketdefinitions: { normalizedName: 1 },
+    pocketassignments: { pocketId: 1, budgetYear: 1, budgetMonth: 1 }
+};
+
+const POCKET_REQUIRED_SCHEMA_PATHS = {
+    pocketdefinitions: ['normalizedName', 'version', 'schemaVersion'],
+    pocketassignments: ['pocketId', 'budgetMonth', 'budgetYear', 'allocations', 'version', 'schemaVersion'],
+    transactions: ['pocketId']
+};
+
+const POCKET_PRESERVATION_KIND = {
+    transactionPocketAssociation: 'transactionAssociation'
+};
+
+function isPocketManagementVersion(migrationVersion) {
+    return migrationVersion === POCKET_MANAGEMENT_MIGRATION_VERSION;
+}
+
+// Unlike the all-or-nothing salary-cycle transform, the pocket-management
+// transform isolates unmappable groups: unambiguous groups still migrate while
+// every blocked group is retained untouched. Approval/execution therefore skip
+// blocked items instead of rejecting the whole preview.
+function allowsPartialExecution(migrationVersion) {
+    return isPocketManagementVersion(migrationVersion);
+}
+
+function requiredUniqueIndexesFor(migrationVersion) {
+    return isPocketManagementVersion(migrationVersion)
+        ? POCKET_REQUIRED_UNIQUE_INDEXES
+        : REQUIRED_UNIQUE_INDEXES;
+}
+
+function requiredSchemaPathsFor(migrationVersion) {
+    return isPocketManagementVersion(migrationVersion)
+        ? POCKET_REQUIRED_SCHEMA_PATHS
+        : REQUIRED_SCHEMA_PATHS;
+}
+
+function preservationKindFor(migrationVersion) {
+    return isPocketManagementVersion(migrationVersion)
+        ? POCKET_PRESERVATION_KIND
+        : PRESERVATION_KIND;
+}
 
 function sameIndexKeys(left, right) {
     return JSON.stringify(left) === JSON.stringify(right);
@@ -113,10 +177,13 @@ function expectedRecordMatches(current, expected) {
 
 function preservationChecks(items, preview) {
     const failures = [];
+    const kindMap = preservationKindFor(preview.migrationVersion);
     for (const item of approvedItems(items, preview)) {
-        const kind = PRESERVATION_KIND[item.changeType];
+        const kind = kindMap[item.changeType];
         if (!kind) continue;
-        const result = checkPreservation(item.before, item.after, kind);
+        const result = kind === 'transactionAssociation'
+            ? checkTransactionAssociationPreservation(item.before, item.after)
+            : checkPreservation(item.before, item.after, kind);
         if (!result.ok) {
             failures.push({
                 collectionName: item.collectionName,
@@ -173,21 +240,27 @@ function sourceInvariantFailures(records, timeZone) {
     return failures;
 }
 
-async function structuralChecks(models, records) {
+async function structuralChecks(models, records, migrationVersion) {
     const schemaFailures = [];
     const indexFailures = [];
     const checkedSchemas = [];
     const checkedIndexes = [];
+    const requiredSchemaPaths = requiredSchemaPathsFor(migrationVersion);
+    const requiredUniqueIndexes = requiredUniqueIndexesFor(migrationVersion);
 
     for (const [collectionName, model] of Object.entries(models || {})) {
         const schema = model?.schema;
         if (!schema) continue;
+        // Only collections that carry a structural contract for this migration
+        // version are inspected, so managed and legacy runs never cross-check
+        // each other's schema paths or indexes.
+        if (!requiredSchemaPaths[collectionName] && !requiredUniqueIndexes[collectionName]) continue;
         checkedSchemas.push(collectionName);
-        for (const path of REQUIRED_SCHEMA_PATHS[collectionName] || []) {
+        for (const path of requiredSchemaPaths[collectionName] || []) {
             if (!schema.path(path)) schemaFailures.push({ collectionName, path, reason: 'missing-schema-path' });
         }
 
-        const requiredIndex = REQUIRED_UNIQUE_INDEXES[collectionName];
+        const requiredIndex = requiredUniqueIndexes[collectionName];
         if (!requiredIndex) continue;
         const declared = typeof schema.indexes === 'function' ? schema.indexes() : [];
         const declaredMatch = declared.some(([keys, options]) =>
@@ -301,6 +374,15 @@ async function readSources(options = {}) {
         source[collectionName] = await readCollection(collectionName, options);
     }
     return source;
+}
+
+// Read a collection only when a model for it is available. Used to feed already
+// migrated managed documents back into the pocket-management transform so a
+// rerun over unchanged data proposes no duplicate definitions/assignments
+// (Requirement 12.12) without requiring the model in lightweight test adapters.
+async function readOptionalCollection(collectionName, { models = MODEL_BY_COLLECTION, session } = {}) {
+    if (!models || !models[collectionName]) return [];
+    return readCollection(collectionName, { models, session });
 }
 
 function sourceInput(source) {
@@ -629,12 +711,23 @@ async function createAndPersistPreview({
 } = {}) {
     const operator = requireOperator(actor);
     // Preview is dry-run for financial records, but the resulting lifecycle
-    // still promises an all-or-nothing execution. Reject standalone MongoDB
+    // still promises a transactional execution. Reject standalone MongoDB
     // deployments before persisting even preview metadata/items.
     await checkTransactionsSupported(connection);
+    const partial = allowsPartialExecution(migrationVersion);
     const source = await readSources({ models });
+    // The managed transform is idempotent: existing definitions/assignments are
+    // fed back so a rerun over unchanged data proposes no duplicates. Legacy
+    // salary-cycle previews never read managed collections.
+    const managedSources = partial
+        ? {
+            pocketDefinitions: await readOptionalCollection('pocketdefinitions', { models }),
+            pocketAssignments: await readOptionalCollection('pocketassignments', { models })
+        }
+        : {};
     const preview = createMigrationPreview({
         ...sourceInput(source),
+        ...managedSources,
         timeZone,
         migrationVersion,
         historicalReassignmentApproved: false,
@@ -660,7 +753,14 @@ async function createAndPersistPreview({
     const historicalOnlyBlockers = preview.blockers.length > 0 && preview.blockers.every(item =>
         item.blockingReason === 'HISTORICAL_REASSIGNMENT_APPROVAL_REQUIRED'
     );
-    const status = preview.blockers.length && !historicalOnlyBlockers ? 'Blocked' : 'Draft';
+    // Managed previews isolate blockers per group: they stay approvable as long
+    // as at least one executable item remains, and are only Blocked when there
+    // is nothing to migrate but blockers to report. Legacy previews keep their
+    // all-or-nothing rule (any non-historical blocker blocks the whole preview).
+    const hasExecutableItem = preview.items.some(item => item.executable === true);
+    const status = partial
+        ? (!hasExecutableItem && preview.blockers.length ? 'Blocked' : 'Draft')
+        : (preview.blockers.length && !historicalOnlyBlockers ? 'Blocked' : 'Draft');
     const header = {
         migrationVersion: preview.migrationVersion,
         timeZone: preview.timeZone,
@@ -689,11 +789,16 @@ async function approveMigrationPreview({
     const operator = requireOperator(actor);
     const { preview, items } = await loadPreview(previewId, { previewModel, itemModel });
     if (preview.status !== 'Draft') throw lifecycleApprovalError(preview);
+    const partial = allowsPartialExecution(preview.migrationVersion);
 
     // Blockers are evaluated before any source-version check so a blocked
     // preview can never be promoted merely because its source changed in a
-    // way that would otherwise produce a stale error.
-    if (items.some(item => !item.executable && item.blockingReason !== 'HISTORICAL_REASSIGNMENT_APPROVAL_REQUIRED')) {
+    // way that would otherwise produce a stale error. Managed previews isolate
+    // blocked groups instead of rejecting the whole preview, so their per-item
+    // blockers are retained (untouched) rather than gating approval; a fully
+    // blocked managed preview is already Blocked and rejected above.
+    if (!partial &&
+        items.some(item => !item.executable && item.blockingReason !== 'HISTORICAL_REASSIGNMENT_APPROVAL_REQUIRED')) {
         throw new MigrationConflictError('MIGRATION_PREVIEW_BLOCKED', { previewId: String(preview._id) });
     }
 
@@ -771,7 +876,12 @@ async function executeMigrationPreview({
     if (hasHistoricalChanges(items) && preview.historicalReassignmentApproved !== true) {
         throw new MigrationConflictError('MIGRATION_APPROVAL_REQUIRED', { historicalReassignmentApprovalRequired: true });
     }
-    if (items.some(item => !isApprovedItem(item, preview))) {
+    // Legacy previews are all-or-nothing: any non-executable item blocks
+    // execution. Managed previews commit only their executable (approved) items
+    // and leave every blocked group untouched, so a mix of executable and
+    // blocked items is expected and must not reject the whole execution.
+    if (!allowsPartialExecution(preview.migrationVersion) &&
+        items.some(item => !isApprovedItem(item, preview))) {
         throw new MigrationConflictError('MIGRATION_PREVIEW_BLOCKED', { previewId: String(preview._id) });
     }
 
@@ -836,7 +946,7 @@ async function verifyMigrationPreview({
     routeChecks,
     routeReadableChecks
 } = {}) {
-    requireOperator(actor);
+    const verifierId = requireOperator(actor);
     const { preview, items } = await loadPreview(previewId, { previewModel, itemModel });
     if (!['Applied', 'RolledBack'].includes(preview.status)) {
         throw new MigrationConflictError('MIGRATION_APPROVAL_REQUIRED', { previewId: String(preview._id), status: preview.status });
@@ -870,7 +980,7 @@ async function verifyMigrationPreview({
         collectionName: entry.item.collectionName,
         value: entry.value
     }));
-    const structural = await structuralChecks(models, expectedRecords);
+    const structural = await structuralChecks(models, expectedRecords, preview.migrationVersion);
     const preservation = preservationChecks(items, preview);
     const source = await readSources({ models });
     const invariantRecords = SOURCE_COLLECTIONS.flatMap(collectionName =>
@@ -905,6 +1015,39 @@ async function verifyMigrationPreview({
     const ok = mismatches.length === 0 && itemMismatches.length === 0 &&
         structuralFailures.length === 0 && preservation.length === 0 &&
         invariants.length === 0 && routes.ok;
+
+    // Record a compact, machine-readable verification summary on the immutable
+    // preview header so activation tooling can gate on the latest outcome. The
+    // summary intentionally stores only counts and boolean outcomes; it never
+    // stores record values, names, emoji, amounts, or notes. Persistence is
+    // best-effort and never changes the verification result the caller sees.
+    try {
+        await executeQuery(previewModel.updateOne(
+            { _id: preview._id },
+            {
+                $set: {
+                    verifiedBy: verifierId,
+                    verifiedAt: new Date(),
+                    verification: {
+                        ok,
+                        status: preview.status,
+                        checked: expectedItems.length,
+                        appliedItemsChecked: appliedItems.length,
+                        mismatchCount: mismatches.length,
+                        itemMismatchCount: itemMismatches.length,
+                        preservationOk: preservation.length === 0,
+                        schemaOk: structural.schemaFailures.length === 0,
+                        indexesOk: structural.indexFailures.length === 0,
+                        invariantsOk: invariants.length === 0,
+                        routesOk: routes.ok
+                    }
+                }
+            }
+        ));
+    } catch {
+        // A verification-summary write failure must not mask the verification
+        // result itself; the returned outcome remains authoritative.
+    }
     return {
         previewId: preview._id,
         status: preview.status,
@@ -1014,10 +1157,131 @@ async function rollbackMigrationPreview({
     }, { transactionOptions });
 }
 
+/**
+ * Compare the managed and legacy read paths across every Budget_Month and
+ * report the guarded dual-read outcome: how many pocket identities are served
+ * by a managed assignment, how many still fall back to a legacy allocation
+ * because they have not been migrated, and any ambiguous double source where a
+ * managed assignment and its legacy allocation disagree.
+ *
+ * This is a read-only verification helper. It never mutates source or managed
+ * data. The rollout verification tooling uses its counts to fail closed on a
+ * nonzero legacy fallback (before legacy retirement) or any ambiguity (before
+ * final activation), exactly matching the reader adapters used at request time
+ * by the budget, transaction, and reporting services.
+ */
+async function reconcileDualReadSources(options = {}) {
+    const { models = MODEL_BY_COLLECTION, session, observer = null } = options;
+    const tracker = createFallbackTracker({ observer });
+
+    const [assignments, monthly, weekly, cadences] = await Promise.all([
+        readOptionalCollection('pocketassignments', { models, session }),
+        readOptionalCollection('pocketbudgets', { models, session }),
+        readOptionalCollection('weeklyallocations', { models, session }),
+        readOptionalCollection('pocketbudgetcadences', { models, session })
+    ]);
+
+    const scopeKey = (year, month) => `${year}-${month}`;
+
+    // Managed assignments per Budget_Month scope.
+    const managedByScope = new Map();
+    for (const doc of assignments) {
+        const dto = typeof doc?.toDTO === 'function' ? doc.toDTO() : plainRecord(doc);
+        const key = scopeKey(dto.budgetYear, dto.budgetMonth);
+        if (!managedByScope.has(key)) managedByScope.set(key, []);
+        managedByScope.get(key).push({
+            pocketId: String(dto.pocketId),
+            budgetYear: dto.budgetYear,
+            budgetMonth: dto.budgetMonth,
+            allocationTotal: Number.isFinite(dto.allocationTotal) ? dto.allocationTotal : 0
+        });
+    }
+
+    // Legacy allocations per Budget_Month scope, aggregated per pocket name so a
+    // cadence choice selects either the monthly amount or the weekly sum.
+    const legacyByScope = new Map();
+    const legacyBucket = (year, month) => {
+        const key = scopeKey(year, month);
+        if (!legacyByScope.has(key)) legacyByScope.set(key, new Map());
+        return legacyByScope.get(key);
+    };
+    const legacyEntry = (bucket, name) => {
+        if (!bucket.has(name)) {
+            bucket.set(name, { name, cadence: 'Monthly', monthly: 0, weekly: 0 });
+        }
+        return bucket.get(name);
+    };
+    for (const record of cadences) {
+        const entry = legacyEntry(legacyBucket(record.year, record.month), record.pocket);
+        entry.cadence = record.cadence === 'Weekly' ? 'Weekly' : 'Monthly';
+    }
+    for (const record of monthly) {
+        legacyEntry(legacyBucket(record.year, record.month), record.pocket).monthly += record.budget || 0;
+    }
+    for (const record of weekly) {
+        legacyEntry(legacyBucket(record.year, record.month), record.pocket).weekly += record.budget || 0;
+    }
+
+    const byScope = [];
+    const scopes = new Set([...managedByScope.keys(), ...legacyByScope.keys()]);
+    for (const scope of scopes) {
+        const managed = managedByScope.get(scope) || [];
+        const legacyBucketMap = legacyByScope.get(scope) || new Map();
+        const budgetMonthKey = (() => {
+            const source = managed[0] || null;
+            if (source) {
+                return `${String(source.budgetYear).padStart(4, '0')}-${String(source.budgetMonth).padStart(2, '0')}`;
+            }
+            const [year, month] = scope.split('-');
+            return `${String(year).padStart(4, '0')}-${String(Number(month)).padStart(2, '0')}`;
+        })();
+
+        const legacy = [...legacyBucketMap.values()].map(entry => ({
+            pocketId: String(pocketDefinitionId(normalizePocketName(typeof entry.name === 'string' ? entry.name : '').normalizedName)),
+            pocket: entry.name,
+            activeAllocation: entry.cadence === 'Weekly' ? entry.weekly : entry.monthly
+        }));
+
+        const managedTotalById = new Map(managed.map(item => [item.pocketId, item.allocationTotal]));
+        const before = { fallback: tracker.counts.fallback, ambiguous: tracker.counts.ambiguous };
+        reconcilePocketSources({
+            managed,
+            legacy,
+            keyOf: (record) => String(record.pocketId),
+            isEquivalent: (managedRecord, legacyRecord) =>
+                (managedTotalById.get(String(managedRecord.pocketId)) ?? 0) === (legacyRecord.activeAllocation ?? 0),
+            tracker,
+            metaOf: (record) => ({
+                source: 'legacy',
+                collection: 'pocketbudgets',
+                budgetMonth: budgetMonthKey,
+                pocketId: record.pocketId
+            })
+        });
+        byScope.push({
+            budgetMonth: budgetMonthKey,
+            managedCount: managed.length,
+            legacyCount: legacy.length,
+            fallbackCount: tracker.counts.fallback - before.fallback,
+            ambiguousCount: tracker.counts.ambiguous - before.ambiguous
+        });
+    }
+
+    return {
+        ...tracker.summary(),
+        events: tracker.events,
+        byScope
+    };
+}
+
 module.exports = {
+    reconcileDualReadSources,
     DEFAULT_MIGRATION_VERSION,
     DEFAULT_MAX_PREVIEW_ITEMS,
     DEFAULT_MAX_PREVIEW_BYTES,
+    POCKET_MANAGEMENT_MIGRATION_VERSION,
+    POCKET_REQUIRED_SCHEMA_PATHS,
+    POCKET_REQUIRED_UNIQUE_INDEXES,
     REQUIRED_SCHEMA_PATHS,
     REQUIRED_UNIQUE_INDEXES,
     SOURCE_COLLECTIONS,

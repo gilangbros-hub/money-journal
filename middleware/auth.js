@@ -40,10 +40,23 @@ function requireSalaryCycleFeature(req, res, next) {
     return next(new FeatureDisabledError());
 }
 
+/**
+ * Gate the managed Pocket Management surface (page and APIs) on the primary,
+ * disabled-by-default `POCKET_MANAGEMENT_ENABLED` flag. Managed routes must be
+ * unavailable while the flag is false; the service enforces the same rule as
+ * defense in depth. The distinct feature name yields the pocket-management
+ * feature-disabled code so clients can tell it apart from salary-cycle.
+ */
+function requirePocketManagementFeature(req, res, next) {
+    if (req.app?.locals?.configuration?.pocketManagementEnabled === true) return next();
+    return next(new FeatureDisabledError('pocket management'));
+}
+
 module.exports = {
     authLimiter,
     isApiRequest,
     requireAuthenticated,
     requireWife,
-    requireSalaryCycleFeature
+    requireSalaryCycleFeature,
+    requirePocketManagementFeature
 };

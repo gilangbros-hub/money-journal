@@ -125,10 +125,20 @@ function normalizeSourceBreakdowns(sourceBreakdowns, amount, field = 'sourceBrea
         }
         pockets.add(pocket);
 
-        return {
+        const normalizedShare = {
             pocket,
             amount: validateShareAmount(share.amount, `${field}.${index}.amount`)
         };
+
+        // Managed immutable Pocket_Identifier for the share is preserved only
+        // when the caller supplies it, so legacy split payloads keep their exact
+        // `{ pocket, amount }` shape while managed writes carry the id that
+        // TransactionService validates against the Budget_Month assignment.
+        if (share.pocketId !== undefined && share.pocketId !== null) {
+            normalizedShare.pocketId = validateIdentifier(share.pocketId, `${field}.${index}.pocketId`);
+        }
+
+        return normalizedShare;
     });
 
     const total = normalized.reduce((sum, share) => sum + BigInt(share.amount), 0n);
@@ -146,7 +156,7 @@ function normalizeSourceBreakdowns(sourceBreakdowns, amount, field = 'sourceBrea
  * Normalize the source representation without falling back to single-pocket
  * mode when a caller supplied a malformed multi-pocket payload.
  */
-function normalizeTransactionSource({ sourceType, pocket, sourceBreakdowns, amount }) {
+function normalizeTransactionSource({ sourceType, pocket, pocketId, sourceBreakdowns, amount }) {
     const hasBreakdowns = sourceBreakdowns !== undefined && sourceBreakdowns !== null;
     const effectiveSourceType = sourceType === undefined || sourceType === null
         ? (hasBreakdowns && Array.isArray(sourceBreakdowns) && sourceBreakdowns.length > 0 ? 'multi' : 'single')
@@ -157,6 +167,9 @@ function normalizeTransactionSource({ sourceType, pocket, sourceBreakdowns, amou
             validatePocket(pocket);
         }
         const breakdowns = normalizeSourceBreakdowns(sourceBreakdowns, amount);
+        // A multi-pocket record carries its managed identifiers on the shares;
+        // the top-level `pocket`/`pocketId` remain representative legacy/compat
+        // projections and are never the authority for split attribution.
         return {
             sourceType: 'multi',
             pocket: breakdowns[0].pocket,
@@ -172,11 +185,20 @@ function normalizeTransactionSource({ sourceType, pocket, sourceBreakdowns, amou
         throw invalid('sourceBreakdowns', 'sourceBreakdowns are only valid for multi-pocket transactions.');
     }
 
-    return {
+    const single = {
         sourceType: 'single',
         pocket: validatePocket(pocket),
         sourceBreakdowns: []
     };
+
+    // Preserve the managed single-pocket identifier only when supplied so
+    // legacy single-pocket payloads keep their exact shape; TransactionService
+    // validates the id against the Budget_Month assignment when present.
+    if (pocketId !== undefined && pocketId !== null) {
+        single.pocketId = validateIdentifier(pocketId, 'pocketId');
+    }
+
+    return single;
 }
 
 function validateExpenseDate(value, field = 'expenseDate') {

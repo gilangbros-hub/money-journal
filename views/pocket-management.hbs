@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{> head}}
+    <title>Pocket Management</title>
+</head>
+
+<body>
+    <!--
+      Pocket Management shell (Task 6.1).
+      Server-rendered data carries ONLY actor capabilities and feature state.
+      Live pocket definitions, assignment setup, weeks, and summaries are loaded
+      from the managed APIs by the browser module delivered in Task 6.2
+      (/js/pocket-management.js). DOM order equals the visible workflow order at
+      every breakpoint (Req 11.5, 11.15, 11.17).
+    -->
+    <div class="page-container journal-shell" id="pocketManagementRoot" data-pocket-management
+        data-can-edit="{{canEdit}}" data-role="{{role}}" data-feature-enabled="{{pocketManagementEnabled}}"
+        data-dual-write-enabled="{{pocketManagementDualWriteEnabled}}">
+
+        <!--
+          Capability / feature-flag bootstrap. The client reads these
+          server-authoritative values without a round trip. Booleans are emitted
+          unquoted so they parse as JSON booleans; role is a quoted string.
+        -->
+        <script id="pocketManagementBootstrap" type="application/json">
+        {
+            "canEdit": {{#if canEdit}}true{{else}}false{{/if}},
+            "role": "{{role}}",
+            "pocketManagementEnabled": {{#if pocketManagementEnabled}}true{{else}}false{{/if}},
+            "pocketManagementDualWriteEnabled": {{#if pocketManagementDualWriteEnabled}}true{{else}}false{{/if}}
+        }
+        </script>
+
+        <!-- Header: single primary page heading (Req 11.1) -->
+        <header class="app-header">
+            <div onclick="window.location.href='/check-pockets'" class="cursor-pointer">
+                <p class="journal-eyebrow"><a href="/check-pockets"
+                        style="color: inherit; text-decoration: none;">← Back</a></p>
+                <h1 class="page-title page-title-ledger">Pocket Management</h1>
+            </div>
+            <div class="user-info" onclick="toggleMenu()">
+                <span class="text-sm font-semibold" style="color: var(--journal-soft-ink);">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
+            </div>
+            <div id="userMenu" class="user-menu"
+                style="background: var(--journal-panel); border: 1px solid var(--journal-line);">
+                <a href="/profile" style="color: var(--journal-ink);">Edit Profile</a>
+                <a href="/logout" class="logout" style="color: var(--journal-danger);">Logout</a>
+            </div>
+        </header>
+
+        <!-- Role and server-state notices -->
+        {{#unless canEdit}}
+        <div class="bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2 border border-amber/30"
+            role="status">
+            <span aria-hidden="true">👁️</span> View-only mode. Only Wife can create, edit, assign, archive, or remove
+            pockets.
+        </div>
+        {{/unless}}
+        {{#unless pocketManagementEnabled}}
+        <div id="featureDisabledNotice"
+            class="bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2 border border-amber/30"
+            role="status">
+            <span aria-hidden="true">🚧</span> Pocket Management is not active yet. Managed pocket data is unavailable
+            until this feature is enabled.
+        </div>
+        {{/unless}}
+
+        <!--
+          Global screen-reader status + error regions (Req 11.7–11.10, 11.16).
+          The client announces pending / success / failure and top-level errors
+          here. Status is polite; errors are assertive.
+        -->
+        <div class="sr-only" id="pocketGlobalStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div class="sr-only" id="pocketGlobalError" role="alert" aria-live="assertive" aria-atomic="true"></div>
+        <div id="pocketGlobalErrorBanner"
+            class="hidden bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center justify-between gap-2 border border-amber/30">
+            <span id="pocketGlobalErrorMessage"></span>
+            <button type="button" class="btn-modal-cancel" id="pocketGlobalRetry" data-global-retry hidden>Retry</button>
+        </div>
+
+        <!-- =====================================================================
+             SECTION 1 — CREATE POCKET (Req 11.1, 11.3)
+             ===================================================================== -->
+        <section class="mb-6" aria-labelledby="createPocketHeading">
+            <div class="section-header">
+                <h2 class="section-title" id="createPocketHeading" style="color: var(--journal-ink);">Create pocket</h2>
+            </div>
+
+            {{#if canEdit}}
+            <div class="journal-hero-card">
+                <form id="pocketCreateForm" novalidate aria-describedby="createPocketStatus">
+                    <!-- Field order per Req 11.3: Emoji, Name, Cadence, Default amount -->
+                    <div class="mb-4">
+                        <label class="text-xs font-semibold text-text-secondary block mb-1" for="createPocketEmoji">Emoji</label>
+                        <input type="text" id="createPocketEmoji" name="emoji" inputmode="text" autocomplete="off"
+                            maxlength="8" placeholder="🍽️"
+                            class="w-full rounded-xl bg-bg-tertiary p-3 text-lg text-text-primary outline-none"
+                            aria-describedby="createPocketEmojiHint createPocketEmojiError" aria-invalid="false">
+                        <p class="text-[11px] text-text-muted mt-1" id="createPocketEmojiHint">Exactly one emoji.</p>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden" id="createPocketEmojiError"
+                            role="alert"></p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs font-semibold text-text-secondary block mb-1" for="createPocketName">Name</label>
+                        <input type="text" id="createPocketName" name="name" autocomplete="off" maxlength="50"
+                            placeholder="Groceries"
+                            class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
+                            aria-describedby="createPocketNameHint createPocketNameError" aria-invalid="false">
+                        <p class="text-[11px] text-text-muted mt-1" id="createPocketNameHint">1–50 characters.</p>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden" id="createPocketNameError"
+                            role="alert"></p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs font-semibold text-text-secondary block mb-1" for="createPocketCadence">Cadence</label>
+                        <select id="createPocketCadence" name="cadence"
+                            class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
+                            aria-describedby="createPocketCadenceError" aria-invalid="false">
+                            <option value="Monthly">Monthly</option>
+                            <option value="Weekly">Weekly</option>
+                        </select>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden" id="createPocketCadenceError"
+                            role="alert"></p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs font-semibold text-text-secondary block mb-1" for="createPocketDefaultAmount">Default amount</label>
+                        <div class="flex items-center bg-bg-tertiary rounded-xl p-3">
+                            <span class="text-sm font-bold text-text-primary mr-2" aria-hidden="true">Rp</span>
+                            <input type="number" id="createPocketDefaultAmount" name="defaultAmount" min="0"
+                                max="999999999999" step="1" inputmode="numeric" placeholder="0"
+                                class="border-none bg-transparent text-sm font-bold text-text-primary w-full outline-none"
+                                aria-describedby="createPocketDefaultAmountHint createPocketDefaultAmountError"
+                                aria-invalid="false">
+                        </div>
+                        <p class="text-[11px] text-text-muted mt-1" id="createPocketDefaultAmountHint">Whole rupiah, 0 to
+                            999,999,999,999.</p>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden"
+                            id="createPocketDefaultAmountError" role="alert"></p>
+                    </div>
+
+                    <button type="submit" class="btn-modal-save w-full" id="pocketCreateSubmit"
+                        data-mutation-control>Create pocket</button>
+                    <p class="text-xs text-text-muted mt-2" id="createPocketStatus" role="status" aria-live="polite"></p>
+                </form>
+            </div>
+            {{else}}
+            <div class="journal-hero-card">
+                <p class="text-sm" style="color: var(--journal-soft-ink);">Only a Wife-role user can create pockets.</p>
+            </div>
+            {{/if}}
+        </section>
+
+        <!-- =====================================================================
+             SECTION 2 — MANAGE POCKETS (Req 11.1, 11.2, 11.11; Req 4 lifecycle)
+             ===================================================================== -->
+        <section class="mb-6" aria-labelledby="managePocketsHeading">
+            <div class="section-header flex items-center justify-between">
+                <h2 class="section-title" id="managePocketsHeading" style="color: var(--journal-ink);">Manage pockets</h2>
+                <label class="text-xs font-semibold text-text-secondary flex items-center gap-2">
+                    <input type="checkbox" id="includeArchivedToggle" data-include-archived>
+                    Show archived
+                </label>
+            </div>
+
+            <!-- Active pockets -->
+            <h3 class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">Active pockets</h3>
+            <div class="journal-group-rows mb-4" id="activePocketList" data-active-pocket-list aria-live="polite"
+                aria-busy="true">
+                <p class="text-center py-5" style="color: var(--journal-soft-ink);">Loading pockets…</p>
+            </div>
+
+            <!-- Empty state: zero active pockets (Req 11.11) -->
+            <div id="activePocketEmptyState" class="journal-hero-card text-center hidden" data-empty-state hidden>
+                <p class="text-sm mb-3" style="color: var(--journal-soft-ink);">You have no active pockets yet.</p>
+                {{#if canEdit}}
+                <button type="button" class="btn-modal-save" id="createFirstPocketBtn" data-create-first-pocket>Create
+                    your first pocket</button>
+                {{/if}}
+            </div>
+
+            <!-- Archived pockets (shown only when the archived toggle is on) -->
+            <div id="archivedPocketsRegion" class="hidden" data-archived-region hidden>
+                <h3 class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">Archived pockets</h3>
+                <div class="journal-group-rows mb-4" id="archivedPocketList" data-archived-pocket-list
+                    aria-live="polite">
+                    <p class="text-center py-5" style="color: var(--journal-soft-ink);">No archived pockets.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- =====================================================================
+             SECTION 3 — SET UP BUDGET MONTH (Req 11.5, 11.6, 11.12; Req 5/6)
+             Visible + focus order: month → pockets → amount mode → allocation
+             entry → summary → confirm.
+             ===================================================================== -->
+        <section class="mb-6" aria-labelledby="setupHeading">
+            <div class="section-header">
+                <h2 class="section-title" id="setupHeading" style="color: var(--journal-ink);">Set up Budget Month</h2>
+            </div>
+
+            <form id="assignmentSetupForm" novalidate aria-describedby="assignmentSetupStatus">
+                <!-- Step 1: Select Budget Month -->
+                <div class="journal-hero-card mb-4">
+                    <h3 class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">1. Select Budget Month</h3>
+                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="setupBudgetMonth">Budget
+                        Month</label>
+                    <select id="setupBudgetMonth" name="month" data-setup-month
+                        class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
+                        aria-describedby="setupBudgetMonthHint setupBudgetMonthError" aria-invalid="false">
+                        <option value="">Loading editable months…</option>
+                    </select>
+                    <p class="text-[11px] text-text-muted mt-1" id="setupBudgetMonthHint">Only the active and next open
+                        Budget Month can be edited.</p>
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="setupBudgetMonthError"
+                        role="alert"></p>
+
+                    <!-- Unassigned-pocket count for the selected month (Req 5.16, 11.12) -->
+                    <p class="text-xs mt-3" style="color: var(--journal-soft-ink);" data-unassigned-count
+                        aria-live="polite">Unassigned active pockets: <span id="unassignedCount">0</span></p>
+
+                    <!-- Zero-assignment view for the active month (Req 5.14, 5.15) -->
+                    <div id="zeroAssignmentState" class="mt-3 hidden" data-zero-assignment-state
+                        aria-live="polite" hidden>
+                        <p class="text-sm" style="color: var(--journal-soft-ink);">This Budget Month has
+                            <span data-assigned-count>0</span> assigned pockets and a combined allocation total of
+                            <span data-zero-total>Rp 0</span>.</p>
+                        {{#if canEdit}}
+                        <button type="button" class="btn-modal-save mt-3" id="startSetupBtn" data-start-setup>Start
+                            setup for this month</button>
+                        {{/if}}
+                    </div>
+                </div>
+
+                {{#if canEdit}}
+                <!-- Step 2: Select pockets -->
+                <fieldset class="journal-hero-card mb-4" aria-describedby="setupPocketSelectionError">
+                    <legend class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">2. Select pockets</legend>
+                    <p class="text-[11px] text-text-muted mb-3">Choose the active pockets to include this month. Each
+                        pocket is selected once.</p>
+                    <div id="setupPocketSelection" data-pocket-selection aria-live="polite">
+                        <p class="text-center py-4 text-sm" style="color: var(--journal-soft-ink);">Select a Budget
+                            Month to load available pockets.</p>
+                    </div>
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="setupPocketSelectionError"
+                        role="alert"></p>
+                </fieldset>
+
+                <!-- Step 3 + 4: Amount mode + allocation entry (per selected pocket) -->
+                <div class="journal-hero-card mb-4" aria-labelledby="setupAllocationHeading">
+                    <h3 class="text-sm font-semibold mb-2" id="setupAllocationHeading"
+                        style="color: var(--journal-ink);">3. Amount mode &amp; 4. Allocation entry</h3>
+                    <p class="text-[11px] text-text-muted mb-3">For each selected pocket choose <em>Use default</em> or
+                        <em>Customize</em>, then enter one monthly amount or one amount per ISO week.</p>
+                    <div id="setupAllocationEntry" data-allocation-entry aria-live="polite">
+                        <p class="text-center py-4 text-sm" style="color: var(--journal-soft-ink);">Selected pockets and
+                            their allocation controls appear here.</p>
+                    </div>
+                </div>
+
+                <!-- Step 5: Assignment Summary (Req 11.6, 5.10, 6.10) -->
+                <div class="journal-hero-card mb-4" aria-labelledby="assignmentSummaryHeading">
+                    <h3 class="text-sm font-semibold mb-2" id="assignmentSummaryHeading"
+                        style="color: var(--journal-ink);">5. Review summary</h3>
+                    <div id="assignmentSummary" data-assignment-summary aria-live="polite">
+                        <p class="text-sm" style="color: var(--journal-soft-ink);">Selected Budget Month:
+                            <span data-summary-month>—</span></p>
+                        <div id="assignmentSummaryRows" data-summary-rows class="mt-3"></div>
+                        <div class="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+                            <span class="text-sm font-semibold" style="color: var(--journal-ink);">Combined allocation
+                                total</span>
+                            <span class="text-sm font-bold text-text-primary" id="assignmentSummaryTotal"
+                                data-summary-total>Rp 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6: Confirm -->
+                <button type="submit" class="btn-modal-save w-full" id="assignmentConfirmBtn"
+                    data-mutation-control data-confirm-assignments>6. Confirm assignments</button>
+                <p class="text-xs text-text-muted mt-2" id="assignmentSetupStatus" role="status"
+                    aria-live="polite"></p>
+                {{else}}
+                <div class="journal-hero-card">
+                    <p class="text-sm" style="color: var(--journal-soft-ink);">Only a Wife-role user can configure
+                        assignments. Assigned pockets for the selected month are shown above.</p>
+                </div>
+                {{/if}}
+            </form>
+        </section>
+    </div>
+
+    <!-- =====================================================================
+         CLIENT TEMPLATES (populated by /js/pocket-management.js, Task 6.2)
+         ===================================================================== -->
+
+    <!-- Definition card (Req 11.2): emoji, name, cadence, rupiah default, status -->
+    <template id="pocketDefinitionCardTemplate">
+        <article class="bg-bg-secondary p-4 rounded-2xl shadow-card border border-border/50" data-pocket-card>
+            <header class="flex items-center justify-between gap-3 mb-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-2xl" data-pocket-emoji aria-hidden="true"></span>
+                    <h3 class="text-sm font-semibold text-text-primary truncate" data-pocket-name></h3>
+                </div>
+                <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-border/50"
+                    data-pocket-status>Active</span>
+            </header>
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                <div><dt class="text-text-muted">Cadence</dt>
+                    <dd class="font-semibold text-text-primary" data-pocket-cadence>Monthly</dd></div>
+                <div><dt class="text-text-muted">Default</dt>
+                    <dd class="font-semibold text-text-primary" data-pocket-default>Rp 0</dd></div>
+            </dl>
+            <div class="flex flex-wrap gap-2 mt-3" data-pocket-actions>
+                <button type="button" class="btn-modal-cancel" data-edit-pocket data-mutation-control>Edit</button>
+                <button type="button" class="btn-modal-cancel" data-archive-pocket data-mutation-control>Archive</button>
+                <button type="button" class="btn-modal-cancel hidden" data-restore-pocket data-mutation-control
+                    hidden>Restore</button>
+            </div>
+        </article>
+    </template>
+
+    <!-- Selection row for assignment setup (Req 5.3–5.4) -->
+    <template id="setupPocketSelectionRowTemplate">
+        <label class="flex items-center gap-3 py-2 border-b border-border/40" data-selection-row>
+            <input type="checkbox" data-select-pocket>
+            <span class="text-xl" data-pocket-emoji aria-hidden="true"></span>
+            <span class="text-sm text-text-primary" data-pocket-name></span>
+            <span class="text-[10px] uppercase tracking-wide text-primary ml-auto" data-pocket-cadence></span>
+        </label>
+    </template>
+
+    <!-- Amount-mode + allocation entry block for one selected pocket (Req 6.3–6.10) -->
+    <template id="setupAllocationBlockTemplate">
+        <fieldset class="border border-border/40 rounded-xl p-3 mb-3" data-allocation-block>
+            <legend class="text-sm font-semibold text-text-primary">
+                <span data-pocket-emoji aria-hidden="true"></span> <span data-pocket-name></span>
+                (<span data-pocket-cadence></span>)
+            </legend>
+            <div class="flex gap-4 my-2" role="radiogroup" data-amount-mode aria-label="Amount mode">
+                <label class="flex items-center gap-1.5 text-sm text-text-secondary">
+                    <input type="radio" name="amountMode" value="Use_Default" data-mode-default checked> Use default
+                </label>
+                <label class="flex items-center gap-1.5 text-sm text-text-secondary">
+                    <input type="radio" name="amountMode" value="Customize" data-mode-customize> Customize
+                </label>
+            </div>
+            <!-- Monthly allocation input -->
+            <div data-monthly-allocation>
+                <label class="text-xs font-semibold text-text-secondary block mb-1">Monthly allocation</label>
+                <div class="flex items-center bg-bg-tertiary rounded-xl p-2">
+                    <span class="text-sm font-bold text-text-primary mr-2" aria-hidden="true">Rp</span>
+                    <input type="number" min="0" max="999999999999" step="1" inputmode="numeric"
+                        class="border-none bg-transparent text-sm font-bold text-text-primary w-full outline-none"
+                        data-monthly-amount aria-invalid="false">
+                </div>
+                <p class="field-error text-xs text-journal-danger mt-1 hidden" data-monthly-error role="alert"></p>
+            </div>
+            <!-- Weekly allocation inputs (one per intersecting ISO week) -->
+            <div class="hidden" data-weekly-allocation hidden>
+                <p class="text-xs font-semibold text-text-secondary mb-1">Weekly allocations</p>
+                <div data-weekly-weeks></div>
+            </div>
+        </fieldset>
+    </template>
+
+    <!-- One ISO-week allocation input (Req 6.4, 6.10) -->
+    <template id="setupWeeklyInputTemplate">
+        <div class="mb-2" data-week-input>
+            <label class="text-xs text-text-secondary block mb-1" data-week-label>ISO week</label>
+            <div class="flex items-center bg-bg-tertiary rounded-xl p-2">
+                <span class="text-sm font-bold text-text-primary mr-2" aria-hidden="true">Rp</span>
+                <input type="number" min="0" max="999999999999" step="1" inputmode="numeric"
+                    class="border-none bg-transparent text-sm font-bold text-text-primary w-full outline-none"
+                    data-week-amount aria-invalid="false">
+            </div>
+            <p class="field-error text-xs text-journal-danger mt-1 hidden" data-week-error role="alert"></p>
+        </div>
+    </template>
+
+    <!-- One summary row (Req 11.6) -->
+    <template id="assignmentSummaryRowTemplate">
+        <div class="py-2 border-b border-border/40" data-summary-row>
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-sm text-text-primary">
+                    <span data-pocket-emoji aria-hidden="true"></span> <span data-pocket-name></span>
+                </span>
+                <span class="text-[10px] uppercase tracking-wide text-primary">
+                    <span data-pocket-cadence></span> · <span data-amount-mode></span>
+                </span>
+            </div>
+            <ul class="text-xs text-text-secondary mt-1" data-summary-allocations></ul>
+        </div>
+    </template>
+
+    <!-- =====================================================================
+         DIALOGS
+         ===================================================================== -->
+
+    {{#if canEdit}}
+    <!-- Edit pocket dialog (Req 11.4): prepopulated emoji, name, cadence, default -->
+    <div id="pocketEditModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="pocketEditTitle" hidden>
+        <div class="modal-card">
+            <h3 id="pocketEditTitle">Edit pocket</h3>
+            <form id="pocketEditForm" novalidate>
+                <input type="hidden" data-edit-pocket-id>
+                <input type="hidden" data-edit-pocket-version>
+                <div class="mb-3 text-left">
+                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="editPocketEmoji">Emoji</label>
+                    <input type="text" id="editPocketEmoji" name="emoji" maxlength="8" autocomplete="off"
+                        class="w-full rounded-xl bg-bg-tertiary p-3 text-lg text-text-primary outline-none"
+                        aria-describedby="editPocketEmojiError" aria-invalid="false">
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editPocketEmojiError"
+                        role="alert"></p>
+                </div>
+                <div class="mb-3 text-left">
+                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="editPocketName">Name</label>
+                    <input type="text" id="editPocketName" name="name" maxlength="50" autocomplete="off"
+                        class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
+                        aria-describedby="editPocketNameError" aria-invalid="false">
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editPocketNameError"
+                        role="alert"></p>
+                </div>
+                <div class="mb-3 text-left">
+                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="editPocketCadence">Cadence</label>
+                    <select id="editPocketCadence" name="cadence"
+                        class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
+                        aria-describedby="editPocketCadenceError" aria-invalid="false">
+                        <option value="Monthly">Monthly</option>
+                        <option value="Weekly">Weekly</option>
+                    </select>
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editPocketCadenceError"
+                        role="alert"></p>
+                </div>
+                <div class="mb-3 text-left">
+                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="editPocketDefaultAmount">Default amount</label>
+                    <div class="flex items-center bg-bg-tertiary rounded-xl p-3">
+                        <span class="text-sm font-bold text-text-primary mr-2" aria-hidden="true">Rp</span>
+                        <input type="number" id="editPocketDefaultAmount" name="defaultAmount" min="0"
+                            max="999999999999" step="1" inputmode="numeric"
+                            class="border-none bg-transparent text-sm font-bold text-text-primary w-full outline-none"
+                            aria-describedby="editPocketDefaultAmountError" aria-invalid="false">
+                    </div>
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editPocketDefaultAmountError"
+                        role="alert"></p>
+                </div>
+                <p class="text-xs text-text-muted mb-3" id="pocketEditStatus" role="status" aria-live="polite"></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-modal-cancel" data-edit-cancel>Cancel</button>
+                    <button type="submit" class="btn-modal-save" data-edit-save data-mutation-control>Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Archive confirmation dialog (Req 4.1–4.2): names pocket name + emoji -->
+    <div id="pocketArchiveModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="pocketArchiveTitle" aria-describedby="pocketArchiveMessage" hidden>
+        <div class="modal-card">
+            <h3 id="pocketArchiveTitle">Archive pocket?</h3>
+            <p class="text-sm text-text-secondary mb-4" id="pocketArchiveMessage">
+                Archive <span data-archive-emoji aria-hidden="true"></span>
+                <strong data-archive-name></strong>? It will leave active selection but its history is preserved.
+            </p>
+            <input type="hidden" data-archive-pocket-id>
+            <input type="hidden" data-archive-pocket-version>
+            <p class="text-xs text-text-muted mb-3" id="pocketArchiveStatus" role="status" aria-live="polite"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" data-archive-cancel>Cancel</button>
+                <button type="button" class="btn-modal-save" data-archive-confirm data-mutation-control>Archive</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment removal confirmation dialog (Req 7.5–7.6): names pocket + month -->
+    <div id="assignmentRemovalModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="assignmentRemovalTitle" aria-describedby="assignmentRemovalMessage" hidden>
+        <div class="modal-card">
+            <h3 id="assignmentRemovalTitle">Remove assignment?</h3>
+            <p class="text-sm text-text-secondary mb-4" id="assignmentRemovalMessage">
+                Remove <strong data-removal-name></strong> from <strong data-removal-month></strong>? Assignments with
+                attributed spending cannot be removed.
+            </p>
+            <input type="hidden" data-removal-pocket-id>
+            <input type="hidden" data-removal-month>
+            <input type="hidden" data-removal-version>
+            <p class="text-xs text-text-muted mb-3" id="assignmentRemovalStatus" role="status" aria-live="polite"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" data-removal-cancel>Cancel</button>
+                <button type="button" class="btn-modal-save" data-removal-confirm data-mutation-control>Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version-conflict recovery dialog (Req 10.7–10.9) -->
+    <div id="versionConflictModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="versionConflictTitle" aria-describedby="versionConflictMessage" hidden>
+        <div class="modal-card">
+            <h3 id="versionConflictTitle">This pocket changed elsewhere</h3>
+            <p class="text-sm text-text-secondary mb-4" id="versionConflictMessage">
+                Another update was saved after you opened this record. Keep the values you entered, or load the current
+                stored values.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" data-conflict-keep>Keep entered values</button>
+                <button type="button" class="btn-modal-save" data-conflict-load>Load current stored values</button>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+
+    <!-- Hidden capability values (parity with other pages' bootstrap inputs) -->
+    <input type="hidden" id="canEdit" value="{{canEdit}}">
+    <input type="hidden" id="userRole" value="{{role}}">
+    <input type="hidden" id="pocketManagementEnabled" value="{{pocketManagementEnabled}}">
+    <input type="hidden" id="pocketManagementDualWriteEnabled" value="{{pocketManagementDualWriteEnabled}}">
+    <div id="message" class="toast"></div>
+
+    {{> actionHub}}
+
+    <script src="/js/common.js"></script>
+    <script src="/js/pocket-management.js"></script>
+</body>
+
+</html>
