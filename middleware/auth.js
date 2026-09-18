@@ -72,6 +72,15 @@ function requireExpenseTypeManagementFeature(req, res, next) {
 function requireTelegramWebhookSecret(req, res, next) {
     const configured = req.app?.locals?.configuration?.telegramWebhookSecret;
     const provided = req.get('X-Telegram-Bot-Api-Secret-Token');
+    // Temporary diagnostic while chasing a persistent 401 in production.
+    // Lengths and presence only -- never the actual secret values -- so this
+    // is safe to leave in Vercel's runtime logs.
+    console.log('[telegram-webhook-auth]', {
+        configuredPresent: Boolean(configured),
+        configuredLength: configured ? configured.length : 0,
+        providedPresent: Boolean(provided),
+        providedLength: provided ? provided.length : 0
+    });
     if (!configured || !provided) return next(new AuthenticationError());
 
     const configuredBuffer = Buffer.from(configured);
