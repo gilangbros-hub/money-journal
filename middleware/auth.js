@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('node:crypto');
 const rateLimit = require('express-rate-limit');
 const { AuthenticationError, AuthorizationError, FeatureDisabledError } = require('../utils/domainErrors');
 
@@ -60,6 +61,27 @@ function requireExpenseTypeManagementFeature(req, res, next) {
     return next(new FeatureDisabledError('expense type management'));
 }
 
+/**
+ * The Telegram webhook is a public, unauthenticated URL by necessity (Telegram
+ * calls it directly, with no cookie or session). The one thing standing
+ * between it and anyone on the internet is the secret token Telegram itself
+ * echoes back on every delivery, set once via the bot's `setWebhook` call and
+ * compared here on every request — never logged, and compared with a
+ * constant-time check so response timing can't leak it.
+ */
+function requireTelegramWebhookSecret(req, res, next) {
+    const configured = req.app?.locals?.configuration?.telegramWebhookSecret;
+    const provided = req.get('X-Telegram-Bot-Api-Secret-Token');
+    if (!configured || !provided) return next(new AuthenticationError());
+
+    const configuredBuffer = Buffer.from(configured);
+    const providedBuffer = Buffer.from(provided);
+    const matches = configuredBuffer.length === providedBuffer.length
+        && crypto.timingSafeEqual(configuredBuffer, providedBuffer);
+    if (!matches) return next(new AuthenticationError());
+    return next();
+}
+
 module.exports = {
     authLimiter,
     isApiRequest,
@@ -67,5 +89,6 @@ module.exports = {
     requireWife,
     requireSalaryCycleFeature,
     requirePocketManagementFeature,
-    requireExpenseTypeManagementFeature
+    requireExpenseTypeManagementFeature,
+    requireTelegramWebhookSecret
 };

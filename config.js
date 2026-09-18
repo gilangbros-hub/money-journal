@@ -6,6 +6,7 @@ const FEATURE_FLAG_ENV_NAME = 'SALARY_CYCLE_BUDGETING_ENABLED';
 const POCKET_MANAGEMENT_FLAG_ENV_NAME = 'POCKET_MANAGEMENT_ENABLED';
 const POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME = 'POCKET_MANAGEMENT_DUAL_WRITE';
 const EXPENSE_TYPE_MANAGEMENT_FLAG_ENV_NAME = 'EXPENSE_TYPE_MANAGEMENT_ENABLED';
+const TELEGRAM_BOT_FLAG_ENV_NAME = 'TELEGRAM_BOT_ENABLED';
 const ENABLED_FLAG_VALUES = new Set(['1', 'true', 'yes', 'on']);
 
 function invalidTimeZoneError(message, cause) {
@@ -86,6 +87,15 @@ function parseExpenseTypeManagementFeatureFlag(value) {
     return parseFeatureFlag(value);
 }
 
+/**
+ * The Telegram bot webhook is disabled by default: without an explicit flag,
+ * a live TELEGRAM_BOT_TOKEN sitting in the environment (e.g. mid-setup)
+ * never turns the public webhook route on by accident.
+ */
+function parseTelegramBotFeatureFlag(value) {
+    return parseFeatureFlag(value);
+}
+
 function createConfiguration(environment = process.env) {
     const configuredTimeZone = environment.HOUSEHOLD_TIME_ZONE;
     const householdTimeZone = validateHouseholdTimeZone(
@@ -105,12 +115,26 @@ function createConfiguration(environment = process.env) {
     const expenseTypeManagementEnabled = parseExpenseTypeManagementFeatureFlag(
         environment[EXPENSE_TYPE_MANAGEMENT_FLAG_ENV_NAME]
     );
+    const telegramBotEnabled = parseTelegramBotFeatureFlag(
+        environment[TELEGRAM_BOT_FLAG_ENV_NAME]
+    );
+    const telegramBotToken = typeof environment.TELEGRAM_BOT_TOKEN === 'string'
+        ? environment.TELEGRAM_BOT_TOKEN.trim()
+        : '';
+    const telegramWebhookSecret = typeof environment.TELEGRAM_WEBHOOK_SECRET === 'string'
+        ? environment.TELEGRAM_WEBHOOK_SECRET.trim()
+        : '';
+    // Display-only (e.g. "message @MoneyJournalBot"), never used for auth.
+    const telegramBotUsername = typeof environment.TELEGRAM_BOT_USERNAME === 'string'
+        ? environment.TELEGRAM_BOT_USERNAME.trim().replace(/^@/, '')
+        : '';
 
     const featureFlags = Object.freeze({
         salaryCycleBudgeting: salaryCycleBudgetingEnabled,
         pocketManagement: pocketManagementEnabled,
         pocketManagementDualWrite: pocketManagementDualWriteEnabled,
-        expenseTypeManagement: expenseTypeManagementEnabled
+        expenseTypeManagement: expenseTypeManagementEnabled,
+        telegramBot: telegramBotEnabled
     });
 
     return Object.freeze({
@@ -119,6 +143,13 @@ function createConfiguration(environment = process.env) {
         pocketManagementEnabled,
         pocketManagementDualWriteEnabled,
         expenseTypeManagementEnabled,
+        // The bot is only truly usable once the flag is on AND a token is
+        // configured; callers that need "should the webhook actually do
+        // anything" should check both (see routes/telegram.js).
+        telegramBotEnabled,
+        telegramBotToken,
+        telegramWebhookSecret,
+        telegramBotUsername,
         featureFlags
     });
 }
@@ -129,10 +160,12 @@ module.exports = {
     POCKET_MANAGEMENT_FLAG_ENV_NAME,
     POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME,
     EXPENSE_TYPE_MANAGEMENT_FLAG_ENV_NAME,
+    TELEGRAM_BOT_FLAG_ENV_NAME,
     ConfigurationError,
     createConfiguration,
     parseSalaryCycleFeatureFlag,
     parsePocketManagementFeatureFlag,
     parseExpenseTypeManagementFeatureFlag,
+    parseTelegramBotFeatureFlag,
     validateHouseholdTimeZone
 };

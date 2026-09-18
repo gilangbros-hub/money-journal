@@ -129,7 +129,10 @@ exports.getProfile = async (req, res) => {
         res.render('profile', {
             username: user.username,
             currentAvatar: user.avatar || '👤',
-            currentRole: user.role || 'Self'
+            currentRole: user.role || 'Self',
+            telegramLinked: Boolean(user.telegramChatId),
+            telegramBotEnabled: req.app?.locals?.configuration?.telegramBotEnabled === true,
+            telegramBotUsername: req.app?.locals?.configuration?.telegramBotUsername || ''
         });
     } catch (error) {
         res.redirect('/log-spending');

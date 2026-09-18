@@ -82,3 +82,27 @@ test('expense type management flag defaults to disabled and enables only on a re
     const unexpected = createConfiguration({ EXPENSE_TYPE_MANAGEMENT_ENABLED: 'unexpected' });
     assert.equal(unexpected.expenseTypeManagementEnabled, false);
 });
+
+test('telegram bot flag defaults to disabled and enables only on a recognized truthy value; token/secret/username pass through as-is', () => {
+    const disabled = createConfiguration({});
+    assert.equal(disabled.telegramBotEnabled, false);
+    assert.equal(disabled.featureFlags.telegramBot, false);
+    assert.equal(disabled.telegramBotToken, '');
+    assert.equal(disabled.telegramWebhookSecret, '');
+    assert.equal(disabled.telegramBotUsername, '');
+
+    const enabled = createConfiguration({
+        TELEGRAM_BOT_ENABLED: 'true',
+        TELEGRAM_BOT_TOKEN: ' 123:ABC ',
+        TELEGRAM_WEBHOOK_SECRET: ' shh ',
+        TELEGRAM_BOT_USERNAME: '@MoneyJournalBot'
+    });
+    assert.equal(enabled.telegramBotEnabled, true);
+    assert.equal(enabled.featureFlags.telegramBot, true);
+    assert.equal(enabled.telegramBotToken, '123:ABC');
+    assert.equal(enabled.telegramWebhookSecret, 'shh');
+    assert.equal(enabled.telegramBotUsername, 'MoneyJournalBot');
+
+    const unexpected = createConfiguration({ TELEGRAM_BOT_ENABLED: 'unexpected' });
+    assert.equal(unexpected.telegramBotEnabled, false);
+});

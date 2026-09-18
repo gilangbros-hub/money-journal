@@ -56,10 +56,38 @@
                 Save Changes
             </button>
         </form>
+
+        {{#if telegramBotEnabled}}
+        <div class="journal-surface mt-5" style="padding: 24px;" id="telegramLinkCard" data-telegram-linked="{{telegramLinked}}">
+            <div class="journal-metric-label mb-3" style="font-size: 11px;">TELEGRAM BOT</div>
+            {{#if telegramLinked}}
+            <p class="text-sm mb-4" style="color: var(--journal-ink);">
+                ✅ Linked. Send <code>/log</code> to {{#if telegramBotUsername}}@{{telegramBotUsername}}{{else}}the bot{{/if}} on Telegram to log an expense from there.
+            </p>
+            <button type="button" class="transaction-save-btn" id="telegramUnlinkBtn" style="background: transparent; border: 1.5px solid var(--journal-danger); color: var(--journal-danger);">
+                Unlink Telegram
+            </button>
+            {{else}}
+            <p class="text-sm mb-4" style="color: var(--journal-soft-ink);">
+                Log expenses from Telegram: generate a one-time code below, then send it to
+                {{#if telegramBotUsername}}<strong>@{{telegramBotUsername}}</strong>{{else}}the bot{{/if}}
+                as <code>/link 123456</code>. The code expires in 10 minutes.
+            </p>
+            <button type="button" class="transaction-save-btn" id="telegramLinkBtn">
+                Generate code
+            </button>
+            <p class="text-sm mt-3 hidden" id="telegramLinkCode" style="color: var(--journal-ink); font-weight: 700; font-size: 20px; letter-spacing: 2px;"></p>
+            <p class="text-xs mt-1 hidden" id="telegramLinkStatus" style="color: var(--journal-soft-ink);"></p>
+            {{/if}}
+        </div>
+        {{/if}}
     </div>
-    
+
     {{> actionHub}}
     <script src="/js/common.js"></script>
+    {{#if telegramBotEnabled}}
+    <script src="/js/profile-telegram.js"></script>
+    {{/if}}
 </body>
 
 </html>
