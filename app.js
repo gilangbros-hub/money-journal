@@ -128,8 +128,13 @@ function createApp(config = createConfiguration()) {
     return app;
 }
 
-// Connect to database (preserves the existing startup behavior).
-connectDB();
+// Connect to database. A rejection here is logged, not fatal: this module
+// runs once per serverless cold start in the same process that serves every
+// other route, so a transient Mongo hiccup must not crash requests that
+// never touch the database (see database.js for the full reasoning).
+connectDB().catch((error) => {
+    console.error('MongoDB connection error:', error);
+});
 
 const app = createApp(configuration);
 const PORT = process.env.PORT || 5000;
