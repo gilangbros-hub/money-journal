@@ -83,14 +83,26 @@ function createApp(config = createConfiguration()) {
         process.exit(1);
     }
 
+    // MongoStore opens its OWN MongoDB connection, entirely separate from the
+    // one connectDB() manages -- a second, unguarded failure surface that a
+    // bad/unreachable Atlas cluster crashes the whole process through, the
+    // exact same way the original connectDB() bug did. Its docs recommend
+    // listening for 'error' here for exactly this reason: without a
+    // listener, that rejection is unhandled and takes the process down with
+    // it, same as before.
+    const sessionStore = MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        ttl: 14 * 24 * 60 * 60 // 14 days
+    });
+    sessionStore.on('error', (error) => {
+        console.error('Session store MongoDB connection error:', error);
+    });
+
     app.use(session({
         secret: process.env.SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
-        store: MongoStore.create({
-            mongoUrl: process.env.MONGODB_URI,
-            ttl: 14 * 24 * 60 * 60 // 14 days
-        }),
+        store: sessionStore,
         cookie: {
             maxAge: 24 * 60 * 60 * 1000,
             secure: process.env.NODE_ENV === 'production'
