@@ -4,7 +4,8 @@
     "buildCommand": "npm run build:css",
     "env": {
         "POCKET_MANAGEMENT_ENABLED": "true",
-        "POCKET_MANAGEMENT_DUAL_WRITE": "false"
+        "POCKET_MANAGEMENT_DUAL_WRITE": "false",
+        "EXPENSE_TYPE_MANAGEMENT_ENABLED": "true"
     },
     "builds": [
         {

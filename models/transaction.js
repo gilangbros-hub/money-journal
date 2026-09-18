@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { Temporal } = require('@js-temporal/polyfill');
 
-const { TRANSACTION_TYPES, POCKETS } = require('../utils/constants');
+const { POCKETS } = require('../utils/constants');
 
 const EXPENSE_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const ASSIGNMENT_VERSIONS = ['salary-cycle-v1', 'legacy-preserved'];
@@ -46,10 +46,20 @@ const transactionSchema = new mongoose.Schema({
         required: false,
         default: Date.now
     },
+    // Expense Type is a household-managed label (Expense_Type_Definition),
+    // not a compile-time enum: any name a Wife-role member has defined can be
+    // stored here. TransactionService enforces "is this actually a defined,
+    // active type" as a runtime existence check when that feature is enabled;
+    // the schema only guarantees a reasonable shape so old and new records
+    // alike are valid documents.
     type: {
         type: String,
         required: true,
-        enum: Object.keys(TRANSACTION_TYPES)
+        trim: true,
+        validate: {
+            validator: (value) => typeof value === 'string' && value.trim().length >= 1 && value.trim().length <= 50,
+            message: 'type must contain 1 through 50 characters after trimming.'
+        }
     },
     pocket: {
         type: String,

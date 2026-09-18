@@ -30,8 +30,14 @@ const {
     PocketValidationError,
     RecordNotFoundError
 } = require('../utils/domainErrors');
-const { isSalaryCycleEnabled, isPocketManagementEnabled } = require('../utils/rollout');
+const {
+    isSalaryCycleEnabled,
+    isPocketManagementEnabled,
+    isExpenseTypeManagementEnabled
+} = require('../utils/rollout');
 const { isDualReadActive, resolveTracker } = require('./pocketCompatibility');
+const { listActiveTypeNormalizedNames } = require('./expenseTypeManagementService');
+const { normalizeTypeName } = require('./expenseTypeValidation');
 
 /**
  * Aggregates transactions by category for the dashboard.
@@ -347,6 +353,22 @@ async function assertReferencedPocketsAssigned(mapped, actor, options, session) 
 }
 
 /**
+ * Reject a new or updated expense whose `type` is not a defined, Active
+ * Expense_Type_Definition, when Expense Type Management is enabled. Unlike
+ * pockets, a type is not scoped to a Budget_Month — any Active type is valid
+ * for any expense, so this is a flat existence check against the whole
+ * Active set rather than a per-month assignment lookup.
+ */
+async function assertKnownExpenseType(mapped, actor, options) {
+    if (!isExpenseTypeManagementEnabled(options, actor)) return;
+    const { normalizedName } = normalizeTypeName(mapped.type);
+    const activeNames = await listActiveTypeNormalizedNames(actor, options);
+    if (!activeNames.has(normalizedName)) {
+        throw new DomainValidationError('type', 'type must be a defined, active expense type.');
+    }
+}
+
+/**
  * Build a resolver from stored transaction records to the Pocket_Assignment
  * snapshot for each record's Budget_Month, so read DTOs render labels from the
  * snapshot even when the current definition is archived or renamed. Returns
@@ -453,6 +475,7 @@ async function createExpense(command, actor, options = {}) {
     );
 
     const pocketManagementEnabled = isPocketManagementEnabled(options, actor);
+    await assertKnownExpenseType(mapped, actor, options);
 
     const created = await runInTransaction(async session => {
         // Validate referenced Pocket_Identifiers against the Budget_Month
@@ -515,6 +538,7 @@ async function updateExpense(id, command, actor, options = {}) {
         if (pocketManagementEnabled) {
             await assertReferencedPocketsAssigned(mapped, actor, options, session);
         }
+        await assertKnownExpenseType(mapped, actor, options);
 
         const source = assignmentPeriod(existing, timeZone);
         const destination = { month: mapped.budgetMonth, year: mapped.budgetYear };

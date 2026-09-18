@@ -2,7 +2,7 @@
 
 const mongoose = require('mongoose');
 const { Temporal } = require('@js-temporal/polyfill');
-const { POCKETS, TRANSACTION_TYPES } = require('./constants');
+const { POCKETS } = require('./constants');
 const { DomainValidationError } = require('./domainErrors');
 const {
     DEFAULT_HOUSEHOLD_TIME_ZONE,
@@ -71,11 +71,21 @@ function validateShareAmount(value, field = 'amount') {
     return parseIntegerRupiah(value, field, { positive: true });
 }
 
+// Shape only: 1-50 characters after trimming, matching the name rule every
+// household-managed label (pocket, expense type) uses. This is no longer a
+// fixed compile-time enum — Expense Type is a managed collection now, and
+// "is this actually a defined, active type" is TransactionService's runtime
+// existence check (gated on the expense-type-management rollout flag), not a
+// static list this pure validator can see.
 function validateCategory(value, field = 'type') {
-    if (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(TRANSACTION_TYPES, value)) {
+    if (typeof value !== 'string') {
         throw invalid(field, `${field} must be a supported transaction category.`);
     }
-    return value;
+    const trimmed = value.trim();
+    if (trimmed.length < 1 || trimmed.length > 50) {
+        throw invalid(field, `${field} must be a supported transaction category.`);
+    }
+    return trimmed;
 }
 
 function validatePocket(value, field = 'pocket') {

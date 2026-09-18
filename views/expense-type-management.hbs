@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {{> head}}
+    <title>Expense Type Management</title>
+</head>
+
+<body>
+    <!--
+      Expense Type Management shell, mirroring pocket-management.hbs's shape
+      but scaled to two steps: a type has no cadence, default amount, or
+      per-Budget_Month assignment, so there is nothing analogous to Pocket
+      Management's "Set up Budget Month" section here.
+    -->
+    <div class="page-container journal-shell" id="expenseTypeManagementRoot" data-expense-type-management
+        data-can-edit="{{canEdit}}" data-role="{{role}}" data-feature-enabled="{{expenseTypeManagementEnabled}}">
+
+        <script id="expenseTypeManagementBootstrap" type="application/json">
+        {
+            "canEdit": {{#if canEdit}}true{{else}}false{{/if}},
+            "role": "{{role}}",
+            "expenseTypeManagementEnabled": {{#if expenseTypeManagementEnabled}}true{{else}}false{{/if}}
+        }
+        </script>
+
+        <header class="app-header">
+            <div onclick="window.location.href='/log-spending'" class="cursor-pointer">
+                <p class="journal-eyebrow"><a href="/log-spending"
+                        style="color: inherit; text-decoration: none;">← Back</a></p>
+                <h1 class="page-title page-title-ledger">Expense Type Management</h1>
+            </div>
+            <div class="user-info" onclick="toggleMenu()">
+                <span class="text-sm font-semibold" style="color: var(--journal-soft-ink);">{{username}}</span>
+                <span class="text-[28px]">{{avatar}}</span>
+            </div>
+            <div id="userMenu" class="user-menu"
+                style="background: var(--journal-panel); border: 1px solid var(--journal-line);">
+                <a href="/profile" style="color: var(--journal-ink);">Edit Profile</a>
+                <a href="/logout" class="logout" style="color: var(--journal-danger);">Logout</a>
+            </div>
+        </header>
+
+        {{#unless canEdit}}
+        <div class="bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2 border border-amber/30"
+            role="status">
+            <span aria-hidden="true">👁️</span> View-only mode. Only Wife can create, edit, or archive expense types.
+        </div>
+        {{/unless}}
+        {{#unless expenseTypeManagementEnabled}}
+        <div id="featureDisabledNotice"
+            class="bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center gap-2 border border-amber/30"
+            role="status">
+            <span aria-hidden="true">🚧</span> Expense Type Management is not active yet.
+        </div>
+        {{/unless}}
+
+        <div class="sr-only" id="typeGlobalStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+        <div class="sr-only" id="typeGlobalError" role="alert" aria-live="assertive" aria-atomic="true"></div>
+        <div id="typeGlobalErrorBanner"
+            class="hidden bg-amber/20 text-amber p-3 px-4 rounded-xl text-sm mb-4 flex items-center justify-between gap-2 border border-amber/30">
+            <span id="typeGlobalErrorMessage"></span>
+            <button type="button" class="btn-modal-cancel" id="typeGlobalRetry" data-global-retry hidden>Retry</button>
+        </div>
+
+        <!-- =====================================================================
+             STEP 1 — CREATE AN EXPENSE TYPE
+             ===================================================================== -->
+        <section class="pm-step" id="stepCreateType" aria-labelledby="createTypeHeading">
+            <div class="pm-step-head">
+                <span class="pm-step-badge" aria-hidden="true">1</span>
+                <div>
+                    <h2 class="section-title" id="createTypeHeading" style="color: var(--journal-ink);">Create an expense type</h2>
+                    <p class="pm-step-hint">An emoji and a name. Any active type is selectable on any expense, in any
+                        month — there's no budget or assignment step for types.</p>
+                </div>
+            </div>
+
+            {{#if canEdit}}
+            <details class="journal-hero-card pm-disclosure" id="createTypeDisclosure" data-create-disclosure>
+                <summary class="pm-disclosure-summary">
+                    <span class="material-symbols-outlined" aria-hidden="true" style="font-size: 18px;">add_circle</span>
+                    New expense type
+                </summary>
+                <form id="typeCreateForm" novalidate aria-describedby="createTypeStatus">
+                    <div class="mb-4">
+                        <label class="text-xs font-semibold text-text-secondary block mb-1" for="createTypeEmoji">Emoji</label>
+                        <input type="text" id="createTypeEmoji" name="emoji" inputmode="text" autocomplete="off"
+                            maxlength="8" placeholder="🍜"
+                            class="w-full rounded-xl bg-bg-tertiary p-3 text-lg text-text-primary outline-none"
+                            aria-describedby="createTypeEmojiHint createTypeEmojiError" aria-invalid="false">
+                        <p class="text-[11px] text-text-muted mt-1" id="createTypeEmojiHint">Exactly one emoji.</p>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden" id="createTypeEmojiError"
+                            role="alert"></p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="text-xs font-semibold text-text-secondary block mb-1" for="createTypeName">Name</label>
+                        <input type="text" id="createTypeName" name="name" autocomplete="off" maxlength="50"
+                            placeholder="Pulsa"
+                            class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
+                            aria-describedby="createTypeNameHint createTypeNameError" aria-invalid="false">
+                        <p class="text-[11px] text-text-muted mt-1" id="createTypeNameHint">1–50 characters.</p>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden" id="createTypeNameError"
+                            role="alert"></p>
+                    </div>
+
+                    <button type="submit" class="btn-modal-save w-full" id="typeCreateSubmit"
+                        data-mutation-control>Create expense type</button>
+                    <p class="text-xs text-text-muted mt-2" id="createTypeStatus" role="status" aria-live="polite"></p>
+                </form>
+            </details>
+            {{else}}
+            <div class="journal-hero-card">
+                <p class="text-sm" style="color: var(--journal-soft-ink);">Only a Wife-role user can create expense
+                    types.</p>
+            </div>
+            {{/if}}
+        </section>
+
+        <hr class="pm-divider" aria-hidden="true">
+
+        <!-- =====================================================================
+             STEP 2 — YOUR EXPENSE TYPES
+             ===================================================================== -->
+        <section class="pm-step" id="stepActiveTypes" aria-labelledby="manageTypesHeading">
+            <div class="pm-step-head">
+                <span class="pm-step-badge" aria-hidden="true">2</span>
+                <div>
+                    <h2 class="section-title" id="manageTypesHeading" style="color: var(--journal-ink);">Your expense types</h2>
+                    <p class="pm-step-hint">Everything you can categorize an expense with. Edit or archive a type
+                        here; archiving never touches past transactions.</p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-sm font-semibold" style="color: var(--journal-ink);">Active types</h3>
+                <label class="text-xs font-semibold text-text-secondary flex items-center gap-2">
+                    <input type="checkbox" id="includeArchivedToggle" data-include-archived>
+                    Show archived
+                </label>
+            </div>
+            <div class="journal-group-rows mb-4" id="activeTypeList" data-active-type-list aria-live="polite"
+                aria-busy="true">
+                <p class="text-center py-5" style="color: var(--journal-soft-ink);">Loading expense types…</p>
+            </div>
+
+            <div id="activeTypeEmptyState" class="journal-hero-card text-center hidden" data-empty-state hidden>
+                <p class="text-sm mb-3" style="color: var(--journal-soft-ink);">You have no active expense types yet.</p>
+                {{#if canEdit}}
+                <button type="button" class="btn-modal-save" id="createFirstTypeBtn" data-create-first-type>Create
+                    your first expense type</button>
+                {{/if}}
+            </div>
+
+            <div id="archivedTypesRegion" class="hidden" data-archived-region hidden>
+                <h3 class="text-sm font-semibold mb-2" style="color: var(--journal-ink);">Archived types</h3>
+                <div class="journal-group-rows mb-4" id="archivedTypeList" data-archived-type-list
+                    aria-live="polite">
+                    <p class="text-center py-5" style="color: var(--journal-soft-ink);">No archived expense types.</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Type card (emoji, name, status; Edit/Archive/Restore for Wife) -->
+    <template id="typeDefinitionCardTemplate">
+        <article class="bg-bg-secondary p-4 rounded-2xl shadow-card border border-border/50" data-type-card>
+            <header class="flex items-center justify-between gap-3 mb-2">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-2xl" data-type-emoji aria-hidden="true"></span>
+                    <h3 class="text-sm font-semibold text-text-primary truncate" data-type-name></h3>
+                </div>
+                <span class="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full border border-border/50"
+                    data-type-status>Active</span>
+            </header>
+            <div class="flex flex-wrap gap-2 mt-3" data-type-actions>
+                <button type="button" class="btn-modal-cancel" data-edit-type data-mutation-control>Edit</button>
+                <button type="button" class="btn-modal-cancel" data-archive-type data-mutation-control>Archive</button>
+                <button type="button" class="btn-modal-cancel hidden" data-restore-type data-mutation-control
+                    hidden>Restore</button>
+            </div>
+        </article>
+    </template>
+
+    {{#if canEdit}}
+    <!-- Edit type dialog -->
+    <div id="typeEditModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="typeEditTitle" hidden>
+        <div class="modal-card">
+            <h3 id="typeEditTitle">Edit expense type</h3>
+            <form id="typeEditForm" novalidate>
+                <input type="hidden" id="editTypeId">
+                <input type="hidden" id="editTypeVersion">
+                <div class="mb-4">
+                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="editTypeEmoji">Emoji</label>
+                    <input type="text" id="editTypeEmoji" name="emoji" maxlength="8" autocomplete="off"
+                        class="w-full rounded-xl bg-bg-tertiary p-3 text-lg text-text-primary outline-none"
+                        aria-describedby="editTypeEmojiError" aria-invalid="false">
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editTypeEmojiError"
+                        role="alert"></p>
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs font-semibold text-text-secondary block mb-1" for="editTypeName">Name</label>
+                    <input type="text" id="editTypeName" name="name" maxlength="50" autocomplete="off"
+                        class="w-full rounded-xl bg-bg-tertiary p-3 text-sm text-text-primary outline-none"
+                        aria-describedby="editTypeNameError" aria-invalid="false">
+                    <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editTypeNameError"
+                        role="alert"></p>
+                </div>
+                <p class="text-xs text-text-muted mb-3" id="typeEditStatus" role="status" aria-live="polite"></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-modal-cancel" data-cancel-edit>Cancel</button>
+                    <button type="submit" class="btn-modal-save" data-mutation-control>Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Archive confirmation dialog -->
+    <div id="typeArchiveModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="typeArchiveTitle" aria-describedby="typeArchiveMessage" hidden>
+        <div class="modal-card">
+            <h3 id="typeArchiveTitle">Archive expense type?</h3>
+            <p class="text-sm text-text-secondary mb-4" id="typeArchiveMessage">
+                Past transactions keep this type name. It just won't be selectable for new expenses until restored.
+            </p>
+            <p class="text-xs text-text-muted mb-3" id="typeArchiveStatus" role="status" aria-live="polite"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" data-cancel-archive>Cancel</button>
+                <button type="button" class="btn-modal-danger" data-confirm-archive data-mutation-control>Archive</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version conflict dialog -->
+    <div id="typeVersionConflictModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="typeVersionConflictTitle" aria-describedby="typeVersionConflictMessage" hidden>
+        <div class="modal-card">
+            <h3 id="typeVersionConflictTitle">This type changed elsewhere</h3>
+            <p class="text-sm text-text-secondary mb-4" id="typeVersionConflictMessage">
+                Someone else updated this expense type. Reload the list to see the latest version before trying again.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-save w-full" data-reload-types>Reload</button>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+
+    <input type="hidden" id="canEdit" value="{{canEdit}}">
+    <input type="hidden" id="userRole" value="{{role}}">
+    <input type="hidden" id="expenseTypeManagementEnabled" value="{{expenseTypeManagementEnabled}}">
+    <div id="message" class="toast"></div>
+
+    <script src="/js/common.js"></script>
+    <script src="/js/expense-type-management.js"></script>
+</body>
+
+</html>

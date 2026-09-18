@@ -67,10 +67,35 @@ function isPocketManagementDualWriteEnabled(options = {}, actor = {}) {
     return false;
 }
 
+/**
+ * Expense Type Management follows the same fail-closed rule as Pocket
+ * Management: absent an explicit boolean it resolves to disabled. HTTP
+ * adapters inject the validated application setting; managed routes and the
+ * transaction-time type check must stay unavailable while this flag is false.
+ */
+function isExpenseTypeManagementEnabled(options = {}, actor = {}) {
+    if (typeof options.expenseTypeManagementEnabled === 'boolean') {
+        return options.expenseTypeManagementEnabled;
+    }
+    if (typeof actor.expenseTypeManagementEnabled === 'boolean') {
+        return actor.expenseTypeManagementEnabled;
+    }
+    return false;
+}
+
+function requireExpenseTypeManagementEnabled(options = {}, actor = {}) {
+    if (!isExpenseTypeManagementEnabled(options, actor)) {
+        throw new FeatureDisabledError('expense type management');
+    }
+    return true;
+}
+
 module.exports = {
     isSalaryCycleEnabled,
     requireSalaryCycleEnabled,
     isPocketManagementEnabled,
     requirePocketManagementEnabled,
-    isPocketManagementDualWriteEnabled
+    isPocketManagementDualWriteEnabled,
+    isExpenseTypeManagementEnabled,
+    requireExpenseTypeManagementEnabled
 };

@@ -28,6 +28,7 @@ const SAFE_DETAIL_KEYS = new Set([
     // rejected mutation; record names, amounts, and payloads remain excluded
     // by the sensitive-key blocklist and the allowlist itself.
     'pocketId',
+    'typeId',
     'entryIndex',
     'currentVersion',
     'expectedVersion',

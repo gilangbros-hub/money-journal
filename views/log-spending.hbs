@@ -126,7 +126,12 @@
         <div class="picker-sheet-card">
             <div class="picker-sheet-head">
                 <h3>Expense Type</h3>
-                <button type="button" class="picker-sheet-close" data-close-sheet="typeSheet">Close</button>
+                <div class="flex items-center gap-3">
+                    <a href="/expense-type-management" class="text-xs font-semibold"
+                        style="color: var(--journal-accent, #6366f1);"
+                        aria-label="Manage expense types">Manage Types</a>
+                    <button type="button" class="picker-sheet-close" data-close-sheet="typeSheet">Close</button>
+                </div>
             </div>
             <div class="picker-grid">
                 {{#each (split "Eat,Snack,Groceries,Laundry,Bensin,Flazz,Home Appliance,Jumat Berkah,Uang Sampah,Uang Keamanan,Medicine,Others")}}

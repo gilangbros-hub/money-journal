@@ -1449,30 +1449,43 @@ body {
    other pages are left untouched. Established
    journal tokens, shape, spacing, dialog, and
    status patterns are preserved.
+
+   Expense Type Management ([data-expense-type-management])
+   is the same card-based management surface with its own
+   three dialogs (#typeEditModal / #typeArchiveModal /
+   #typeVersionConflictModal), so every selector above is
+   duplicated for it explicitly rather than sharing this
+   whole block under one attribute.
    ============================================ */
 
 /* --- No horizontal page scrolling at 320–767px (Req 11.13, 11.14) ---
    The page-container already has side padding; clip is a safety net and
    min-width:0 lets flex/grid children shrink so values wrap instead of
    forcing the page wider. */
-[data-pocket-management] {
+[data-pocket-management],
+[data-expense-type-management] {
   max-width: 100%;
   overflow-x: clip;
 }
 
-[data-pocket-management] * {
+[data-pocket-management] *,
+[data-expense-type-management] * {
   min-width: 0;
 }
 
 /* Long labels, names, and rupiah totals wrap rather than overflow. */
 [data-pocket-management] .journal-row-title,
+[data-expense-type-management] .journal-row-title,
 [data-pocket-management] [data-pocket-name],
 [data-pocket-management] [data-summary-total],
 [data-pocket-management] [data-zero-total],
 [data-pocket-management] [data-summary-month],
 [data-pocket-management] .field-error,
+[data-expense-type-management] .field-error,
 [data-pocket-management] [role="status"],
-[data-pocket-management] [role="alert"] {
+[data-expense-type-management] [role="status"],
+[data-pocket-management] [role="alert"],
+[data-expense-type-management] [role="alert"] {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -1583,7 +1596,8 @@ body {
   border-bottom: 1px solid var(--journal-line);
 }
 
-[data-pocket-management] .journal-hero-card {
+[data-pocket-management] .journal-hero-card,
+[data-expense-type-management] .journal-hero-card {
   background: var(--journal-panel);
   border: 1px solid var(--journal-line);
   color: var(--journal-ink);
@@ -1591,20 +1605,25 @@ body {
 }
 
 [data-pocket-management] .journal-hero-card legend,
-[data-pocket-management] .journal-hero-card h3 {
+[data-pocket-management] .journal-hero-card h3,
+[data-expense-type-management] .journal-hero-card legend,
+[data-expense-type-management] .journal-hero-card h3 {
   color: var(--journal-ink);
 }
 
 /* Single-column management cards at mobile widths (Req 11.13, 11.14). */
 @media (max-width: 767px) {
   [data-pocket-management] .journal-story-grid,
-  [data-pocket-management] .grid {
+  [data-pocket-management] .grid,
+  [data-expense-type-management] .journal-story-grid,
+  [data-expense-type-management] .grid {
     grid-template-columns: 1fr;
   }
 
   /* The definition card's two-column detail list is compact enough to keep,
      but ensure its cells can shrink without overflow. */
-  [data-pocket-management] [data-pocket-card] dl {
+  [data-pocket-management] [data-pocket-card] dl,
+  [data-expense-type-management] [data-type-card] dl {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1612,18 +1631,21 @@ body {
 /* --- Text contrast: muted / hint / status to AA (Req 11.22) ---
    Journal muted (#6B7B96) is ~4.0:1 on the light surface; nudge it darker so
    hints and status text clear 4.5:1 while staying within the journal palette. */
-[data-pocket-management] .text-text-muted {
+[data-pocket-management] .text-text-muted,
+[data-expense-type-management] .text-text-muted {
   color: #55627A;
 }
 
-[data-pocket-management] [role="status"] {
+[data-pocket-management] [role="status"],
+[data-expense-type-management] [role="status"] {
   color: #35405B;
 }
 
 /* Warning/notice banners use text-amber (#F9A41E ~2:1). Darken the text to an
    AA-compliant amber; the amber border/background remains the >=3:1 non-text
    status cue (Req 11.22). */
-[data-pocket-management] .text-amber {
+[data-pocket-management] .text-amber,
+[data-expense-type-management] .text-amber {
   color: #8A5A0B;
 }
 
@@ -1631,7 +1653,8 @@ body {
    text-journal-danger is a design alias with no Tailwind utility, so error
    text would otherwise inherit body color. Define the AA-compliant danger
    *text* color here (matches the design's semantic danger text #B82F1D). */
-[data-pocket-management] .field-error {
+[data-pocket-management] .field-error,
+[data-expense-type-management] .field-error {
   color: #B82F1D;
   font-weight: 600;
 }
@@ -1640,13 +1663,17 @@ body {
    Every input/select and every rupiah-amount wrapper carries .bg-bg-tertiary,
    whose fill is nearly identical to the card surface (~1.1:1). Add a boundary
    that clears 3:1 against the light surface so controls are distinguishable. */
-[data-pocket-management] .bg-bg-tertiary {
+[data-pocket-management] .bg-bg-tertiary,
+[data-expense-type-management] .bg-bg-tertiary {
   border: 1.5px solid #6B7B96;
 }
 
 [data-pocket-management] input,
 [data-pocket-management] select,
-[data-pocket-management] textarea {
+[data-pocket-management] textarea,
+[data-expense-type-management] input,
+[data-expense-type-management] select,
+[data-expense-type-management] textarea {
   color: var(--journal-ink);
 }
 
@@ -1655,10 +1682,14 @@ body {
    management page and its dialogs use the journal primary CTA (blue gradient,
    white text ~7:1), which is the journal design language's primary control. */
 [data-pocket-management] .btn-modal-save,
+[data-expense-type-management] .btn-modal-save,
 #pocketEditModal .btn-modal-save,
 #pocketArchiveModal .btn-modal-save,
 #assignmentRemovalModal .btn-modal-save,
-#versionConflictModal .btn-modal-save {
+#versionConflictModal .btn-modal-save,
+#typeEditModal .btn-modal-save,
+#typeArchiveModal .btn-modal-save,
+#typeVersionConflictModal .btn-modal-save {
   background: linear-gradient(135deg, var(--journal-cta-start) 0%, var(--journal-cta-end) 100%);
   color: #FFFFFF;
   border: 1px solid var(--journal-cta-end);
@@ -1674,6 +1705,12 @@ body {
 [data-pocket-management] select:focus-visible,
 [data-pocket-management] textarea:focus-visible,
 [data-pocket-management] [tabindex]:focus-visible,
+[data-expense-type-management] a:focus-visible,
+[data-expense-type-management] button:focus-visible,
+[data-expense-type-management] input:focus-visible,
+[data-expense-type-management] select:focus-visible,
+[data-expense-type-management] textarea:focus-visible,
+[data-expense-type-management] [tabindex]:focus-visible,
 #pocketEditModal a:focus-visible,
 #pocketEditModal button:focus-visible,
 #pocketEditModal input:focus-visible,
@@ -1681,29 +1718,50 @@ body {
 #pocketEditModal textarea:focus-visible,
 #pocketArchiveModal button:focus-visible,
 #assignmentRemovalModal button:focus-visible,
-#versionConflictModal button:focus-visible {
+#versionConflictModal button:focus-visible,
+#typeEditModal a:focus-visible,
+#typeEditModal button:focus-visible,
+#typeEditModal input:focus-visible,
+#typeEditModal select:focus-visible,
+#typeEditModal textarea:focus-visible,
+#typeArchiveModal button:focus-visible,
+#typeVersionConflictModal button:focus-visible {
   outline: 3px solid #143765;
   outline-offset: 2px;
 }
 
 /* Disabled (pending) controls read as inactive without relying on motion. */
 [data-pocket-management] button:disabled,
+[data-expense-type-management] button:disabled,
 #pocketEditModal button:disabled,
 #pocketArchiveModal button:disabled,
 #assignmentRemovalModal button:disabled,
-#versionConflictModal button:disabled {
+#versionConflictModal button:disabled,
+#typeEditModal button:disabled,
+#typeArchiveModal button:disabled,
+#typeVersionConflictModal button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* --- 44x44 CSS-pixel primary-action targets at 320–767px (Req 11.21) --- */
+/* --- 44x44 CSS-pixel primary-action targets at 320–767px (Req 11.21) ---
+   :not([hidden]):not(.hidden) matters here: this selector's specificity
+   (an attribute/id selector plus a type selector) beats the plain `.hidden`
+   utility class, so without the exclusion this rule's `display: inline-flex`
+   would force every conditionally-hidden button (Restore on an Active card,
+   Edit/Archive on an Archived one) visible regardless of its hidden state. */
 @media (max-width: 767px) {
-  [data-pocket-management] button,
-  [data-pocket-management] [type="submit"],
-  #pocketEditModal button,
-  #pocketArchiveModal button,
-  #assignmentRemovalModal button,
-  #versionConflictModal button {
+  [data-pocket-management] button:not([hidden]):not(.hidden),
+  [data-pocket-management] [type="submit"]:not([hidden]):not(.hidden),
+  [data-expense-type-management] button:not([hidden]):not(.hidden),
+  [data-expense-type-management] [type="submit"]:not([hidden]):not(.hidden),
+  #pocketEditModal button:not([hidden]):not(.hidden),
+  #pocketArchiveModal button:not([hidden]):not(.hidden),
+  #assignmentRemovalModal button:not([hidden]):not(.hidden),
+  #versionConflictModal button:not([hidden]):not(.hidden),
+  #typeEditModal button:not([hidden]):not(.hidden),
+  #typeArchiveModal button:not([hidden]):not(.hidden),
+  #typeVersionConflictModal button:not([hidden]):not(.hidden) {
     min-height: 44px;
     min-width: 44px;
     display: inline-flex;
@@ -1720,10 +1778,16 @@ body {
   [data-pocket-management] *,
   [data-pocket-management] *::before,
   [data-pocket-management] *::after,
+  [data-expense-type-management] *,
+  [data-expense-type-management] *::before,
+  [data-expense-type-management] *::after,
   #pocketEditModal *,
   #pocketArchiveModal *,
   #assignmentRemovalModal *,
-  #versionConflictModal * {
+  #versionConflictModal *,
+  #typeEditModal *,
+  #typeArchiveModal *,
+  #typeVersionConflictModal * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -1736,10 +1800,16 @@ body {
   [data-pocket-management] *,
   [data-pocket-management] *::before,
   [data-pocket-management] *::after,
+  [data-expense-type-management] *,
+  [data-expense-type-management] *::before,
+  [data-expense-type-management] *::after,
   #pocketEditModal *,
   #pocketArchiveModal *,
   #assignmentRemovalModal *,
-  #versionConflictModal * {
+  #versionConflictModal *,
+  #typeEditModal *,
+  #typeArchiveModal *,
+  #typeVersionConflictModal * {
     transition-duration: 200ms !important;
     animation-duration: 200ms !important;
   }

@@ -21,6 +21,7 @@ const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const budgetRoutes = require('./routes/budget');
 const pocketRoutes = require('./routes/pockets');
+const expenseTypeRoutes = require('./routes/expenseTypes');
 
 const { TRANSACTION_TYPES } = require('./utils/constants');
 
@@ -109,6 +110,7 @@ function createApp(config = createConfiguration()) {
     app.use(transactionRoutes);
     app.use(budgetRoutes);
     app.use(pocketRoutes);
+    app.use(expenseTypeRoutes);
 
     // 404 handler
     app.use((req, res, next) => {

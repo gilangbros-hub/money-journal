@@ -51,7 +51,14 @@ test('transaction field validators accept canonical values and reject malformed 
     for (const value of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, '12.5', ' 12']) {
         assertValidation(() => validateAmount(value), 'amount');
     }
-    assertValidation(() => validateCategory('Unknown'), 'type');
+    // 'type' is a shape check now (1-50 characters), not a fixed enum: Expense
+    // Type is a managed collection, and "must actually be a defined, active
+    // type" is TransactionService's runtime existence check, not this pure
+    // validator's job. 'Unknown' is a well-formed category name.
+    assert.equal(validateCategory('Unknown'), 'Unknown');
+    for (const value of ['', '   ', 'x'.repeat(51), 42, null, undefined]) {
+        assertValidation(() => validateCategory(value), 'type');
+    }
     assertValidation(() => validatePocket('Unknown'), 'pocket');
     assertValidation(() => validatePayer('Partner'), 'paidBy');
     assertValidation(() => validateSourceType('daily'), 'sourceType');

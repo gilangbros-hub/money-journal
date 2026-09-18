@@ -5,6 +5,7 @@ const DEFAULT_HOUSEHOLD_TIME_ZONE = 'Asia/Jakarta';
 const FEATURE_FLAG_ENV_NAME = 'SALARY_CYCLE_BUDGETING_ENABLED';
 const POCKET_MANAGEMENT_FLAG_ENV_NAME = 'POCKET_MANAGEMENT_ENABLED';
 const POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME = 'POCKET_MANAGEMENT_DUAL_WRITE';
+const EXPENSE_TYPE_MANAGEMENT_FLAG_ENV_NAME = 'EXPENSE_TYPE_MANAGEMENT_ENABLED';
 const ENABLED_FLAG_VALUES = new Set(['1', 'true', 'yes', 'on']);
 
 function invalidTimeZoneError(message, cause) {
@@ -76,6 +77,15 @@ function parsePocketManagementFeatureFlag(value) {
     return parseFeatureFlag(value);
 }
 
+/**
+ * Expense Type Management is disabled by default, same fail-closed rule as
+ * Pocket Management: an absent or malformed flag keeps the managed routes and
+ * the transaction-time type check off, never on by accident.
+ */
+function parseExpenseTypeManagementFeatureFlag(value) {
+    return parseFeatureFlag(value);
+}
+
 function createConfiguration(environment = process.env) {
     const configuredTimeZone = environment.HOUSEHOLD_TIME_ZONE;
     const householdTimeZone = validateHouseholdTimeZone(
@@ -92,11 +102,15 @@ function createConfiguration(environment = process.env) {
     const pocketManagementDualWriteEnabled = parsePocketManagementFeatureFlag(
         environment[POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME]
     );
+    const expenseTypeManagementEnabled = parseExpenseTypeManagementFeatureFlag(
+        environment[EXPENSE_TYPE_MANAGEMENT_FLAG_ENV_NAME]
+    );
 
     const featureFlags = Object.freeze({
         salaryCycleBudgeting: salaryCycleBudgetingEnabled,
         pocketManagement: pocketManagementEnabled,
-        pocketManagementDualWrite: pocketManagementDualWriteEnabled
+        pocketManagementDualWrite: pocketManagementDualWriteEnabled,
+        expenseTypeManagement: expenseTypeManagementEnabled
     });
 
     return Object.freeze({
@@ -104,6 +118,7 @@ function createConfiguration(environment = process.env) {
         salaryCycleBudgetingEnabled,
         pocketManagementEnabled,
         pocketManagementDualWriteEnabled,
+        expenseTypeManagementEnabled,
         featureFlags
     });
 }
@@ -113,9 +128,11 @@ module.exports = {
     FEATURE_FLAG_ENV_NAME,
     POCKET_MANAGEMENT_FLAG_ENV_NAME,
     POCKET_MANAGEMENT_DUAL_WRITE_ENV_NAME,
+    EXPENSE_TYPE_MANAGEMENT_FLAG_ENV_NAME,
     ConfigurationError,
     createConfiguration,
     parseSalaryCycleFeatureFlag,
     parsePocketManagementFeatureFlag,
+    parseExpenseTypeManagementFeatureFlag,
     validateHouseholdTimeZone
 };

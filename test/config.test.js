@@ -69,3 +69,16 @@ test('invalid or fixed-offset zones fail with a field-specific configuration err
         );
     }
 });
+
+test('expense type management flag defaults to disabled and enables only on a recognized truthy value', () => {
+    const disabled = createConfiguration({});
+    assert.equal(disabled.expenseTypeManagementEnabled, false);
+    assert.equal(disabled.featureFlags.expenseTypeManagement, false);
+
+    const enabled = createConfiguration({ EXPENSE_TYPE_MANAGEMENT_ENABLED: 'true' });
+    assert.equal(enabled.expenseTypeManagementEnabled, true);
+    assert.equal(enabled.featureFlags.expenseTypeManagement, true);
+
+    const unexpected = createConfiguration({ EXPENSE_TYPE_MANAGEMENT_ENABLED: 'unexpected' });
+    assert.equal(unexpected.expenseTypeManagementEnabled, false);
+});

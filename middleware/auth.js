@@ -52,11 +52,20 @@ function requirePocketManagementFeature(req, res, next) {
     return next(new FeatureDisabledError('pocket management'));
 }
 
+/**
+ * Same gate as Pocket Management, for the Expense Type Management surface.
+ */
+function requireExpenseTypeManagementFeature(req, res, next) {
+    if (req.app?.locals?.configuration?.expenseTypeManagementEnabled === true) return next();
+    return next(new FeatureDisabledError('expense type management'));
+}
+
 module.exports = {
     authLimiter,
     isApiRequest,
     requireAuthenticated,
     requireWife,
     requireSalaryCycleFeature,
-    requirePocketManagementFeature
+    requirePocketManagementFeature,
+    requireExpenseTypeManagementFeature
 };

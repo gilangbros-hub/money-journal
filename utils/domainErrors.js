@@ -48,7 +48,8 @@ class AuthorizationError extends DomainError {
 // code to preserve the historical default behavior.
 const FEATURE_DISABLED_CODES = {
     'salary-cycle budgeting': 'SALARY_CYCLE_FEATURE_DISABLED',
-    'pocket management': 'POCKET_MANAGEMENT_FEATURE_DISABLED'
+    'pocket management': 'POCKET_MANAGEMENT_FEATURE_DISABLED',
+    'expense type management': 'EXPENSE_TYPE_MANAGEMENT_FEATURE_DISABLED'
 };
 
 class FeatureDisabledError extends DomainError {
@@ -127,7 +128,8 @@ const RECORD_CODES = {
     transaction: 'TRANSACTION_NOT_FOUND',
     allocation: 'ALLOCATION_NOT_FOUND',
     pocket: 'POCKET_NOT_FOUND',
-    'pocket assignment': 'POCKET_ASSIGNMENT_NOT_FOUND'
+    'pocket assignment': 'POCKET_ASSIGNMENT_NOT_FOUND',
+    'expense type': 'EXPENSE_TYPE_NOT_FOUND'
 };
 
 class RecordNotFoundError extends DomainError {
