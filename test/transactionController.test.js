@@ -45,7 +45,8 @@ test('transaction controller delegates writes and keeps legacy response envelope
     await handlers.createTransaction(request({ body: { date: '2027-02-24', amount: 1000 } }), createRes);
     assert.deepEqual(createRes.body, {
         success: true,
-        message: 'Transaction saved successfully!'
+        message: 'Transaction saved successfully!',
+        id: 'created'
     });
 
     const updateRes = response();

@@ -29,7 +29,7 @@ function pocketOptionsResponse(options = [{ pocketId: 'pocket-1', name: 'Kwintal
     return response({ success: true, data: options });
 }
 
-async function setupPage(fetchImpl, { edit = '', showToast = () => {}, expenseTypeManagementEnabled = false } = {}) {
+async function setupPage(fetchImpl, { edit = '', showToast = () => {}, expenseTypeManagementEnabled = false, storage = {} } = {}) {
     const dom = new JSDOM(renderView({
         username: 'tester',
         avatar: '👤',
@@ -39,6 +39,9 @@ async function setupPage(fetchImpl, { edit = '', showToast = () => {}, expenseTy
         url: `https://money-journal.test/log-spending${edit ? `?edit=${edit}` : ''}`,
         runScripts: 'outside-only'
     });
+    // Each JSDOM gets a fresh origin storage; seed it before the page script runs.
+    dom.window.localStorage.clear();
+    Object.entries(storage).forEach(([key, value]) => dom.window.localStorage.setItem(key, value));
     dom.window.fetch = fetchImpl;
     dom.window.showToast = showToast;
     dom.window.formatRupiah = value => `Rp ${value}`;
@@ -425,27 +428,299 @@ test('editing keeps a type that is no longer in the managed list, and does not b
     assert.equal(JSON.parse(update.options.body).type, 'Kopi');
     assert.equal(localStorage.getItem('moneyJournalStreak'), streak);
     assert.deepEqual(toasts, [{ message: 'Transaction updated', type: 'success' }]);
-    assert.equal(document.getElementById('successModal').classList.contains('show'), false);
     dom.window.close();
 });
 
-test('creating a transaction still bumps the streak', async () => {
-    const dom = await setupPage(async (url) => {
+function savingPage({ pocketOptions, createBody = { success: true, id: 'new-id' }, deleteStatus = 200, calls = [], toasts = [], storage = {} } = {}) {
+    return setupPage(async (url, options) => {
+        calls.push({ url, options });
         if (url.startsWith('/api/salary-cycle/assignment')) return assignmentResponse();
-        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse(pocketOptions);
+        if (options?.method === 'POST') return response(createBody);
+        if (options?.method === 'DELETE') return response({ success: deleteStatus === 200 }, deleteStatus);
         return response({ success: true });
-    });
+    }, { showToast: (message, type, extra) => toasts.push({ message, type, extra }), storage });
+}
+
+function submitForm(dom) {
+    dom.window.document.getElementById('transactionForm')
+        .dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+}
+
+function typeAmount(dom, value) {
+    const input = dom.window.document.getElementById('amount');
+    input.value = value;
+    input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+}
+
+const twoPockets = [
+    { pocketId: 'pocket-1', name: 'Kwintals', emoji: '💰', cadence: 'Monthly' },
+    { pocketId: 'pocket-2', name: 'Transport', emoji: '🚌', cadence: 'Monthly' }
+];
+
+test('creating a transaction bumps the streak, resets the form in place, and offers Undo', async () => {
+    const calls = [];
+    const toasts = [];
+    const dom = await savingPage({ calls, toasts });
     await settle();
 
     const { document, localStorage } = dom.window;
     localStorage.removeItem('moneyJournalStreak');
     dom.window.selectManagedPocket('pocket-1');
-    document.getElementById('amount').value = '1000';
+    typeAmount(dom, '35000');
     document.getElementById('ngapain').value = 'Lunch';
-    document.getElementById('transactionForm').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    submitForm(dom);
     await settle();
 
     assert.equal(JSON.parse(localStorage.getItem('moneyJournalStreak')).count, 1);
-    assert.equal(document.getElementById('successModal').classList.contains('show'), true);
+    assert.equal(document.getElementById('amount').value, '');
+    assert.equal(document.getElementById('ngapain').value, '');
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '💰 Kwintals');
+    assert.equal(toasts.length, 1);
+    assert.equal(toasts[0].message, 'Saved · Rp 35000');
+    assert.equal(toasts[0].extra.actionLabel, 'Undo');
     dom.window.close();
+});
+
+test('Undo deletes the new entry, rolls back the streak, and puts the values back', async () => {
+    const calls = [];
+    const toasts = [];
+    const dom = await savingPage({ calls, toasts });
+    await settle();
+
+    const { document, localStorage } = dom.window;
+    const previous = JSON.stringify({ count: 3, lastDate: '2000-01-01' });
+    localStorage.setItem('moneyJournalStreak', previous);
+    dom.window.selectManagedPocket('pocket-1');
+    typeAmount(dom, '12500');
+    document.getElementById('ngapain').value = 'Parkir';
+    submitForm(dom);
+    await settle();
+    assert.notEqual(localStorage.getItem('moneyJournalStreak'), previous);
+
+    toasts[0].extra.onAction();
+    await settle();
+
+    const removal = calls.find(call => call.options?.method === 'DELETE');
+    assert.equal(removal.url, '/api/transaction/new-id');
+    assert.equal(localStorage.getItem('moneyJournalStreak'), previous);
+    assert.equal(document.getElementById('amount').value, '12.500');
+    assert.equal(document.getElementById('ngapain').value, 'Parkir');
+    assert.equal(dom.window.getSelectedType(), 'Eat');
+    assert.equal(toasts.at(-1).message, 'Entry removed');
+    dom.window.close();
+});
+
+test('a failed Undo says the entry is still saved and keeps the streak', async () => {
+    const toasts = [];
+    const dom = await savingPage({ toasts, deleteStatus: 500 });
+    await settle();
+
+    const { document, localStorage } = dom.window;
+    localStorage.removeItem('moneyJournalStreak');
+    dom.window.selectManagedPocket('pocket-1');
+    typeAmount(dom, '1000');
+    submitForm(dom);
+    await settle();
+    const streak = localStorage.getItem('moneyJournalStreak');
+
+    toasts[0].extra.onAction();
+    await settle();
+
+    assert.deepEqual(toasts.at(-1), { message: 'Could not undo, the entry is still saved', type: 'error', extra: undefined });
+    assert.equal(localStorage.getItem('moneyJournalStreak'), streak);
+    assert.equal(document.getElementById('amount').value, '');
+    dom.window.close();
+});
+
+test('a create response without an id saves without offering Undo', async () => {
+    const toasts = [];
+    const dom = await savingPage({ toasts, createBody: { success: true } });
+    await settle();
+
+    dom.window.selectManagedPocket('pocket-1');
+    typeAmount(dom, '1000');
+    submitForm(dom);
+    await settle();
+
+    assert.equal(toasts.length, 1);
+    assert.equal(toasts[0].extra, undefined);
+    dom.window.close();
+});
+
+test('a double tap on Save only creates one entry', async () => {
+    const calls = [];
+    const dom = await savingPage({ calls });
+    await settle();
+
+    dom.window.selectManagedPocket('pocket-1');
+    typeAmount(dom, '1000');
+    submitForm(dom);
+    submitForm(dom);
+    await settle();
+
+    assert.equal(calls.filter(call => call.options?.method === 'POST').length, 1);
+    dom.window.close();
+});
+
+test('the amount shows thousands separators, the 000 button appends zeros, and the payload is plain digits', async () => {
+    const calls = [];
+    const dom = await savingPage({ calls });
+    await settle();
+
+    const { document } = dom.window;
+    const amount = document.getElementById('amount');
+    assert.equal(amount.getAttribute('inputmode'), 'numeric');
+
+    typeAmount(dom, '35000');
+    assert.equal(amount.value, '35.000');
+    typeAmount(dom, 'Rp 1.2a50');
+    assert.equal(amount.value, '1.250');
+    typeAmount(dom, '007');
+    assert.equal(amount.value, '7');
+
+    typeAmount(dom, '35');
+    document.getElementById('amountThousandsBtn').click();
+    assert.equal(amount.value, '35.000');
+    typeAmount(dom, '');
+    document.getElementById('amountThousandsBtn').click();
+    assert.equal(amount.value, '');
+
+    typeAmount(dom, '1500000');
+    dom.window.selectManagedPocket('pocket-1');
+    document.getElementById('ngapain').value = 'Rent';
+    submitForm(dom);
+    await settle();
+
+    const payload = JSON.parse(calls.find(call => call.options?.method === 'POST').options.body);
+    assert.equal(payload.amount, '1500000');
+    dom.window.close();
+});
+
+test('an empty note is sent as the type name, like the Telegram Skip', async () => {
+    const calls = [];
+    const dom = await savingPage({ calls });
+    await settle();
+
+    const { document } = dom.window;
+    assert.equal(document.getElementById('ngapain').required, false);
+    document.querySelector('#typeSheet [data-type-option="Bensin"]').click();
+    dom.window.selectManagedPocket('pocket-1');
+    typeAmount(dom, '50000');
+    document.getElementById('ngapain').value = '   ';
+    submitForm(dom);
+    await settle();
+
+    const payload = JSON.parse(calls.find(call => call.options?.method === 'POST').options.body);
+    assert.equal(payload.ngapain, 'Bensin');
+    dom.window.close();
+});
+
+test('the last type and the pocket used for it are preselected on the next visit', async () => {
+    const first = await savingPage({ pocketOptions: twoPockets });
+    await settle();
+    first.window.document.querySelector('#typeSheet [data-type-option="Bensin"]').click();
+    first.window.selectManagedPocket('pocket-2');
+    typeAmount(first, '50000');
+    submitForm(first);
+    await settle();
+    const stored = {
+        moneyJournalLastPick: first.window.localStorage.getItem('moneyJournalLastPick'),
+        moneyJournalPocketByType: first.window.localStorage.getItem('moneyJournalPocketByType')
+    };
+    first.window.close();
+
+    assert.deepEqual(JSON.parse(stored.moneyJournalLastPick), { type: 'Bensin', pocketId: 'pocket-2' });
+    assert.deepEqual(JSON.parse(stored.moneyJournalPocketByType), { Bensin: 'pocket-2' });
+
+    const second = await savingPage({ pocketOptions: twoPockets, storage: stored });
+    await settle();
+    assert.equal(second.window.getSelectedType(), 'Bensin');
+    assert.equal(second.window.document.getElementById('selectedPocketDisplay').textContent, '🚌 Transport');
+    second.window.close();
+});
+
+test('picking a type switches to the pocket last used for it, unless a pocket was picked by hand', async () => {
+    const storage = {
+        moneyJournalLastPick: JSON.stringify({ type: 'Eat', pocketId: 'pocket-1' }),
+        moneyJournalPocketByType: JSON.stringify({ Eat: 'pocket-1', Bensin: 'pocket-2' })
+    };
+    const dom = await savingPage({ pocketOptions: twoPockets, storage });
+    await settle();
+
+    const { document } = dom.window;
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '💰 Kwintals');
+    document.querySelector('#typeSheet [data-type-option="Bensin"]').click();
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '🚌 Transport');
+
+    document.querySelector('#pocketSheet [data-managed-pocket-option="pocket-1"]').click();
+    document.querySelector('#typeSheet [data-type-option="Bensin"]').click();
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '💰 Kwintals');
+    dom.window.close();
+});
+
+test('a remembered pocket that is not assigned this Budget Month is ignored', async () => {
+    const storage = { moneyJournalLastPick: JSON.stringify({ type: 'Eat', pocketId: 'archived-pocket' }) };
+    const dom = await savingPage({ storage });
+    await settle();
+
+    assert.equal(dom.window.document.getElementById('selectedPocketDisplay').textContent, 'Select pocket…');
+    dom.window.close();
+});
+
+test('broken remembered data falls back to the plain defaults', async () => {
+    const storage = { moneyJournalLastPick: '{not json', moneyJournalPocketByType: '[]' };
+    const dom = await savingPage({ storage });
+    await settle();
+
+    assert.equal(dom.window.getSelectedType(), 'Eat');
+    assert.equal(dom.window.document.getElementById('selectedPocketDisplay').textContent, 'Select pocket…');
+    dom.window.close();
+});
+
+test('editing does not apply remembered defaults over the saved values', async () => {
+    const storage = {
+        moneyJournalLastPick: JSON.stringify({ type: 'Bensin', pocketId: 'pocket-2' }),
+        moneyJournalPocketByType: JSON.stringify({ Bensin: 'pocket-2', Eat: 'pocket-2' })
+    };
+    const dom = await setupPage(async (url, options) => {
+        if (url === '/api/transaction/transaction-id') {
+            return response({
+                _id: 'transaction-id', expenseDate: '2027-02-24', type: 'Eat', amount: 1250000,
+                ngapain: 'Groceries run', sourceType: 'single', pocket: 'Kwintals', pocketId: 'pocket-1'
+            });
+        }
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse(twoPockets);
+        return assignmentResponse();
+    }, { edit: 'transaction-id', storage });
+    await settle();
+
+    const { document } = dom.window;
+    assert.equal(dom.window.getSelectedType(), 'Eat');
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '💰 Kwintals');
+    assert.equal(document.getElementById('amount').value, '1.250.000');
+    dom.window.close();
+});
+
+test('confetti and the streak note only appear when a save reaches a streak milestone', async () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+
+    async function saveWithStreak(count) {
+        const toasts = [];
+        const dom = await savingPage({ toasts, storage: { moneyJournalStreak: JSON.stringify({ count, lastDate: yesterdayKey }) } });
+        let confetti = 0;
+        dom.window.launchConfetti = () => { confetti += 1; };
+        await settle();
+        dom.window.selectManagedPocket('pocket-1');
+        typeAmount(dom, '1000');
+        submitForm(dom);
+        await settle();
+        dom.window.close();
+        return { confetti, message: toasts[0].message };
+    }
+
+    assert.deepEqual(await saveWithStreak(6), { confetti: 1, message: 'Saved · Rp 1000 · 🔥 7-day streak' });
+    assert.deepEqual(await saveWithStreak(2), { confetti: 0, message: 'Saved · Rp 1000' });
 });

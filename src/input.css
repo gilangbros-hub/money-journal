@@ -257,6 +257,23 @@
     @apply bg-coral-dark;
   }
 
+  /* Log Spending keeps the toast at the top: at the bottom it covers the Save
+     button (and the keyboard covers it) while the 5 s Undo toast is up. */
+  .transaction-screen .toast {
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    bottom: auto;
+  }
+
+  .transaction-screen .toast.show {
+    bottom: auto;
+  }
+
+  .toast-action {
+    @apply ml-3 py-1 px-3 rounded-lg text-sm font-bold cursor-pointer border-none;
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+  }
+
   /* --- Progress Bar --- */
   .progress-track {
     @apply w-full h-1.5 bg-bg-tertiary rounded-full overflow-hidden;
@@ -1110,6 +1127,25 @@ body {
 .transaction-counter-input::placeholder {
   color: var(--journal-ink);
   opacity: 0.3;
+}
+
+.transaction-amount-quick {
+  margin-top: 8px;
+  min-height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--journal-line);
+  background: #FFFFFF;
+  color: var(--journal-soft-ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.transaction-amount-quick:active {
+  background: var(--journal-accent-soft);
+  color: var(--journal-ink);
 }
 
 .transaction-section {

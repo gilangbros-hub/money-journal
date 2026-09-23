@@ -46,8 +46,13 @@ function createTransactionController({ service = transactionService, reporting }
     const reportingAdapter = reporting || (service === transactionService ? reportingService : null);
     return {
         async createTransaction(req, res) {
-            await service.createExpense(req.body || {}, actorFromRequest(req), serviceOptions(req));
-            res.json({ success: true, message: 'Transaction saved successfully!' });
+            const created = await service.createExpense(req.body || {}, actorFromRequest(req), serviceOptions(req));
+            // `id` lets the client offer Undo (a DELETE of the new record).
+            res.json({
+                success: true,
+                message: 'Transaction saved successfully!',
+                id: created?._id ? String(created._id) : undefined
+            });
         },
 
         async getAllTransactions(req, res) {

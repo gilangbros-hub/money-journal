@@ -13,13 +13,8 @@ const TYPE_META = {
     Others: { icon: '\u{1F4E6}' }
 };
 
-const celebrationMessages = [
-    { emoji: '\u{1F389}', text: 'Great job tracking!' },
-    { emoji: '\u{1F4AA}', text: 'Discipline = freedom!' },
-    { emoji: '\u2728', text: 'Every rupiah counts!' },
-    { emoji: '\u{1F4CA}', text: 'Data is power!' }
-];
-
+// Confetti is saved for these streak days; an ordinary save just gets a toast.
+const STREAK_MILESTONES = [7, 30, 100];
 let breakdownRowId = 0;
 let closedMonthKeys = [];
 let assignmentPreview = null;
@@ -31,6 +26,13 @@ const expenseTypeManagementEnabled = document.getElementById('expenseTypeManagem
 // never silently swaps the type for another one.
 let pendingEditType = '';
 
+// Remembered defaults: the last type/pocket saved, plus the pocket last used
+// for each type. A manual pick in this visit wins over either of them.
+const LAST_PICK_KEY = 'moneyJournalLastPick';
+const POCKET_BY_TYPE_KEY = 'moneyJournalPocketByType';
+let typeChosenManually = false;
+let pocketChosenManually = false;
+let saving = false;
 // Pocket source is always assignment-backed: fetched from
 // /api/expense-pocket-options as soon as the Budget Month is known (page
 // load, then again on every date/edit change), never from a hardcoded list.
@@ -97,12 +99,72 @@ function bumpStreak() {
 function displayStreak() {
     const streak = getStreak();
     const badge = document.getElementById('streakBadge');
-    if (badge && streak.count > 0) {
+    if (!badge) return;
+    if (streak.count > 0) {
         badge.textContent = `\u{1F525} ${streak.count}d`;
         badge.style.display = 'inline-flex';
+    } else {
+        badge.style.display = 'none';
     }
 }
 
+// localStorage can be missing or throw (private mode, blocked site data); the
+// form must work the same without it, just without remembered defaults.
+function readStoredJson(key, fallback) {
+    try {
+        const value = JSON.parse(localStorage.getItem(key) || 'null');
+        return value && typeof value === 'object' ? value : fallback;
+    } catch (error) {
+        return fallback;
+    }
+}
+
+function writeStoredJson(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+        // Remembered defaults are a convenience; ignore.
+    }
+}
+
+function rememberPick(type, pocketId) {
+    writeStoredJson(LAST_PICK_KEY, { type, pocketId: pocketId || '' });
+    if (pocketId) {
+        writeStoredJson(POCKET_BY_TYPE_KEY, { ...readStoredJson(POCKET_BY_TYPE_KEY, {}), [type]: pocketId });
+    }
+}
+
+function rememberedType() {
+    const type = readStoredJson(LAST_PICK_KEY, {}).type;
+    return typeof type === 'string' ? type : '';
+}
+
+// ---------------------------------------------------------------------------
+// Amount input: digits only, shown with '.' thousands separators (35.000),
+// submitted as a plain digit string.
+// ---------------------------------------------------------------------------
+
+function amountDigits(value) {
+    return String(value == null ? '' : value).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+}
+
+function formatAmountDigits(digits) {
+    return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+function parseAmountInput() {
+    return amountDigits(document.getElementById('amount').value);
+}
+
+function setAmountInput(value) {
+    const input = document.getElementById('amount');
+    input.value = formatAmountDigits(amountDigits(value));
+    try {
+        input.setSelectionRange(input.value.length, input.value.length);
+    } catch (error) {
+        // Not focused or not supported; the caret position does not matter then.
+    }
+}
 function canonicalExpenseDate(transaction) {
     const value = transaction?.expenseDate ?? transaction?.date;
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : '';
@@ -172,7 +234,10 @@ function applyManagedExpenseTypes(activeTypes) {
     renderTypeOptions(types);
 
     const names = types.map((type) => type.name);
-    const next = [pendingEditType, previous].find((name) => name && names.includes(name)) || names[0];
+    // A remembered custom type may only exist in the managed list, so give it
+    // another chance now unless the user already picked a type.
+    const remembered = editId || typeChosenManually ? '' : rememberedType();
+    const next = [pendingEditType, remembered, previous].find((name) => name && names.includes(name)) || names[0];
     setSelectedType(next);
 }
 
@@ -283,11 +348,23 @@ function applyManagedPocketOptions(options) {
     managedPocketOptions.forEach((option) => managedPocketById.set(option.pocketId, option));
 
     restorePendingEditPocketSelections();
+    if (!editId && !selectedManagedPocketId) applyRememberedPocket();
 
     renderManagedPocketSheet();
     renderManagedSingleDisplay();
     refreshAllDropdowns();
     updateBreakdownTotal();
+}
+
+// Preselect the pocket last used for the current type, else the last pocket
+// used at all. Only pockets assigned for this Budget Month qualify.
+function applyRememberedPocket({ typeOnly = false } = {}) {
+    const byType = readStoredJson(POCKET_BY_TYPE_KEY, {})[getSelectedType()];
+    const candidate = typeOnly ? byType : (byType || readStoredJson(LAST_PICK_KEY, {}).pocketId);
+    if (typeof candidate === 'string' && managedPocketById.has(candidate)) {
+        selectedManagedPocketId = candidate;
+        renderManagedSingleDisplay();
+    }
 }
 
 function pocketSheetGrid() {
@@ -446,7 +523,7 @@ function onBreakdownPocketChange() {
 }
 
 function getTransactionAmount() {
-    return parseFloat(document.getElementById('amount').value) || 0;
+    return parseFloat(parseAmountInput()) || 0;
 }
 
 function getBreakdownSum() {
@@ -643,8 +720,8 @@ function validateForm() {
         showToast('Choose a valid expense date first', 'error');
         return false;
     }
-    const amountValue = document.getElementById('amount').value;
-    if (!amountValue || parseFloat(amountValue) <= 0) {
+    const amountValue = getTransactionAmount();
+    if (amountValue <= 0) {
         showToast('Amount must be greater than 0', 'error');
         return false;
     }
@@ -691,7 +768,7 @@ function validateForm() {
             breakdownSum += amount;
         }
 
-        if (Math.round(breakdownSum) !== Math.round(parseFloat(amountValue))) {
+        if (Math.round(breakdownSum) !== Math.round(amountValue)) {
             showToast('Pocket breakdown must match transaction amount', 'error');
             return false;
         }
@@ -709,7 +786,7 @@ async function loadTransactionForEdit(id) {
         document.getElementById('submitBtn').textContent = 'Update Transaction';
         document.getElementById('transactionId').value = transaction._id;
         document.getElementById('ngapain').value = transaction.ngapain || '';
-        document.getElementById('amount').value = transaction.amount || '';
+        setAmountInput(transaction.amount || '');
 
         const canonicalDate = canonicalExpenseDate(transaction);
         document.getElementById('date').value = canonicalDate;
@@ -774,18 +851,64 @@ function editReturnUrl() {
     return '/review-history';
 }
 
-function addAnother() {
-    document.getElementById('successModal').classList.remove('show');
-    document.getElementById('transactionForm').reset();
-    document.getElementById('date').value = dateOnlyToday();
-    updateDateDisplay();
-    if (salaryCycleEnabled) loadAssignmentPreview();
-    else populateBudgetMonthSelect();
-    document.getElementById('sourceTypeSingle').checked = true;
-    setSelectedType('Eat');
-    handleSourceTypeChange();
-    selectedManagedPocketId = '';
-    renderManagedSingleDisplay();
+// After a save, clear what changes per entry (amount, note, split rows) and
+// keep what usually repeats: date, Budget Month, type and pocket.
+function resetForNextEntry() {
+    setAmountInput('');
+    document.getElementById('ngapain').value = '';
+    if (getSourceType() !== 'single') {
+        document.getElementById('sourceTypeSingle').checked = true;
+        handleSourceTypeChange();
+    }
+    // Back to the top so the amount sits below the top toast, not under it.
+    window.scrollTo(0, 0);
+    document.getElementById('amount').focus({ preventScroll: true });
+}
+
+function readRawStreak() {
+    try {
+        return localStorage.getItem('moneyJournalStreak');
+    } catch (error) {
+        return null;
+    }
+}
+
+function restoreStreak(previousValue) {
+    try {
+        if (previousValue === null) localStorage.removeItem('moneyJournalStreak');
+        else localStorage.setItem('moneyJournalStreak', previousValue);
+    } catch (error) {
+        // Nothing to roll back if storage is unavailable.
+    }
+    displayStreak();
+}
+
+// Undo deletes the entry just saved and puts its values back in the form so
+// a wrong amount or pocket can be fixed and saved again.
+async function undoCreate(transactionId, snapshot, previousStreak) {
+    try {
+        const response = await fetch(`/api/transaction/${encodeURIComponent(transactionId)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error(`Undo failed with ${response.status}`);
+    } catch (error) {
+        console.error('Error undoing transaction:', error);
+        showToast('Could not undo, the entry is still saved', 'error');
+        return;
+    }
+
+    restoreStreak(previousStreak);
+    setAmountInput(snapshot.amount);
+    document.getElementById('ngapain').value = snapshot.note;
+    setSelectedType(snapshot.type);
+    if (snapshot.sourceType === 'multi') {
+        document.getElementById('sourceTypeMulti').checked = true;
+        handleSourceTypeChange();
+        document.getElementById('breakdownRows').innerHTML = '';
+        snapshot.breakdowns.forEach((item) => addBreakdownRow(item.pocketId, item.amount));
+        updateBreakdownTotal();
+    } else if (managedPocketById.has(snapshot.pocketId)) {
+        selectManagedPocket(snapshot.pocketId);
+    }
+    showToast('Entry removed', 'success');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -795,7 +918,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDateDisplay();
     if (salaryCycleEnabled) loadAssignmentPreview();
     else populateBudgetMonthSelect();
-    setSelectedType('Eat');
+    const remembered = rememberedType();
+    const rememberedAvailable = remembered
+        && document.querySelector(`input[name="type"][value="${CSS.escape(remembered)}"]`);
+    setSelectedType(!editId && rememberedAvailable ? remembered : 'Eat');
     loadManagedExpenseTypes();
     handleSourceTypeChange();
     loadClosedMonths();
@@ -811,10 +937,19 @@ document.addEventListener('DOMContentLoaded', () => {
         radio.addEventListener('change', handleSourceTypeChange);
     });
 
-    document.getElementById('amount').addEventListener('input', () => {
+    const amountInput = document.getElementById('amount');
+    amountInput.addEventListener('input', () => {
+        setAmountInput(amountInput.value);
         if (getSourceType() === 'multi') updateBreakdownTotal();
     });
+    if (!editId) amountInput.focus();
 
+    document.getElementById('amountThousandsBtn').addEventListener('click', () => {
+        const digits = parseAmountInput();
+        if (digits) setAmountInput(`${digits}000`);
+        amountInput.focus();
+        if (getSourceType() === 'multi') updateBreakdownTotal();
+    });
     document.getElementById('date').addEventListener('change', () => {
         updateDateDisplay();
         if (salaryCycleEnabled) loadAssignmentPreview();
@@ -846,7 +981,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('typeSheet')?.addEventListener('click', (event) => {
         const typeButton = event.target.closest('[data-type-option]');
         if (!typeButton) return;
+        typeChosenManually = true;
         setSelectedType(typeButton.dataset.typeOption);
+        if (!editId && !pocketChosenManually) applyRememberedPocket({ typeOnly: true });
         closeSheet('typeSheet');
     });
 
@@ -855,6 +992,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('pocketSheet')?.addEventListener('click', (event) => {
         const managedButton = event.target.closest('[data-managed-pocket-option]');
         if (managedButton) {
+            pocketChosenManually = true;
             selectManagedPocket(managedButton.dataset.managedPocketOption);
             closeSheet('pocketSheet');
             return;
@@ -878,17 +1016,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('transactionForm').addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!validateForm()) return;
-
+        // The form no longer sits behind a modal after saving, so guard
+        // against a double tap creating the same entry twice.
+        if (saving || !validateForm()) return;
         const transactionId = document.getElementById('transactionId').value;
         const isEdit = !!transactionId;
         const sourceType = getSourceType();
+        const note = document.getElementById('ngapain').value;
         const formData = {
             expenseDate: document.getElementById('date').value,
             date: document.getElementById('date').value,
             type: getSelectedType(),
-            ngapain: document.getElementById('ngapain').value,
-            amount: document.getElementById('amount').value,
+            // The server requires a note; like the Telegram bot's Skip, an
+            // empty note falls back to the type name.
+            ngapain: note.trim() || getSelectedType(),
+            amount: parseAmountInput(),
             sourceType
         };
 
@@ -918,6 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.sourceBreakdowns = breakdowns;
         }
 
+        saving = true;
         try {
             const response = await fetch(isEdit ? `/api/transaction/${transactionId}` : '/api/transaction', {
                 method: isEdit ? 'PUT' : 'POST',
@@ -933,14 +1076,34 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = editReturnUrl();
                 }, 800);
             } else if (response.ok && result.success) {
-                const streakCount = bumpStreak();
-                const msg = celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)];
-                const streakSuffix = streakCount > 1 ? ` ${streakCount}d streak` : '';
-                if (typeof launchConfetti === 'function') launchConfetti(2200);
+                const snapshot = {
+                    amount: formData.amount,
+                    note,
+                    type: formData.type,
+                    sourceType,
+                    pocketId: formData.pocketId || '',
+                    breakdowns: formData.sourceBreakdowns
+                };
+                rememberPick(formData.type, formData.pocketId);
 
-                document.getElementById('successEmoji').textContent = msg.emoji;
-                document.getElementById('successMessage').textContent = `${msg.text}${streakSuffix}`;
-                document.getElementById('successModal').classList.add('show');
+                const previousStreak = readRawStreak();
+                const streakBefore = getStreak().count;
+                const streakCount = bumpStreak();
+                displayStreak();
+                const milestone = streakCount !== streakBefore && STREAK_MILESTONES.includes(streakCount);
+                if (milestone && typeof launchConfetti === 'function') launchConfetti(2200);
+
+                resetForNextEntry();
+                const savedText = `Saved \u00B7 ${formatRupiah(Number(formData.amount))}`
+                    + (milestone ? ` \u00B7 \u{1F525} ${streakCount}-day streak` : '');
+                if (result.id) {
+                    showToast(savedText, 'success', {
+                        actionLabel: 'Undo',
+                        onAction: () => undoCreate(result.id, snapshot, previousStreak)
+                    });
+                } else {
+                    showToast(savedText, 'success');
+                }
             } else {
                 if (salaryCycleEnabled && response.status === 409) {
                     await loadAssignmentPreview();
@@ -950,15 +1113,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error saving transaction:', error);
             showToast('Network error occurred', 'error');
+        } finally {
+            saving = false;
         }
     });
 
     document.addEventListener('click', (event) => {
         if (event.target.classList.contains('picker-sheet-overlay')) {
             event.target.classList.remove('show');
-        }
-        if (event.target === document.getElementById('successModal')) {
-            document.getElementById('successModal').classList.remove('show');
         }
     });
 });

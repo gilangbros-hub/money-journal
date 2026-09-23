@@ -2,6 +2,12 @@
 
 A step-by-step plan for improving the money tracking flow: Log Spending, Monthly Story, Review History and navigation. Do the phases in order. Each phase is one commit. Don't start a new phase until the current one has passed its checks.
 
+## Status
+
+- **Phase 1: done.** Deviation: after saving an edit, the page returns to where the edit was opened from (same-origin referrer), falling back to `/review-history`.
+- **Phase 2: done.** Deviations: Undo also puts the deleted entry's values back in the form so it can be fixed and saved again. After a save, the date, type and pocket are kept (only amount, note and split rows reset). On Log Spending the toast sits at the top of the screen, because at the bottom it covered the Save button for the 5 s it stays up. `showToast` now uses `textContent` instead of `innerText`.
+- Phases 3 to 6: not started.
+
 ## Ground rules for whoever runs this
 
 - Work on branch `claude/money-tracking-ui-ux-pvfnrh`. Commit after each phase with a message like `feat(log-spending): ...` or `fix(log-spending): ...`, the same style as `git log`.
