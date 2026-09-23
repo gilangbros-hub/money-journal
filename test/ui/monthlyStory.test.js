@@ -8,6 +8,7 @@ const hbs = require('hbs');
 
 const viewSource = fs.readFileSync(require.resolve('../../views/monthly-story.hbs'), 'utf8');
 const browserSource = fs.readFileSync(require.resolve('../../public/js/monthly-story.js'), 'utf8');
+const banksSource = fs.readFileSync(require.resolve('../../public/js/banks.js'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
 hbs.handlebars.registerPartial('actionHub', fs.readFileSync(require.resolve('../../views/partials/actionHub.hbs'), 'utf8'));
@@ -88,6 +89,7 @@ async function setupPage({ summary, transactions, expenseTypes } = {}) {
     dom.window.formatRupiah = value => `Rp ${value}`;
     dom.window.showToast = () => {};
     dom.window.openOptions = () => {};
+    dom.window.eval(banksSource);
     dom.window.eval(browserSource);
     await new Promise(resolve => setImmediate(resolve));
     return { dom, calls, charts };
@@ -398,8 +400,6 @@ test('Month Feed rows open the entry for editing and have no inline Delete', asy
     dom.window.close();
 });
 
-const banksSource = fs.readFileSync(require.resolve('../../public/js/banks.js'), 'utf8');
-
 async function setupWithBanks(banks) {
     const summary = {
         budgetMonth: '2027-03',
@@ -411,11 +411,7 @@ async function setupWithBanks(banks) {
         budgetAlerts: [],
         budget: { totalBudget: 1000, totalRemaining: 500, pockets: [], ...(banks ? { banks } : {}) }
     };
-    const page = await setupPage({ summary, transactions: [] });
-    // banks.js normally loads before the page script; add it and re-render.
-    page.dom.window.eval(banksSource);
-    page.dom.window.eval('renderBankMoney()');
-    return page;
+    return setupPage({ summary, transactions: [] });
 }
 
 test('Money by bank shows one card per bank with what is left', async () => {
@@ -450,5 +446,27 @@ test('Money by bank stays hidden without bank data', async () => {
 
     assert.equal(document.getElementById('bankMoneySection').hidden, true);
     assert.equal(document.querySelectorAll('#bankMoneyList [data-bank]').length, 0);
+    dom.window.close();
+});
+
+test('Pocket Pulse shows the bank logo before each pocket name', async () => {
+    const { dom } = await setupPage({
+        summary: budgetSummary({
+            pockets: [
+                { pocket: 'Groceries', icon: '🥦', cadence: 'Monthly', budget: 500000, spent: 100000, alertStatus: 'normal',
+                    bank: { key: 'jago', name: 'Jago', color: '#FDAF27', logo: '/images/banks/jago.svg' } },
+                { pocket: 'Old', icon: '📦', cadence: 'Monthly', budget: 100000, spent: 0, alertStatus: 'normal', bank: null }
+            ],
+            totalBudget: 600000,
+            totalRemaining: 500000,
+            period: { startDate: utcDateKey(-5), endDate: utcDateKey(9) }
+        }),
+        transactions: []
+    });
+    const titles = [...dom.window.document.querySelectorAll('#pocketPulseList .journal-pulse-title')];
+
+    assert.ok(titles[0].querySelector('[data-bank-logo="jago"] img'));
+    assert.equal(titles[0].lastElementChild.textContent, '🥦 Groceries');
+    assert.equal(titles[1].querySelector('[data-bank-logo]'), null);
     dom.window.close();
 });

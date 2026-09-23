@@ -363,7 +363,7 @@ function renderPocketPulse() {
             return `
             <article class="journal-pulse-item ${status}">
                 <div class="journal-pulse-head">
-                    <p class="journal-pulse-title">${safeText(`${pocket.icon || pocket.pocketEmoji || ''} ${pocket.pocket}`.trim())}</p>
+                    <p class="journal-pulse-title">${pocket.bank && typeof bankLogoHtml === 'function' ? bankLogoHtml(pocket.bank, 'sm') : ''}<span>${safeText(`${pocket.icon || pocket.pocketEmoji || ''} ${pocket.pocket}`.trim())}</span></p>
                     <p class="journal-pulse-scope">${safeText(pulseScopeLabel(pocket, currentWeekKey))}</p>
                 </div>
                 <p class="journal-pulse-amounts">${safeText(amounts)}</p>

@@ -2149,3 +2149,21 @@ a.trans-item {
 .bank-logo-unassigned {
   font-weight: 700;
 }
+
+/* Pocket Pulse: bank logo before the pocket name */
+.journal-pulse-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.journal-pulse-title .bank-logo {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+
+.journal-pulse-head {
+  align-items: center;
+}
