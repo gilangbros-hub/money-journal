@@ -19,6 +19,29 @@ const typeEmojis = {
     Others: '📦'
 };
 
+// With Expense Type Management on, merge the managed types' emoji into
+// typeEmojis so custom types don't all render as the fallback box.
+const expenseTypeManagementEnabled = document.getElementById('expenseTypeManagementEnabled')?.value === 'true';
+
+async function loadManagedTypeEmojis() {
+    if (!expenseTypeManagementEnabled) return;
+    try {
+        const response = await fetch('/api/expense-types');
+        const result = await response.json();
+        if (!response.ok || result?.success !== true || !Array.isArray(result.data?.active)) return;
+        result.data.active.forEach((type) => {
+            if (type && typeof type.name === 'string' && type.name && type.emoji) {
+                typeEmojis[type.name] = type.emoji;
+            }
+        });
+    } catch (error) {
+        // Keep the static map.
+    }
+}
+
+// Started once on load; loadJournalData waits for it before rendering.
+let typeEmojisReady = Promise.resolve();
+
 async function determineDefaultMonth() {
     const requested = new URLSearchParams(window.location.search).get('month');
     if (requested !== null) return requested;
@@ -35,6 +58,7 @@ async function determineDefaultMonth() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    typeEmojisReady = loadManagedTypeEmojis();
     const monthFilter = document.getElementById('monthFilter');
     
     currentMonth = await determineDefaultMonth();
@@ -67,6 +91,7 @@ async function loadJournalData() {
 
         const summaryResult = await summaryResponse.json();
         const txResult = await txResponse.json();
+        await typeEmojisReady;
 
         if (!summaryResult.success) {
             throw new Error('Failed to load summary');

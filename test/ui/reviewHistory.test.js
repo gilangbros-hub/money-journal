@@ -23,7 +23,7 @@ function response(body, status = 200) {
     };
 }
 
-async function setupPage({ transactions } = {}) {
+async function setupPage({ transactions, expenseTypes } = {}) {
     const calls = [];
     const historyTransactions = transactions || [
         {
@@ -50,12 +50,15 @@ async function setupPage({ transactions } = {}) {
             paidBy: 'Self'
         }
     ];
-    const dom = new JSDOM(renderView({ username: 'tester', avatar: '👤' }), {
+    const dom = new JSDOM(renderView({ username: 'tester', avatar: '👤', expenseTypeManagementEnabled: Boolean(expenseTypes) }), {
         url: 'https://money-journal.test/review-history',
         runScripts: 'outside-only'
     });
     dom.window.fetch = async (url, options) => {
         calls.push({ url, options });
+        if (url === '/api/expense-types') {
+            return response({ success: true, data: { active: expenseTypes || [] } });
+        }
         if (url === '/api/budget') {
             return response({
                 success: true,
@@ -138,4 +141,26 @@ test('Review History never routes date-only values through UTC serialization or 
     assert.doesNotMatch(browserSource, /new Date\(\s*dateKey/);
     assert.match(browserSource, /transactionDateKey\(a\)/);
     assert.match(browserSource, /groups\[key\]/);
+});
+
+test('Review History adds managed custom types to the filter pills with their emoji', async () => {
+    const { dom, calls } = await setupPage({
+        expenseTypes: [{ id: 't2', name: 'Parkir', emoji: '🅿️', status: 'Active' }],
+        transactions: [
+            { _id: 'parkir', expenseDate: '2027-03-01', type: 'Parkir', pocket: 'Kwintals', amount: 5000, ngapain: 'Mall parking', paidBy: 'Self' },
+            { _id: 'eat', expenseDate: '2027-03-01', type: 'Eat', pocket: 'Kwintals', amount: 1000, ngapain: 'Lunch', paidBy: 'Self' }
+        ]
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    const { document } = dom.window;
+
+    assert.ok(calls.some(call => call.url === '/api/expense-types'));
+    const pill = document.querySelector('#filterPills [data-type="Parkir"]');
+    assert.equal(pill.textContent, '🅿️ Parkir');
+    pill.click();
+    const rows = [...document.querySelectorAll('.trans-item')];
+    assert.equal(rows.length, 1);
+    assert.match(rows[0].textContent, /Mall parking/);
+    assert.match(rows[0].textContent, /🅿️/);
+    dom.window.close();
 });

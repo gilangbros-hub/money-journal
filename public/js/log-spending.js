@@ -24,6 +24,12 @@ let breakdownRowId = 0;
 let closedMonthKeys = [];
 let assignmentPreview = null;
 const salaryCycleEnabled = document.getElementById('salaryCycleEnabled')?.value === 'true';
+const expenseTypeManagementEnabled = document.getElementById('expenseTypeManagementEnabled')?.value === 'true';
+
+// The type saved on the transaction being edited. It stays selectable even if
+// it is missing from the managed list (archived since), so saving an edit
+// never silently swaps the type for another one.
+let pendingEditType = '';
 
 // Pocket source is always assignment-backed: fetched from
 // /api/expense-pocket-options as soon as the Budget Month is known (page
@@ -114,6 +120,76 @@ function setSelectedType(type) {
     const input = document.querySelector(`input[name="type"][value="${CSS.escape(type)}"]`);
     if (input) input.checked = true;
     updateTypeDisplay();
+}
+
+// ---------------------------------------------------------------------------
+// Expense type options. The server-rendered list is the fallback; with Expense
+// Type Management on, the managed Active types replace it so types created on
+// /expense-type-management show up here as they already do in the Telegram bot.
+// ---------------------------------------------------------------------------
+
+function renderTypeOptions(types) {
+    const hidden = document.querySelector('.transaction-hidden-types');
+    const grid = document.querySelector('#typeSheet .picker-grid');
+    if (!hidden || !grid) return;
+
+    hidden.innerHTML = types.map((type) => (
+        `<input type="radio" name="type" value="${escapeHtml(type.name)}" class="option-input type-hidden-input" data-type-label="${escapeHtml(type.name)}" required>`
+    )).join('');
+    grid.innerHTML = types.map((type) => (
+        `<button type="button" class="picker-grid-item" data-type-option="${escapeHtml(type.name)}">`
+        + `<span class="picker-grid-icon">${escapeHtml(type.emoji)}</span>`
+        + `<span>${escapeHtml(type.name)}</span>`
+        + '</button>'
+    )).join('');
+}
+
+function currentTypeOptions() {
+    return Array.from(document.querySelectorAll('input[name="type"]')).map((input) => ({
+        name: input.value,
+        emoji: TYPE_META[input.value]?.icon || ''
+    }));
+}
+
+function ensureTypeOption(type) {
+    if (!type || document.querySelector(`input[name="type"][value="${CSS.escape(type)}"]`)) return;
+    renderTypeOptions([...currentTypeOptions(), { name: type, emoji: TYPE_META[type]?.icon || '\u{1F4E6}' }]);
+}
+
+function applyManagedExpenseTypes(activeTypes) {
+    const previous = document.querySelector('input[name="type"]:checked')?.value || '';
+    const types = activeTypes
+        .filter((type) => type && typeof type.name === 'string' && type.name)
+        .map((type) => ({ name: type.name, emoji: type.emoji || '' }));
+    if (!types.length) return;
+
+    if (pendingEditType && !types.some((type) => type.name === pendingEditType)) {
+        types.push({ name: pendingEditType, emoji: TYPE_META[pendingEditType]?.icon || '\u{1F4E6}' });
+    }
+    types.forEach((type) => {
+        TYPE_META[type.name] = { icon: type.emoji || TYPE_META[type.name]?.icon || '' };
+    });
+    renderTypeOptions(types);
+
+    const names = types.map((type) => type.name);
+    const next = [pendingEditType, previous].find((name) => name && names.includes(name)) || names[0];
+    setSelectedType(next);
+}
+
+async function loadManagedExpenseTypes() {
+    if (!expenseTypeManagementEnabled) return false;
+    let result;
+    try {
+        const response = await fetch('/api/expense-types');
+        if (!response.ok) return false;
+        result = await response.json();
+    } catch (error) {
+        // Keep the server-rendered list; a picker that still works beats an error toast.
+        return false;
+    }
+    if (!result || result.success !== true || !Array.isArray(result.data?.active)) return false;
+    applyManagedExpenseTypes(result.data.active);
+    return true;
 }
 
 function updateTypeDisplay() {
@@ -640,6 +716,8 @@ async function loadTransactionForEdit(id) {
         updateDateDisplay();
         if (salaryCycleEnabled) await loadAssignmentPreview();
 
+        pendingEditType = transaction.type || '';
+        ensureTypeOption(pendingEditType);
         setSelectedType(transaction.type || 'Eat');
 
         if (!salaryCycleEnabled && transaction.budgetMonth && transaction.budgetYear) {
@@ -682,6 +760,20 @@ async function loadTransactionForEdit(id) {
     }
 }
 
+// After saving an edit, go back to the page the edit was opened from (Monthly
+// Story or Review History), falling back to Review History.
+function editReturnUrl() {
+    try {
+        const referrer = new URL(document.referrer);
+        if (referrer.origin === window.location.origin && referrer.pathname !== window.location.pathname) {
+            return `${referrer.pathname}${referrer.search}`;
+        }
+    } catch (error) {
+        // No or unparseable referrer.
+    }
+    return '/review-history';
+}
+
 function addAnother() {
     document.getElementById('successModal').classList.remove('show');
     document.getElementById('transactionForm').reset();
@@ -704,6 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (salaryCycleEnabled) loadAssignmentPreview();
     else populateBudgetMonthSelect();
     setSelectedType('Eat');
+    loadManagedExpenseTypes();
     handleSourceTypeChange();
     loadClosedMonths();
     // Fetch pocket options immediately so the sheet has real data by the time
@@ -749,11 +842,12 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => closeSheet(button.dataset.closeSheet));
     });
 
-    document.querySelectorAll('[data-type-option]').forEach((button) => {
-        button.addEventListener('click', () => {
-            setSelectedType(button.dataset.typeOption);
-            closeSheet('typeSheet');
-        });
+    // Delegated so it keeps working after managed types replace the grid.
+    document.getElementById('typeSheet')?.addEventListener('click', (event) => {
+        const typeButton = event.target.closest('[data-type-option]');
+        if (!typeButton) return;
+        setSelectedType(typeButton.dataset.typeOption);
+        closeSheet('typeSheet');
     });
 
     // Delegated so it keeps working as the grid's contents are replaced by
@@ -832,7 +926,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const result = await response.json();
 
-            if (response.ok && result.success) {
+            if (response.ok && result.success && isEdit) {
+                // An edit is not a new day of tracking: no streak bump, no confetti.
+                showToast('Transaction updated', 'success');
+                setTimeout(() => {
+                    window.location.href = editReturnUrl();
+                }, 800);
+            } else if (response.ok && result.success) {
                 const streakCount = bumpStreak();
                 const msg = celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)];
                 const streakSuffix = streakCount > 1 ? ` ${streakCount}d streak` : '';

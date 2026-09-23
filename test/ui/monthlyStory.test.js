@@ -23,7 +23,7 @@ function response(body, status = 200) {
     };
 }
 
-async function setupPage({ summary, transactions } = {}) {
+async function setupPage({ summary, transactions, expenseTypes } = {}) {
     const calls = [];
     const charts = [];
     const summaryData = summary || {
@@ -56,7 +56,7 @@ async function setupPage({ summary, transactions } = {}) {
         { _id: 'older', expenseDate: '2027-02-28', type: 'Eat', pocket: 'Kwintals', amount: 1000, ngapain: 'Older' },
         { _id: 'newer', expenseDate: '2027-03-01', type: 'Eat', pocket: 'Groceries', amount: 2000, ngapain: 'Newer' }
     ];
-    const dom = new JSDOM(renderView({ username: 'tester', avatar: '👤' }), {
+    const dom = new JSDOM(renderView({ username: 'tester', avatar: '👤', expenseTypeManagementEnabled: Boolean(expenseTypes) }), {
         url: 'https://money-journal.test/monthly-story',
         runScripts: 'outside-only'
     });
@@ -73,6 +73,9 @@ async function setupPage({ summary, transactions } = {}) {
         }
         if (url.startsWith('/api/dashboard/summary')) {
             return response({ success: true, data: summaryData });
+        }
+        if (url === '/api/expense-types') {
+            return response({ success: true, data: { active: expenseTypes || [] } });
         }
         return response(transactionData);
     };
@@ -161,5 +164,27 @@ test('Monthly Story keeps canonical date grouping and sorting independent of com
     const text = dom.window.document.getElementById('historyList').textContent;
     assert.ok(text.indexOf('Canonical newer') < text.indexOf('Canonical older'));
     assert.equal(dom.window.document.querySelectorAll('#historyList .journal-date-group').length, 2);
+    dom.window.close();
+});
+
+test('Monthly Story shows managed expense type emoji for custom types', async () => {
+    const { dom, calls } = await setupPage({
+        expenseTypes: [{ id: 't2', name: 'Parkir', emoji: '🅿️', status: 'Active' }],
+        transactions: [
+            { _id: 'parkir', expenseDate: '2027-03-01', type: 'Parkir', pocket: 'Kwintals', amount: 5000, ngapain: 'Mall parking' }
+        ]
+    });
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.ok(calls.some(call => call.url === '/api/expense-types'));
+    const row = [...dom.window.document.querySelectorAll('#historyList .journal-row')]
+        .find(item => item.textContent.includes('Mall parking'));
+    assert.equal(row.querySelector('.journal-row-icon').textContent, '🅿️');
+    dom.window.close();
+});
+
+test('Monthly Story does not fetch expense types when the feature is off', async () => {
+    const { dom, calls } = await setupPage();
+    assert.equal(calls.some(call => call.url === '/api/expense-types'), false);
     dom.window.close();
 });

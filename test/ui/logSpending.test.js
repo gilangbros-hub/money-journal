@@ -29,11 +29,12 @@ function pocketOptionsResponse(options = [{ pocketId: 'pocket-1', name: 'Kwintal
     return response({ success: true, data: options });
 }
 
-async function setupPage(fetchImpl, { edit = '', showToast = () => {} } = {}) {
+async function setupPage(fetchImpl, { edit = '', showToast = () => {}, expenseTypeManagementEnabled = false } = {}) {
     const dom = new JSDOM(renderView({
         username: 'tester',
         avatar: '👤',
-        salaryCycleBudgetingEnabled: true
+        salaryCycleBudgetingEnabled: true,
+        expenseTypeManagementEnabled
     }), {
         url: `https://money-journal.test/log-spending${edit ? `?edit=${edit}` : ''}`,
         runScripts: 'outside-only'
@@ -286,5 +287,165 @@ test('the pocket sheet never renders a fixed-pocket list, only loading then the 
 
     assert.doesNotMatch(grid.innerHTML, /Kwintals|Groceries|Weekday Transport/);
     assert.match(grid.innerHTML, /Free Monkey/);
+    dom.window.close();
+});
+
+function assignmentResponse() {
+    return response({
+        success: true,
+        data: { budgetMonth: '2027-02', period: { startDate: '2027-01-25', endDate: '2027-02-24' } }
+    });
+}
+
+function managedTypesResponse(active) {
+    return response({ success: true, data: { active } });
+}
+
+async function settle() {
+    await new Promise(resolve => setImmediate(resolve));
+    await new Promise(resolve => setImmediate(resolve));
+}
+
+test('managed expense types replace the hardcoded picker and a custom type can be saved', async () => {
+    const calls = [];
+    const dom = await setupPage(async (url, options) => {
+        calls.push({ url, options });
+        if (url.startsWith('/api/salary-cycle/assignment')) return assignmentResponse();
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
+        if (url === '/api/expense-types') {
+            return managedTypesResponse([
+                { id: 't1', name: 'Eat', emoji: '🍽️', status: 'Active' },
+                { id: 't2', name: 'Parkir', emoji: '🅿️', status: 'Active' }
+            ]);
+        }
+        return response({ success: true });
+    }, { expenseTypeManagementEnabled: true });
+    await settle();
+
+    const { document } = dom.window;
+    const buttons = [...document.querySelectorAll('#typeSheet [data-type-option]')].map(button => button.dataset.typeOption);
+    assert.deepEqual(buttons, ['Eat', 'Parkir']);
+    assert.equal(document.getElementById('selectedTypeDisplay').textContent, '🍽️ Eat');
+
+    document.querySelector('#typeSheet [data-type-option="Parkir"]').click();
+    assert.equal(document.getElementById('selectedTypeDisplay').textContent, '🅿️ Parkir');
+
+    dom.window.selectManagedPocket('pocket-1');
+    document.getElementById('amount').value = '5000';
+    document.getElementById('ngapain').value = 'Mall';
+    document.getElementById('transactionForm').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+
+    const submit = calls.find(call => call.options?.method === 'POST');
+    assert.equal(JSON.parse(submit.options.body).type, 'Parkir');
+    dom.window.close();
+});
+
+test('a managed list without the default type falls back to its first type', async () => {
+    const dom = await setupPage(async (url) => {
+        if (url.startsWith('/api/salary-cycle/assignment')) return assignmentResponse();
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
+        if (url === '/api/expense-types') return managedTypesResponse([{ id: 't2', name: 'Parkir', emoji: '🅿️' }]);
+        return response({ success: true });
+    }, { expenseTypeManagementEnabled: true });
+    await settle();
+
+    assert.equal(dom.window.getSelectedType(), 'Parkir');
+    dom.window.close();
+});
+
+test('with Expense Type Management off the picker keeps the hardcoded list and never fetches types', async () => {
+    const calls = [];
+    const dom = await setupPage(async (url) => {
+        calls.push(url);
+        if (url.startsWith('/api/salary-cycle/assignment')) return assignmentResponse();
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
+        return response({ success: true });
+    });
+    await settle();
+
+    assert.equal(calls.includes('/api/expense-types'), false);
+    assert.equal(dom.window.document.querySelectorAll('#typeSheet [data-type-option]').length, 12);
+    assert.ok(dom.window.document.querySelector('#typeSheet [data-type-option="Uang Keamanan"]'));
+    dom.window.close();
+});
+
+test('a failed managed type fetch keeps the hardcoded list', async () => {
+    const dom = await setupPage(async (url) => {
+        if (url.startsWith('/api/salary-cycle/assignment')) return assignmentResponse();
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
+        if (url === '/api/expense-types') return response({ success: false }, 503);
+        return response({ success: true });
+    }, { expenseTypeManagementEnabled: true });
+    await settle();
+
+    assert.equal(dom.window.document.querySelectorAll('#typeSheet [data-type-option]').length, 12);
+    assert.equal(dom.window.getSelectedType(), 'Eat');
+    dom.window.close();
+});
+
+test('editing keeps a type that is no longer in the managed list, and does not bump the streak', async () => {
+    const calls = [];
+    const toasts = [];
+    const dom = await setupPage(async (url, options) => {
+        calls.push({ url, options });
+        if (options?.method === 'PUT') return response({ success: true });
+        if (url === '/api/transaction/transaction-id') {
+            return response({
+                _id: 'transaction-id',
+                expenseDate: '2027-02-24',
+                type: 'Kopi',
+                amount: 18000,
+                ngapain: 'Flat white',
+                sourceType: 'single',
+                pocket: 'Kwintals',
+                pocketId: 'pocket-1'
+            });
+        }
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
+        if (url === '/api/expense-types') return managedTypesResponse([{ id: 't1', name: 'Eat', emoji: '🍽️' }]);
+        return assignmentResponse();
+    }, {
+        edit: 'transaction-id',
+        expenseTypeManagementEnabled: true,
+        showToast: (message, type) => toasts.push({ message, type })
+    });
+    await settle();
+
+    const { document, localStorage } = dom.window;
+    assert.equal(dom.window.getSelectedType(), 'Kopi');
+    assert.ok(document.querySelector('#typeSheet [data-type-option="Kopi"]'));
+
+    const streak = JSON.stringify({ count: 4, lastDate: '2000-01-01' });
+    localStorage.setItem('moneyJournalStreak', streak);
+    document.getElementById('transactionForm').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+
+    const update = calls.find(call => call.options?.method === 'PUT');
+    assert.equal(JSON.parse(update.options.body).type, 'Kopi');
+    assert.equal(localStorage.getItem('moneyJournalStreak'), streak);
+    assert.deepEqual(toasts, [{ message: 'Transaction updated', type: 'success' }]);
+    assert.equal(document.getElementById('successModal').classList.contains('show'), false);
+    dom.window.close();
+});
+
+test('creating a transaction still bumps the streak', async () => {
+    const dom = await setupPage(async (url) => {
+        if (url.startsWith('/api/salary-cycle/assignment')) return assignmentResponse();
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse();
+        return response({ success: true });
+    });
+    await settle();
+
+    const { document, localStorage } = dom.window;
+    localStorage.removeItem('moneyJournalStreak');
+    dom.window.selectManagedPocket('pocket-1');
+    document.getElementById('amount').value = '1000';
+    document.getElementById('ngapain').value = 'Lunch';
+    document.getElementById('transactionForm').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
+    await settle();
+
+    assert.equal(JSON.parse(localStorage.getItem('moneyJournalStreak')).count, 1);
+    assert.equal(document.getElementById('successModal').classList.contains('show'), true);
     dom.window.close();
 });

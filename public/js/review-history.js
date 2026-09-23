@@ -6,7 +6,27 @@ const typeEmojis = {
     'Uang Sampah': '🗑️', 'Uang Keamanan': '👮', 'Medicine': '💊', 'Others': '📦'
 };
 
-const allTypes = Object.keys(typeEmojis);
+let allTypes = Object.keys(typeEmojis);
+
+// With Expense Type Management on, merge the managed types' emoji into
+// typeEmojis so custom types don't all render as the fallback box.
+const expenseTypeManagementEnabled = document.getElementById('expenseTypeManagementEnabled')?.value === 'true';
+
+async function loadManagedTypeEmojis() {
+    if (!expenseTypeManagementEnabled) return;
+    try {
+        const response = await fetch('/api/expense-types');
+        const result = await response.json();
+        if (!response.ok || result?.success !== true || !Array.isArray(result.data?.active)) return;
+        result.data.active.forEach((type) => {
+            if (type && typeof type.name === 'string' && type.name && type.emoji) {
+                typeEmojis[type.name] = type.emoji;
+            }
+        });
+    } catch (error) {
+        // Keep the static map.
+    }
+}
 
 const pocketIcons = {
     'Kwintals': '💰', 'Groceries': '🥦', 'Weekday Transport': '🚌',
@@ -24,6 +44,8 @@ let currentPocket = 'all';
 let sortDesc = true;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Runs alongside the Budget Month lookup instead of after it.
+    const typeEmojisReady = loadManagedTypeEmojis();
     const params = new URLSearchParams(window.location.search);
     currentMonth = params.has('month') ? params.get('month') : await determineDefaultMonth();
 
@@ -35,6 +57,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         backBtn.href = '/monthly-story';
     }
 
+    await typeEmojisReady;
+    if (expenseTypeManagementEnabled) allTypes = Object.keys(typeEmojis);
     buildFilterPills();
     buildPocketFilterPills();
     fetchTransactions();

@@ -149,3 +149,16 @@ test('page handlers retain the existing authenticated view names', () => {
         'review-history'
     ]);
 });
+
+test('page handlers pass the Expense Type Management flag to the views', () => {
+    const controller = require('../controllers/transactionController');
+    const rendered = [];
+    const res = { render(view, data) { rendered.push(data); } };
+    const on = { session: { username: 'alice' }, app: { locals: { configuration: { expenseTypeManagementEnabled: true } } } };
+    const off = { session: { username: 'alice' } };
+    controller.getTransactionPage(on, res);
+    controller.getTransactionsPage(on, res);
+    controller.getAllTransactionsPage(on, res);
+    controller.getTransactionPage(off, res);
+    assert.deepEqual(rendered.map(data => data.expenseTypeManagementEnabled), [true, true, true, false]);
+});

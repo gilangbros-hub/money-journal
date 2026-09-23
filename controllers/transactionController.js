@@ -109,7 +109,8 @@ exports.getTransactionPage = (req, res) => {
     res.render('log-spending', {
         username: req.session.username,
         avatar: req.session.avatar || '👤',
-        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true
+        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
+        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true
     });
 };
 
@@ -117,7 +118,8 @@ exports.getTransactionsPage = (req, res) => {
     res.render('monthly-story', {
         username: req.session.username,
         avatar: req.session.avatar || '👤',
-        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true
+        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
+        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true
     });
 };
 
@@ -125,7 +127,8 @@ exports.getAllTransactionsPage = (req, res) => {
     res.render('review-history', {
         username: req.session.username,
         avatar: req.session.avatar || '👤',
-        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true
+        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
+        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true
     });
 };
 
