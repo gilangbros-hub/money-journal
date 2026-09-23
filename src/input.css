@@ -2014,3 +2014,90 @@ a.trans-item {
   color: #92400E;
   font-weight: 600;
 }
+
+/* Check Pockets: By bank strip */
+.bank-summary-hint {
+  margin: -4px 0 10px;
+  font-size: 11px;
+  color: var(--journal-soft-ink);
+}
+
+.bank-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  margin-bottom: 12px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bank-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex: 0 0 auto;
+  min-width: 136px;
+  padding: 12px;
+  border: 1.5px solid var(--journal-line);
+  border-radius: 16px;
+  background: var(--journal-panel);
+  text-align: left;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.bank-card[aria-pressed="true"] {
+  border-color: var(--journal-soft-ink);
+  box-shadow: 0 0 0 2px var(--journal-soft-ink);
+}
+
+.bank-card:focus-visible {
+  outline: 2px solid var(--journal-soft-ink);
+  outline-offset: 2px;
+}
+
+.bank-card .bank-logo { margin-bottom: 4px; }
+
+.bank-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--journal-soft-ink);
+}
+
+.bank-card-amount {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--journal-ink);
+}
+
+.bank-card-meta {
+  font-size: 10px;
+  color: var(--journal-soft-ink);
+}
+
+.bank-logo-unassigned {
+  background: var(--journal-panel);
+  border-style: dashed;
+  color: var(--journal-soft-ink);
+}
+
+.bank-filter-clear {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--journal-accent, #6366f1);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.journal-pocket-bank {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.journal-pocket-bank[hidden] {
+  display: none;
+}

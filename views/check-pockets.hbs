@@ -88,6 +88,16 @@
             </div>
         </div>
 
+        <!-- By bank: budget left per bank, filled from the summary's banks list -->
+        <section class="bank-summary hidden" id="bankSummary" aria-labelledby="bankSummaryHeading" hidden>
+            <div class="section-header flex items-center justify-between">
+                <h2 class="section-title" id="bankSummaryHeading" style="color: var(--journal-ink);">By bank</h2>
+                <button type="button" class="bank-filter-clear hidden" id="bankFilterClear" hidden>Show all pockets</button>
+            </div>
+            <p class="bank-summary-hint">Budget left per bank this cycle. Not your bank balance.</p>
+            <div class="bank-strip" id="bankStrip" role="group" aria-label="Filter pockets by bank"></div>
+        </section>
+
         <!-- Budget List -->
         <div class="section-header flex items-center justify-between">
             <h2 class="section-title" style="color: var(--journal-ink);">Pocket Breakdown</h2>
@@ -109,6 +119,7 @@
                     <div class="flex items-center gap-2.5 min-w-0">
                         <span class="text-2xl leading-none" data-pocket-icon aria-hidden="true"></span>
                         <h3 class="journal-pocket-name" data-pocket-name></h3>
+                        <span class="journal-pocket-bank hidden" data-pocket-bank hidden></span>
                     </div>
                     <span class="journal-cadence-chip" data-cadence-readonly>Monthly</span>
                     {{#if canEdit}}
@@ -148,6 +159,7 @@
                     <div class="flex items-center gap-2.5 min-w-0">
                         <span class="text-2xl leading-none" data-pocket-icon aria-hidden="true"></span>
                         <h3 class="journal-pocket-name" data-pocket-name></h3>
+                        <span class="journal-pocket-bank hidden" data-pocket-bank hidden></span>
                     </div>
                     <span class="journal-cadence-chip" data-cadence-readonly>Weekly</span>
                     {{#if canEdit}}
@@ -253,6 +265,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/common.js"></script>
+    <script src="/js/banks.js"></script>
     <script src="/js/check-pockets.js"></script>
 </body>
 

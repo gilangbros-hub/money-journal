@@ -22,6 +22,8 @@ let budgetLoadSequence = 0;
 let pocketManagementActive = false;
 let activeBudgetMonth = null;
 let initialBudgetLoad = true;
+// Bank key the pocket list is filtered to, or null for every pocket.
+let selectedBankFilter = null;
 
 const MONTH_NAMES = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -294,6 +296,7 @@ function renderEnabledBudgets(data) {
     renderServerState(data);
     renderHealthSummary(data);
     installCloseBanner(data);
+    renderBankSummary(data);
 
     const list = element('budgetList');
     if (!list) return;
@@ -316,6 +319,13 @@ function renderEnabledBudgets(data) {
         const card = template.content.firstElementChild.cloneNode(true);
         card.dataset.pocket = pocket.pocket;
         card.dataset.cadence = pocket.cadence || 'Monthly';
+        card.dataset.bank = pocket.bank?.key || 'unassigned';
+        const bankNode = card.querySelector('[data-pocket-bank]');
+        if (bankNode && pocket.bank && typeof bankLogoHtml === 'function') {
+            bankNode.innerHTML = bankLogoHtml(pocket.bank, 'sm');
+            bankNode.setAttribute('title', pocket.bank.name);
+            toggleNode(bankNode, true);
+        }
         card.dataset.missingAllocation = String(pocket.missingAllocation === true || !pocket.allocation);
         setText(card.querySelector('[data-pocket-icon]'), pocket.icon || '');
         setText(card.querySelector('[data-pocket-name]'), pocket.pocket);
@@ -376,6 +386,66 @@ function renderEnabledBudgets(data) {
         list.appendChild(card);
     });
     setMutationControlsEnabled(canEdit);
+    applyBankFilter();
+}
+
+function escapeText(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+function bankCardLogo(bank) {
+    if (bank.key === 'unassigned' || typeof bankLogoHtml !== 'function') {
+        return '<span class="bank-logo bank-logo-lg bank-logo-unassigned" aria-hidden="true"><span class="material-symbols-outlined">help</span></span>';
+    }
+    return bankLogoHtml(bank, 'lg');
+}
+
+// The By bank strip. Hidden unless the server sent a banks list (managed
+// pockets only), so the legacy and salary-cycle-only views never show it.
+function renderBankSummary(data) {
+    const section = element('bankSummary');
+    const strip = element('bankStrip');
+    if (!section || !strip) return;
+    const banks = Array.isArray(data?.banks) ? data.banks : [];
+    if (!banks.some(bank => bank.key === selectedBankFilter)) selectedBankFilter = null;
+    if (!banks.length) {
+        strip.innerHTML = '';
+        toggleNode(section, false);
+        applyBankFilter();
+        return;
+    }
+    strip.innerHTML = banks.map((bank) => {
+        const remaining = Number(bank.remaining || 0);
+        const amount = `${remaining < 0 ? '-' : ''}${currency(Math.abs(remaining), bank.formattedRemaining)}`;
+        const count = `${bank.pocketCount} pocket${bank.pocketCount === 1 ? '' : 's'}`;
+        return `<button type="button" class="bank-card" data-bank-filter="${escapeText(bank.key)}" aria-pressed="false">`
+            + bankCardLogo(bank)
+            + `<span class="bank-card-name">${escapeText(bank.name)}</span>`
+            + `<span class="bank-card-amount ${remaining < 0 ? 'text-coral' : ''}" data-bank-remaining>${escapeText(amount)}</span>`
+            + `<span class="bank-card-meta">${count} · left in budget</span>`
+            + '</button>';
+    }).join('');
+    toggleNode(section, true);
+    applyBankFilter();
+}
+
+function applyBankFilter() {
+    document.querySelectorAll('#bankStrip [data-bank-filter]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.bankFilter === selectedBankFilter));
+    });
+    document.querySelectorAll('#budgetList [data-pocket-card]').forEach((card) => {
+        toggleNode(card, !selectedBankFilter || card.dataset.bank === selectedBankFilter);
+    });
+    toggleNode(element('bankFilterClear'), Boolean(selectedBankFilter));
+}
+
+function selectBankFilter(key) {
+    selectedBankFilter = key && key !== selectedBankFilter ? key : null;
+    applyBankFilter();
 }
 
 function renderLegacyBudgets(data) {
@@ -682,6 +752,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     element('prevMonth')?.addEventListener('click', () => navigateMonth(-1));
     element('nextMonth')?.addEventListener('click', () => navigateMonth(1));
+    element('bankStrip')?.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-bank-filter]');
+        if (button) selectBankFilter(button.dataset.bankFilter);
+    });
+    element('bankFilterClear')?.addEventListener('click', () => selectBankFilter(null));
     loadBudgets();
 });
 

@@ -8,6 +8,7 @@ const hbs = require('hbs');
 
 const viewSource = fs.readFileSync(require.resolve('../../views/check-pockets.hbs'), 'utf8');
 const browserSource = fs.readFileSync(require.resolve('../../public/js/check-pockets.js'), 'utf8');
+const banksSource = fs.readFileSync(require.resolve('../../public/js/banks.js'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
 hbs.handlebars.registerPartial('actionHub', fs.readFileSync(require.resolve('../../views/partials/actionHub.hbs'), 'utf8'));
@@ -71,6 +72,7 @@ async function setupPage(fetchImpl, { role = 'Wife', canEdit = true, calls = [] 
     dom.window.showToast = () => {};
     dom.window.confirm = () => true;
     dom.window.CSS = dom.window.CSS || { escape: value => value };
+    dom.window.eval(banksSource);
     dom.window.eval(browserSource);
     await new Promise(resolve => setImmediate(resolve));
     return dom;
@@ -390,5 +392,96 @@ test('managed view updates the Budget Month text even when the legacy salary-cyc
     await new Promise(resolve => setImmediate(resolve));
 
     assert.equal(dom.window.document.getElementById('currentMonth').textContent, 'Maret 2027');
+    dom.window.close();
+});
+
+
+// ---------------------------------------------------------------------------
+// By bank strip (managed pockets only)
+// ---------------------------------------------------------------------------
+const JAGO = { key: 'jago', name: 'Bank Jago', color: '#FDAF27', logo: '/images/banks/jago.svg', initial: 'B' };
+const BLU = { key: 'blu', name: 'blu', color: '#33CDCF', logo: '/images/banks/blu.svg', initial: 'B' };
+
+function bankBudgetData(overrides = {}) {
+    return budgetData({
+        pocketManagementEnabled: true,
+        pockets: [
+            pocket({ pocket: 'Groceries', pocketId: 'p1', bank: JAGO }),
+            pocket({ pocket: 'Snacks', pocketId: 'p2', bank: JAGO }),
+            pocket({ pocket: 'Transport', pocketId: 'p3', bank: BLU }),
+            pocket({ pocket: 'Old', pocketId: 'p4', bank: null })
+        ],
+        banks: [
+            { ...JAGO, pocketCount: 2, allocation: 600, spending: 200, remaining: 400, formattedRemaining: 'Rp 400', isOver: false },
+            { ...BLU, pocketCount: 1, allocation: 300, spending: 450, remaining: -150, formattedRemaining: 'Rp 150', isOver: true },
+            { key: 'unassigned', name: 'No bank', color: null, logo: null, initial: '?', pocketCount: 1, allocation: 300, spending: 100, remaining: 200, formattedRemaining: 'Rp 200', isOver: false }
+        ],
+        ...overrides
+    });
+}
+
+const visiblePockets = document => [...document.querySelectorAll('#budgetList [data-pocket-card]')]
+    .filter(card => !card.hidden)
+    .map(card => card.dataset.pocket);
+
+test('the By bank strip shows one card per bank with its remaining', async () => {
+    const dom = await setupPage(async () => response({ success: true, data: bankBudgetData() }));
+    const { document } = dom.window;
+    const section = document.getElementById('bankSummary');
+    const cards = [...document.querySelectorAll('#bankStrip [data-bank-filter]')];
+
+    assert.equal(section.hidden, false);
+    assert.deepEqual(cards.map(card => card.dataset.bankFilter), ['jago', 'blu', 'unassigned']);
+    assert.equal(cards[0].querySelector('[data-bank-remaining]').textContent, 'Rp 400');
+    assert.match(cards[0].textContent, /2 pockets · left in budget/);
+    assert.ok(cards[0].querySelector('[data-bank-logo="jago"] img'));
+    // Overspent bank: sign shown and coral.
+    const blu = cards[1].querySelector('[data-bank-remaining]');
+    assert.equal(blu.textContent, '-Rp 150');
+    assert.ok(blu.classList.contains('text-coral'));
+    assert.match(cards[2].textContent, /No bank/);
+    dom.window.close();
+});
+
+test('pocket cards carry their bank logo', async () => {
+    const dom = await setupPage(async () => response({ success: true, data: bankBudgetData() }));
+    const { document } = dom.window;
+    const card = name => document.querySelector(`#budgetList [data-pocket-card][data-pocket="${name}"]`);
+
+    assert.ok(card('Groceries').querySelector('[data-pocket-bank] [data-bank-logo="jago"]'));
+    assert.equal(card('Groceries').querySelector('[data-pocket-bank]').hidden, false);
+    assert.equal(card('Old').querySelector('[data-pocket-bank]').hidden, true);
+    dom.window.close();
+});
+
+test('tapping a bank filters the pockets, tapping again shows them all', async () => {
+    const dom = await setupPage(async () => response({ success: true, data: bankBudgetData() }));
+    const { document } = dom.window;
+    const jago = document.querySelector('[data-bank-filter="jago"]');
+
+    jago.click();
+    assert.deepEqual(visiblePockets(document), ['Groceries', 'Snacks']);
+    assert.equal(jago.getAttribute('aria-pressed'), 'true');
+    assert.equal(document.getElementById('bankFilterClear').hidden, false);
+
+    document.querySelector('[data-bank-filter="unassigned"]').click();
+    assert.deepEqual(visiblePockets(document), ['Old']);
+
+    document.querySelector('[data-bank-filter="unassigned"]').click();
+    assert.deepEqual(visiblePockets(document), ['Groceries', 'Snacks', 'Transport', 'Old']);
+
+    jago.click();
+    document.getElementById('bankFilterClear').click();
+    assert.deepEqual(visiblePockets(document), ['Groceries', 'Snacks', 'Transport', 'Old']);
+    assert.equal(document.getElementById('bankFilterClear').hidden, true);
+    dom.window.close();
+});
+
+test('no banks in the summary means no By bank strip', async () => {
+    const dom = await setupPage(async () => response({ success: true, data: budgetData() }));
+    const { document } = dom.window;
+
+    assert.equal(document.getElementById('bankSummary').hidden, true);
+    assert.equal(document.querySelectorAll('#bankStrip [data-bank-filter]').length, 0);
     dom.window.close();
 });
