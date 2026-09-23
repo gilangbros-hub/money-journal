@@ -191,3 +191,79 @@ test('Review History rows open the entry for editing and render notes as text', 
     assert.equal(dom.window.document.getElementById('deleteModal'), null);
     dom.window.close();
 });
+
+const searchTransactions = [
+    { _id: 'g1', expenseDate: '2027-03-03', type: 'Groceries', pocket: 'Groceries', amount: 21000, ngapain: 'Galon Aqua', paidBy: 'Self' },
+    { _id: 'e1', expenseDate: '2027-03-02', type: 'Eat', pocket: 'Kwintals', amount: 35000, ngapain: 'Nasi padang', paidBy: 'Self' },
+    {
+        _id: 's1', expenseDate: '2027-03-01', type: 'Home Appliance', pocket: 'Kwintals', sourceType: 'multi', amount: 450000,
+        ngapain: 'Kipas angin', paidBy: 'Self',
+        sourceBreakdowns: [{ pocket: 'Kwintals', amount: 300000 }, { pocket: 'Sedeqah', amount: 150000 }]
+    },
+    { _id: 'g2', expenseDate: '2027-02-28', type: 'Groceries', pocket: 'Groceries', amount: 22000, ngapain: 'galon isi ulang', paidBy: 'Self' }
+];
+
+async function search(dom, value, key) {
+    const input = dom.window.document.getElementById('historySearch');
+    input.value = value;
+    if (key) input.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true }));
+    else input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+    await new Promise(resolve => setTimeout(resolve, 200));
+}
+
+function rowNotes(dom) {
+    // The note is the first text node; badges (split, payer) follow it.
+    return [...dom.window.document.querySelectorAll('.trans-item')]
+        .map(row => row.querySelector('.font-semibold').firstChild.textContent.trim());
+}
+
+test('search narrows the month to matching notes, case-insensitively, and updates the summary', async () => {
+    const { dom } = await setupPage({ transactions: searchTransactions });
+    const { document } = dom.window;
+    assert.equal(document.getElementById('historySearch').getAttribute('placeholder'), 'Search this month');
+
+    await search(dom, 'GALON');
+    assert.deepEqual(rowNotes(dom), ['Galon Aqua', 'galon isi ulang']);
+    assert.match(document.getElementById('summaryInfo').textContent, /2 transactions/);
+    assert.match(document.getElementById('summaryInfo').textContent, /Rp 43000/);
+    dom.window.close();
+});
+
+test('search matches type, pocket, split shares and amounts', async () => {
+    const { dom } = await setupPage({ transactions: searchTransactions });
+
+    await search(dom, 'sedeqah');
+    assert.deepEqual(rowNotes(dom), ['Kipas angin']);
+    await search(dom, 'home appl');
+    assert.deepEqual(rowNotes(dom), ['Kipas angin']);
+    await search(dom, '35.000');
+    assert.deepEqual(rowNotes(dom), ['Nasi padang']);
+    await search(dom, '35000');
+    assert.deepEqual(rowNotes(dom), ['Nasi padang']);
+    dom.window.close();
+});
+
+test('search combines with the type filter, and Escape clears it', async () => {
+    const { dom } = await setupPage({ transactions: searchTransactions });
+    const { document } = dom.window;
+
+    document.querySelector('#filterPills [data-type="Eat"]').click();
+    await search(dom, 'galon');
+    assert.deepEqual(rowNotes(dom), []);
+    assert.match(document.getElementById('transactionList').textContent, /No matches for “galon” this month/);
+
+    await search(dom, 'galon', 'Escape');
+    assert.equal(document.getElementById('historySearch').value, '');
+    assert.deepEqual(rowNotes(dom), ['Nasi padang']);
+    dom.window.close();
+});
+
+test('the no-match message shows the query as text', async () => {
+    const { dom } = await setupPage({ transactions: searchTransactions });
+    await search(dom, '<b>zzz</b>');
+
+    const list = dom.window.document.getElementById('transactionList');
+    assert.equal(list.querySelector('b'), null);
+    assert.match(list.textContent, /<b>zzz<\/b>/);
+    dom.window.close();
+});

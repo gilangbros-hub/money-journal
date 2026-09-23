@@ -42,7 +42,8 @@ let currentMonth = '';
 let currentType = 'all';
 let currentPocket = 'all';
 let sortDesc = true;
-
+let searchQuery = '';
+let searchTimer = null;
 document.addEventListener('DOMContentLoaded', async () => {
     // Runs alongside the Budget Month lookup instead of after it.
     const typeEmojisReady = loadManagedTypeEmojis();
@@ -62,6 +63,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     buildFilterPills();
     buildPocketFilterPills();
     fetchTransactions();
+
+    const search = document.getElementById('historySearch');
+    search.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            searchQuery = search.value.trim();
+            applyFilterAndRender();
+        }, 150);
+    });
+    search.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        clearTimeout(searchTimer);
+        search.value = '';
+        searchQuery = '';
+        applyFilterAndRender();
+    });
 
     monthFilter.addEventListener('change', (e) => {
         currentMonth = e.target.value;
@@ -172,11 +189,27 @@ function transactionHasPocket(transaction, pocket) {
         (Array.isArray(transaction?.sourceBreakdowns) && transaction.sourceBreakdowns.some(share => share?.pocket === pocket));
 }
 
+// Case-insensitive match on note, type and pocket (split shares included).
+// A query of digits (dots allowed, as in 35.000) also matches the amount.
+function transactionMatchesSearch(transaction, query) {
+    if (!query) return true;
+    const needle = query.toLowerCase();
+    const shares = Array.isArray(transaction?.sourceBreakdowns) ? transaction.sourceBreakdowns : [];
+    const text = [transaction?.ngapain, transaction?.type, transaction?.pocket, ...shares.map(share => share?.pocket)]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+    if (text.includes(needle)) return true;
+
+    const digits = /^[\d.]+$/.test(query) ? query.replace(/\./g, '') : '';
+    return Boolean(digits) && String(transaction?.amount ?? '').includes(digits);
+}
+
 function applyFilterAndRender() {
     filteredTransactions = allTransactions.filter(t => {
         const typeMatch = currentType === 'all' || t.type === currentType;
         const pocketMatch = transactionHasPocket(t, currentPocket);
-        return typeMatch && pocketMatch;
+        return typeMatch && pocketMatch && transactionMatchesSearch(t, searchQuery);
     });
 
     filteredTransactions.sort((a, b) => {
@@ -194,9 +227,10 @@ function updateSummary() {
     const total = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
 
     const summaryInfo = document.getElementById('summaryInfo');
+    // Same classes as the server-rendered placeholder: light text on the blue card.
     summaryInfo.innerHTML = `
-        <span class="text-[13px] font-semibold text-text-secondary">${count} transaction${count !== 1 ? 's' : ''}</span>
-        <span class="text-base font-extrabold text-text-primary">${formatRupiah(total)}</span>
+        <span class="journal-total-label m-0 text-white/80">${count} transaction${count !== 1 ? 's' : ''}</span>
+        <span class="journal-total-amount m-0 text-white" style="font-size: 1.6rem; margin-bottom: 0;">${formatRupiah(total)}</span>
     `;
 }
 
@@ -223,10 +257,13 @@ function renderTransactions() {
     const list = document.getElementById('transactionList');
 
     if (filteredTransactions.length === 0) {
+        const message = searchQuery
+            ? `No matches for “${escapeHtml(searchQuery)}” this month`
+            : 'No transactions found';
         list.innerHTML = `
             <div class="empty-state">
                 <div class="text-5xl mb-3">📭</div>
-                <div class="text-[15px] font-medium">No transactions found</div>
+                <div class="text-[15px] font-medium">${message}</div>
             </div>
         `;
         return;

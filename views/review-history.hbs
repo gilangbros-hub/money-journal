@@ -30,6 +30,12 @@
             <p id="salaryCyclePeriod" class="text-xs text-text-muted mt-2" aria-live="polite">Loading salary-cycle period...</p>
         </div>
 
+        <!-- Search (within the loaded month) -->
+        <div class="mb-3">
+            <label for="historySearch" class="sr-only">Search this month</label>
+            <input type="search" id="historySearch" class="transaction-note-input w-full" placeholder="Search this month" autocomplete="off" enterkeyhint="search">
+        </div>
+
         <!-- Type Filter Pills -->
         <div class="mb-2 overflow-hidden">
             <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="filterPills">
