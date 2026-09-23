@@ -823,6 +823,11 @@ body {
   padding: 10px;
 }
 
+a.journal-row {
+  color: inherit;
+  text-decoration: none;
+}
+
 .journal-row:hover {
   background: #fcf8ef;
 }
@@ -859,37 +864,11 @@ body {
   color: var(--journal-soft-ink);
 }
 
-.journal-row-right {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
-}
-
 .journal-row-amount {
   color: #b83422;
   font-size: 13px;
   font-weight: 800;
   white-space: nowrap;
-}
-
-.journal-row-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.journal-action-link {
-  border: none;
-  background: transparent;
-  font-size: 11px;
-  color: var(--journal-accent);
-  text-decoration: none;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.journal-action-link.danger {
-  color: #b83422;
 }
 
 .journal-pulse-item {
@@ -1070,6 +1049,57 @@ body {
 /* Scroll room so the last content clears the navbar and the + button. */
 .bottom-navbar-spacer {
   height: calc(var(--bottom-nav-height) + 24px + env(safe-area-inset-bottom, 0px));
+}
+
+a.trans-item {
+  color: inherit;
+  text-decoration: none;
+}
+
+.transaction-mode-toggle[hidden] {
+  display: none;
+}
+
+.transaction-split-link {
+  display: block;
+  margin: 2px 0 10px auto;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  color: var(--journal-accent);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.breakdown-rest-btn {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--journal-line);
+  background: #FFFFFF;
+  color: var(--journal-soft-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.transaction-delete-btn {
+  width: 100%;
+  margin-top: 12px;
+  min-height: 48px;
+  border-radius: 16px;
+  border: 1px solid #f1c3b8;
+  background: transparent;
+  color: var(--journal-danger);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.transaction-delete-btn[hidden] {
+  display: none;
 }
 
 /* Transaction page primary action */
@@ -1417,12 +1447,26 @@ body {
 
 .breakdown-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 110px 36px;
+  /* Pocket on its own line so its name fits; amount, Rest and remove below. */
+  grid-template-columns: minmax(0, 1fr) auto 36px;
   gap: 8px;
   padding: 0;
   background: transparent;
   border: none;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
+}
+
+.breakdown-row select {
+  grid-column: 1 / -1;
+}
+
+.breakdown-row .breakdown-amount {
+  width: 100%;
+}
+
+.breakdown-row .breakdown-rest-btn {
+  min-height: 46px;
+  border-radius: 14px;
 }
 
 .breakdown-row select,

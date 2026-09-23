@@ -275,25 +275,19 @@ function renderMonthFeed() {
         .join('');
 }
 
+// The whole row opens the entry in Log Spending; delete lives there too.
 function renderFeedRow(item) {
-    const escapedNote = (item.ngapain || '').replace(/'/g, "\\'");
     const amount = Number(item.amount || 0);
 
     return `
-        <article class="journal-row">
-            <div class="journal-row-icon">${typeEmojis[item.type] || '📦'}</div>
+        <a class="journal-row" href="/log-spending?edit=${encodeURIComponent(item._id)}" aria-label="Edit ${safeText(item.ngapain || 'transaction')}">
+            <div class="journal-row-icon">${safeText(typeEmojis[item.type] || '📦')}</div>
             <div class="journal-row-body">
                 <p class="journal-row-title">${safeText(item.ngapain || 'No description')}</p>
                 <p class="journal-row-meta">${safeText(item.pocket || 'Unknown')}</p>
             </div>
-            <div class="journal-row-right">
-                <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(amount)}</p>
-                <div class="journal-row-actions">
-                    <a class="journal-action-link" href="/log-spending?edit=${item._id}">Edit</a>
-                    <button class="journal-action-link danger" type="button" onclick="openOptions('${item._id}', '${escapedNote}', ${amount})">Delete</button>
-                </div>
-            </div>
-        </article>
+            <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(amount)}</p>
+        </a>
     `;
 }
 
@@ -434,7 +428,7 @@ function renderSpendingChart() {
         .map((cat, index) => `
             <div class="legend-item">
                 <span class="w-2.5 h-2.5 rounded flex-shrink-0" style="background: ${chartColors[index % chartColors.length]}"></span>
-                <span class="flex-1 text-text-secondary font-medium whitespace-nowrap overflow-hidden text-ellipsis">${cat.icon || typeEmojis[cat.category] || '📦'} ${cat.category}</span>
+                <span class="flex-1 text-text-secondary font-medium whitespace-nowrap overflow-hidden text-ellipsis">${safeText(cat.icon || typeEmojis[cat.category] || '📦')} ${safeText(cat.category)}</span>
                 <span class="font-bold text-text-primary">${cat.percentage}%</span>
             </div>
         `)
@@ -516,33 +510,4 @@ function safeText(value) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
-}
-
-let deleteId = null;
-function openOptions(id, note, amount) {
-    deleteId = id;
-    const formatted = typeof amount === 'number' ? formatRupiah(amount) : amount;
-    document.getElementById('deleteDetails').innerText = `${note} - ${formatted}`;
-    document.getElementById('deleteModal').classList.add('show');
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('show');
-}
-
-async function confirmDelete() {
-    if (!deleteId) return;
-    try {
-        const response = await fetch(`/api/transaction/${deleteId}`, { method: 'DELETE' });
-        if (response.ok) {
-            closeDeleteModal();
-            loadJournalData();
-            showToast('Transaction deleted', 'success');
-        } else {
-            showToast('Could not delete transaction', 'error');
-        }
-    } catch (error) {
-        console.error(error);
-        showToast('Network error', 'error');
-    }
 }

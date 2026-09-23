@@ -251,9 +251,8 @@ function renderTransactions() {
             const icon = typeEmojis[t.type] || '📦';
             const formattedAmount = t.formattedAmount || formatRupiah(t.amount);
             const paidByBadge = t.paidBy && t.paidBy !== 'Self'
-                ? `<span class="text-[10px] bg-bg-tertiary text-text-secondary py-0.5 px-1.5 rounded">${t.paidBy}</span>`
+                ? `<span class="text-[10px] bg-bg-tertiary text-text-secondary py-0.5 px-1.5 rounded">${escapeHtml(t.paidBy)}</span>`
                 : '';
-            const safeNote = (t.ngapain || '').replace(/'/g, "\\'");
 
             // Render one row for the transaction. A split is filtered by its
             // shares, but its parent amount is still displayed exactly once.
@@ -268,18 +267,18 @@ function renderTransactions() {
             }
 
             html += `
-                <div class="trans-item" onclick="openOptions('${t._id}', '${safeNote}', ${t.amount})">
-                    <div class="trans-icon">${icon}</div>
+                <a class="trans-item" href="/log-spending?edit=${encodeURIComponent(t._id)}">
+                    <div class="trans-icon">${escapeHtml(icon)}</div>
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm text-text-primary mb-0.5 flex items-center gap-1.5 flex-wrap">
-                            ${t.ngapain || 'No Description'}
+                            ${escapeHtml(t.ngapain || 'No Description')}
                             ${paidByBadge}
                             ${multiBadge}
                         </div>
-                        <div class="text-xs text-text-muted">${t.type} • ${pocketDisplay}</div>
+                        <div class="text-xs text-text-muted">${escapeHtml(t.type)} • ${escapeHtml(pocketDisplay)}</div>
                     </div>
                     <div class="font-bold text-sm text-coral whitespace-nowrap ml-2">- ${formattedAmount}</div>
-                </div>
+                </a>
             `;
         });
     });
@@ -287,30 +286,12 @@ function renderTransactions() {
     list.innerHTML = html;
 }
 
-// Delete Logic
-let deleteId = null;
-
-function openOptions(id, note, amount) {
-    deleteId = id;
-    const modal = document.getElementById('deleteModal');
-    const formatted = typeof amount === 'number' ? formatRupiah(amount) : amount;
-    document.getElementById('deleteDetails').innerText = `${note} - ${formatted}`;
-    modal.classList.add('show');
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('show');
-}
-
-async function confirmDelete() {
-    if (!deleteId) return;
-    try {
-        const response = await fetch(`/api/transaction/${deleteId}`, { method: 'DELETE' });
-        if (response.ok) {
-            closeDeleteModal();
-            fetchTransactions();
-        }
-    } catch (error) {
-        console.error(error);
-    }
+// Notes, types and pocket names are household-entered text.
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }

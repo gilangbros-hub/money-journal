@@ -47,7 +47,8 @@
                         <span class="transaction-row-value" id="selectedTypeDisplay">Eat</span>
                     </button>
 
-                    <div class="transaction-mode-toggle">
+                    <!-- Kept for the form state; switched by #splitToggle below. -->
+                    <div class="transaction-mode-toggle" hidden>
                         <label class="transaction-mode-pill">
                             <input type="radio" name="sourceType" value="single" checked id="sourceTypeSingle">
                             <span>Single Pocket</span>
@@ -62,6 +63,8 @@
                         <span class="transaction-row-label">Pocket</span>
                         <span class="transaction-row-value" id="selectedPocketDisplay">Loading…</span>
                     </button>
+
+                    <button type="button" class="transaction-split-link" id="splitToggle" aria-controls="multiPocketSection">Split across pockets</button>
 
                     <div class="transaction-breakdown-panel" id="multiPocketSection" style="display:none;">
                         <div class="transaction-breakdown-head">
@@ -113,6 +116,7 @@
                 </section>
 
                 <button type="submit" class="transaction-save-btn" id="submitBtn">Save Transaction</button>
+                <button type="button" class="transaction-delete-btn" id="deleteBtn" hidden>Delete transaction</button>
             </div>
 
             <div class="transaction-hidden-types" aria-hidden="true">
@@ -164,6 +168,17 @@
                 <div class="col-span-full text-center py-4" data-pocket-loading>
                     <p class="text-sm" style="color: var(--journal-soft-ink, inherit);">Loading pockets…</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-card">
+            <h3 id="deleteModalTitle">Delete this?</h3>
+            <p id="deleteDetails" class="text-text-secondary mb-5"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" id="deleteCancelBtn">Cancel</button>
+                <button type="button" class="btn-modal-danger" id="deleteConfirmBtn">Delete</button>
             </div>
         </div>
     </div>

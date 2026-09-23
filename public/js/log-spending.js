@@ -441,6 +441,11 @@ function handleSourceTypeChange() {
     const singleSection = document.getElementById('singlePocketSection');
     const multiSection = document.getElementById('multiPocketSection');
     const pocketTrigger = document.getElementById('pocketTrigger');
+    const splitToggle = document.getElementById('splitToggle');
+    if (splitToggle) {
+        splitToggle.textContent = sourceType === 'multi' ? 'Use one pocket' : 'Split across pockets';
+        splitToggle.setAttribute('aria-expanded', String(sourceType === 'multi'));
+    }
 
     if (sourceType === 'single') {
         singleSection.style.display = '';
@@ -504,11 +509,25 @@ function addBreakdownRow(pocketVal = '', amountVal = '') {
     row.innerHTML = `
         <select onchange="onBreakdownPocketChange()">${buildPocketOptions(pocketVal)}</select>
         <input type="number" class="breakdown-amount" placeholder="0" value="${amountVal}" oninput="updateBreakdownTotal()" min="0">
+        <button type="button" class="breakdown-rest-btn" title="Fill with what is left to allocate">Rest</button>
         <button type="button" class="remove-pocket-btn" onclick="removeBreakdownRow('${rowId}')" title="Remove">x</button>
     `;
 
     document.getElementById('breakdownRows').appendChild(row);
     refreshAllDropdowns();
+    updateBreakdownTotal();
+}
+
+// Put whatever is still unallocated into this row, so a split only needs the
+// other rows typed in.
+function fillBreakdownRest(rowId) {
+    const row = document.getElementById(rowId);
+    if (!row) return;
+    const input = row.querySelector('.breakdown-amount');
+    const others = Array.from(document.querySelectorAll('#breakdownRows .breakdown-amount'))
+        .filter((item) => item !== input)
+        .reduce((sum, item) => sum + (parseFloat(item.value) || 0), 0);
+    input.value = String(Math.max(0, getTransactionAmount() - others));
     updateBreakdownTotal();
 }
 
@@ -785,6 +804,8 @@ async function loadTransactionForEdit(id) {
         document.querySelector('.transaction-title').textContent = 'Edit Transaction';
         document.getElementById('submitBtn').textContent = 'Update Transaction';
         document.getElementById('transactionId').value = transaction._id;
+        document.getElementById('deleteBtn').hidden = false;
+        document.getElementById('deleteDetails').textContent = `${transaction.ngapain || transaction.type || 'Transaction'} · ${formatRupiah(Number(transaction.amount) || 0)}`;
         document.getElementById('ngapain').value = transaction.ngapain || '';
         setAmountInput(transaction.amount || '');
 
@@ -849,6 +870,34 @@ function editReturnUrl() {
         // No or unparseable referrer.
     }
     return '/review-history';
+}
+
+function openDeleteModal() {
+    document.getElementById('deleteModal').classList.add('show');
+    document.getElementById('deleteCancelBtn').focus();
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+}
+
+async function confirmDeleteTransaction() {
+    const transactionId = document.getElementById('transactionId').value;
+    if (!transactionId || saving) return;
+    saving = true;
+    try {
+        const response = await fetch(`/api/transaction/${encodeURIComponent(transactionId)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error(`Delete failed with ${response.status}`);
+        closeDeleteModal();
+        showToast('Transaction deleted', 'success');
+        setTimeout(() => {
+            window.location.href = editReturnUrl();
+        }, 800);
+    } catch (error) {
+        console.error('Error deleting transaction:', error);
+        showToast('Could not delete transaction', 'error');
+        saving = false;
+    }
 }
 
 // After a save, clear what changes per entry (amount, note, split rows) and
@@ -952,6 +1001,21 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input[name="sourceType"]').forEach((radio) => {
         radio.addEventListener('change', handleSourceTypeChange);
     });
+
+    document.getElementById('splitToggle').addEventListener('click', () => {
+        const next = getSourceType() === 'multi' ? 'sourceTypeSingle' : 'sourceTypeMulti';
+        document.getElementById(next).checked = true;
+        handleSourceTypeChange();
+    });
+
+    document.getElementById('breakdownRows').addEventListener('click', (event) => {
+        const restButton = event.target.closest('.breakdown-rest-btn');
+        if (restButton) fillBreakdownRest(restButton.closest('.breakdown-row').id);
+    });
+
+    document.getElementById('deleteBtn').addEventListener('click', openDeleteModal);
+    document.getElementById('deleteCancelBtn').addEventListener('click', closeDeleteModal);
+    document.getElementById('deleteConfirmBtn').addEventListener('click', confirmDeleteTransaction);
 
     const amountInput = document.getElementById('amount');
     amountInput.addEventListener('input', () => {
@@ -1138,5 +1202,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (event.target.classList.contains('picker-sheet-overlay')) {
             event.target.classList.remove('show');
         }
+        if (event.target === document.getElementById('deleteModal')) closeDeleteModal();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeDeleteModal();
     });
 });

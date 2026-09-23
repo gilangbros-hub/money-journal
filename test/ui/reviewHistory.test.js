@@ -174,3 +174,20 @@ test('Review History is a navbar tab with History active and no back link', () =
     assert.equal(document.querySelector('.bottom-navbar').querySelectorAll('.nav-item.active').length, 1);
     assert.doesNotMatch(document.querySelector('.app-header').textContent, /Back/);
 });
+
+test('Review History rows open the entry for editing and render notes as text', async () => {
+    const { dom } = await setupPage({
+        transactions: [{
+            _id: 'x1', expenseDate: '2027-03-01', type: 'Eat', pocket: 'Kwintals',
+            amount: 1000, ngapain: '<img src=x onerror="window.pwned=1">', paidBy: 'Self'
+        }]
+    });
+    const row = dom.window.document.querySelector('.trans-item');
+
+    assert.equal(row.tagName, 'A');
+    assert.equal(row.getAttribute('href'), '/log-spending?edit=x1');
+    assert.equal(row.querySelector('img'), null);
+    assert.match(row.textContent, /<img src=x/);
+    assert.equal(dom.window.document.getElementById('deleteModal'), null);
+    dom.window.close();
+});

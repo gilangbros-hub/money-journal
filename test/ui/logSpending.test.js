@@ -759,3 +759,129 @@ test('the Log Spending title no longer navigates away mid-entry', () => {
     assert.equal(document.querySelector('.app-header [onclick*="monthly-story"]'), null);
     assert.equal(document.getElementById('backLink').getAttribute('href'), '/monthly-story');
 });
+
+test('split is behind a link that switches between one pocket and a split', async () => {
+    const dom = await savingPage({ pocketOptions: twoPockets });
+    await settle();
+    const { document } = dom.window;
+    const toggle = document.getElementById('splitToggle');
+
+    assert.equal(document.querySelector('.transaction-mode-toggle').hidden, true);
+    assert.equal(toggle.textContent, 'Split across pockets');
+    assert.equal(document.getElementById('multiPocketSection').style.display, 'none');
+
+    toggle.click();
+    assert.equal(dom.window.getSourceType(), 'multi');
+    assert.equal(toggle.textContent, 'Use one pocket');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    assert.equal(document.getElementById('multiPocketSection').style.display, 'block');
+    assert.equal(document.getElementById('pocketTrigger').style.display, 'none');
+
+    toggle.click();
+    assert.equal(dom.window.getSourceType(), 'single');
+    assert.equal(toggle.textContent, 'Split across pockets');
+    dom.window.close();
+});
+
+test('Rest fills a split row with what is still unallocated, never below zero', async () => {
+    const dom = await savingPage({ pocketOptions: twoPockets });
+    await settle();
+    const { document } = dom.window;
+
+    typeAmount(dom, '100000');
+    document.getElementById('splitToggle').click();
+    dom.window.addBreakdownRow();
+    const rows = [...document.querySelectorAll('#breakdownRows .breakdown-row')];
+    rows[0].querySelector('.breakdown-amount').value = '30000';
+    rows[1].querySelector('.breakdown-rest-btn').click();
+    assert.equal(rows[1].querySelector('.breakdown-amount').value, '70000');
+    assert.equal(document.getElementById('differenceDisplay').textContent, 'Matched');
+
+    rows[0].querySelector('.breakdown-amount').value = '150000';
+    rows[1].querySelector('.breakdown-rest-btn').click();
+    assert.equal(rows[1].querySelector('.breakdown-amount').value, '0');
+    dom.window.close();
+});
+
+function editPage({ transaction, deleteStatus = 200, calls = [], toasts = [] }) {
+    return setupPage(async (url, options) => {
+        calls.push({ url, options });
+        if (options?.method === 'DELETE') return response({ success: deleteStatus === 200 }, deleteStatus);
+        if (url === '/api/transaction/transaction-id') return response(transaction);
+        if (url.startsWith('/api/expense-pocket-options')) return pocketOptionsResponse(twoPockets);
+        return assignmentResponse();
+    }, { edit: 'transaction-id', showToast: (message, type) => toasts.push({ message, type }) });
+}
+
+const singleTransaction = {
+    _id: 'transaction-id', expenseDate: '2027-02-24', type: 'Eat', amount: 45000,
+    ngapain: 'Nasi padang', sourceType: 'single', pocket: 'Kwintals', pocketId: 'pocket-1'
+};
+
+test('editing a split opens in split mode', async () => {
+    const dom = await editPage({
+        transaction: {
+            ...singleTransaction,
+            sourceType: 'multi',
+            sourceBreakdowns: [
+                { pocketId: 'pocket-1', pocket: 'Kwintals', amount: 30000 },
+                { pocketId: 'pocket-2', pocket: 'Transport', amount: 15000 }
+            ]
+        }
+    });
+    await settle();
+    const { document } = dom.window;
+
+    assert.equal(dom.window.getSourceType(), 'multi');
+    assert.equal(document.getElementById('splitToggle').textContent, 'Use one pocket');
+    assert.equal(document.querySelectorAll('#breakdownRows .breakdown-row').length, 2);
+    dom.window.close();
+});
+
+test('Delete only appears when editing, and asks before deleting', async () => {
+    const createDom = await savingPage();
+    await settle();
+    assert.equal(createDom.window.document.getElementById('deleteBtn').hidden, true);
+    createDom.window.close();
+
+    const calls = [];
+    const toasts = [];
+    const dom = await editPage({ transaction: singleTransaction, calls, toasts });
+    await settle();
+    const { document } = dom.window;
+
+    const deleteBtn = document.getElementById('deleteBtn');
+    assert.equal(deleteBtn.hidden, false);
+    deleteBtn.click();
+    assert.ok(document.getElementById('deleteModal').classList.contains('show'));
+    assert.equal(document.getElementById('deleteDetails').textContent, 'Nasi padang · Rp 45000');
+
+    document.getElementById('deleteCancelBtn').click();
+    assert.equal(document.getElementById('deleteModal').classList.contains('show'), false);
+    assert.equal(calls.some(call => call.options?.method === 'DELETE'), false);
+
+    deleteBtn.click();
+    document.getElementById('deleteConfirmBtn').click();
+    await settle();
+
+    const removal = calls.find(call => call.options?.method === 'DELETE');
+    assert.equal(removal.url, '/api/transaction/transaction-id');
+    assert.deepEqual(toasts.at(-1), { message: 'Transaction deleted', type: 'success' });
+    assert.equal(document.getElementById('deleteModal').classList.contains('show'), false);
+    dom.window.close();
+});
+
+test('a failed delete keeps the dialog open and says so', async () => {
+    const toasts = [];
+    const dom = await editPage({ transaction: singleTransaction, deleteStatus: 500, toasts });
+    await settle();
+    const { document } = dom.window;
+
+    document.getElementById('deleteBtn').click();
+    document.getElementById('deleteConfirmBtn').click();
+    await settle();
+
+    assert.deepEqual(toasts.at(-1), { message: 'Could not delete transaction', type: 'error' });
+    assert.ok(document.getElementById('deleteModal').classList.contains('show'));
+    dom.window.close();
+});

@@ -384,3 +384,16 @@ test('Monthly Story loads Chart.js once and no longer has a Today Feed', () => {
     assert.doesNotMatch(html, /datalabels/);
     assert.doesNotMatch(html, /id="todayTimeline"/);
 });
+
+test('Month Feed rows open the entry for editing and have no inline Delete', async () => {
+    const { dom } = await setupPage({
+        transactions: [{ _id: 'tx 1', expenseDate: '2027-03-01', type: 'Eat', pocket: 'Kwintals', amount: 1000, ngapain: 'Lunch' }]
+    });
+    const row = dom.window.document.querySelector('#historyList .journal-row');
+
+    assert.equal(row.tagName, 'A');
+    assert.equal(row.getAttribute('href'), '/log-spending?edit=tx%201');
+    assert.doesNotMatch(row.textContent, /Delete|Edit/);
+    assert.equal(dom.window.document.getElementById('deleteModal'), null);
+    dom.window.close();
+});
