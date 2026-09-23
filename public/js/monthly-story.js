@@ -112,6 +112,7 @@ async function loadJournalData() {
         renderPeriodMetadata();
         renderHero();
         renderStoryCards();
+        renderBankMoney();
         renderPocketPulse();
         renderSpendingChart();
         renderMonthFeed();
@@ -250,6 +251,39 @@ function renderStoryCards() {
         topCategoryEl.textContent = 'No category yet';
         topCategoryAmountEl.textContent = 'Start logging to see pattern';
     }
+}
+
+// One card per bank: what's left this cycle across the pockets in it. The
+// server only sends budget.banks for managed pockets, so the section stays
+// hidden otherwise.
+function renderBankMoney() {
+    const section = document.getElementById('bankMoneySection');
+    const list = document.getElementById('bankMoneyList');
+    if (!section || !list) return;
+    const banks = Array.isArray(dashboardData?.budget?.banks) ? dashboardData.budget.banks : [];
+    section.hidden = banks.length === 0;
+    section.classList.toggle('hidden', banks.length === 0);
+    list.innerHTML = banks.map((bank) => {
+        const remaining = Number(bank.remaining) || 0;
+        const allocation = Number(bank.allocation) || 0;
+        const spending = Number(bank.spending) || 0;
+        const used = allocation > 0 ? Math.min(100, Math.max(0, Math.round((spending / allocation) * 100))) : (spending > 0 ? 100 : 0);
+        const status = remaining < 0 ? 'danger' : used >= 80 ? 'warning' : 'safe';
+        const logo = bank.key !== 'unassigned' && typeof bankLogoHtml === 'function'
+            ? bankLogoHtml(bank, 'md')
+            : '<span class="bank-logo bank-logo-md bank-logo-unassigned" aria-hidden="true">?</span>';
+        const amount = `${remaining < 0 ? '-' : ''}${formatRupiah(Math.abs(remaining))}`;
+        const pockets = `${bank.pocketCount} pocket${bank.pocketCount === 1 ? '' : 's'}`;
+        return `
+            <article class="bank-money-card" data-bank="${safeText(bank.key)}">
+                <div class="bank-money-head">${logo}<span class="bank-card-name">${safeText(bank.name)}</span></div>
+                <p class="bank-card-amount ${remaining < 0 ? 'text-coral' : ''}" data-bank-remaining>${safeText(amount)}</p>
+                <div class="journal-pulse-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${used}" aria-label="${safeText(bank.name)} budget used">
+                    <div class="journal-pulse-fill ${status}" style="width: ${used}%"></div>
+                </div>
+                <p class="bank-card-meta">${remaining < 0 ? 'Over budget · ' : ''}of ${safeText(formatRupiah(allocation))} · ${pockets}</p>
+            </article>`;
+    }).join('');
 }
 
 function renderMonthFeed() {

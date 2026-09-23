@@ -397,3 +397,58 @@ test('Month Feed rows open the entry for editing and have no inline Delete', asy
     assert.equal(dom.window.document.getElementById('deleteModal'), null);
     dom.window.close();
 });
+
+const banksSource = fs.readFileSync(require.resolve('../../public/js/banks.js'), 'utf8');
+
+async function setupWithBanks(banks) {
+    const summary = {
+        budgetMonth: '2027-03',
+        timeZone: 'Asia/Jakarta',
+        period: { startDate: '2027-02-25', endDate: '2027-03-24' },
+        total: { formatted: 'Rp 3.000', raw: 3000 },
+        categories: [],
+        comparison: { hasLastMonth: false },
+        budgetAlerts: [],
+        budget: { totalBudget: 1000, totalRemaining: 500, pockets: [], ...(banks ? { banks } : {}) }
+    };
+    const page = await setupPage({ summary, transactions: [] });
+    // banks.js normally loads before the page script; add it and re-render.
+    page.dom.window.eval(banksSource);
+    page.dom.window.eval('renderBankMoney()');
+    return page;
+}
+
+test('Money by bank shows one card per bank with what is left', async () => {
+    const { dom } = await setupWithBanks([
+        { key: 'jago', name: 'Jago', color: '#FDAF27', logo: '/images/banks/jago.svg', pocketCount: 2, allocation: 4000, spending: 1000, remaining: 3000 },
+        { key: 'blu', name: 'blu', color: '#33CDCF', logo: '/images/banks/blu.svg', pocketCount: 1, allocation: 500, spending: 700, remaining: -200 },
+        { key: 'unassigned', name: 'No bank', color: null, logo: null, pocketCount: 1, allocation: 100, spending: 0, remaining: 100 }
+    ]);
+    const { document } = dom.window;
+    const section = document.getElementById('bankMoneySection');
+    const cards = [...document.querySelectorAll('#bankMoneyList [data-bank]')];
+
+    assert.equal(section.hidden, false);
+    assert.deepEqual(cards.map(card => card.dataset.bank), ['jago', 'blu', 'unassigned']);
+    assert.equal(cards[0].querySelector('[data-bank-remaining]').textContent, 'Rp 3000');
+    assert.match(cards[0].textContent, /of Rp 4000 · 2 pockets/);
+    assert.ok(cards[0].querySelector('[data-bank-logo="jago"] img'));
+    assert.equal(cards[0].querySelector('[role="progressbar"]').getAttribute('aria-valuenow'), '25');
+
+    const blu = cards[1].querySelector('[data-bank-remaining]');
+    assert.equal(blu.textContent, '-Rp 200');
+    assert.match(cards[1].textContent, /Over budget · of Rp 500 · 1 pocket/);
+    assert.ok(blu.classList.contains('text-coral'));
+    assert.ok(cards[1].querySelector('.journal-pulse-fill.danger'));
+    assert.match(cards[2].textContent, /No bank/);
+    dom.window.close();
+});
+
+test('Money by bank stays hidden without bank data', async () => {
+    const { dom } = await setupWithBanks(null);
+    const { document } = dom.window;
+
+    assert.equal(document.getElementById('bankMoneySection').hidden, true);
+    assert.equal(document.querySelectorAll('#bankMoneyList [data-bank]').length, 0);
+    dom.window.close();
+});

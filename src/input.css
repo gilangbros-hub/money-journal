@@ -2073,6 +2073,11 @@ a.trans-item {
   color: var(--journal-ink);
 }
 
+/* Declared after the utilities, so restate the overspent colour here. */
+.bank-card-amount.text-coral {
+  color: #b82f1d;
+}
+
 .bank-card-meta {
   font-size: 10px;
   color: var(--journal-soft-ink);
@@ -2107,3 +2112,40 @@ a.trans-item {
   margin-top: -2px;
 }
 
+
+/* Monthly Story: Money by bank */
+.bank-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bank-money-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--journal-line);
+  border-radius: 16px;
+  background: #FFFFFF;
+}
+
+.bank-money-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.bank-money-card .bank-card-amount {
+  overflow-wrap: anywhere;
+}
+
+.bank-money-card .journal-pulse-track {
+  margin-bottom: 0;
+}
+
+.bank-logo-unassigned {
+  font-weight: 700;
+}
