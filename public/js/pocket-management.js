@@ -445,6 +445,7 @@
         setStatusText(q('[data-pocket-name]', card), dto.name);
         setStatusText(q('[data-pocket-cadence]', card), dto.cadence);
         setStatusText(q('[data-pocket-default]', card), formatRupiah(dto.defaultAmount));
+        renderPocketBank(q('[data-pocket-bank]', card), dto.bank);
         const statusEl = q('[data-pocket-status]', card);
         setStatusText(statusEl, dto.status);
 
@@ -474,6 +475,36 @@
         return card;
     }
 
+    function bankFor(key) {
+        return (state.bootstrap.banks || []).find((bank) => bank.key === key) || null;
+    }
+
+    function renderPocketBank(node, key) {
+        if (!node) return;
+        const bank = bankFor(key);
+        if (!bank) {
+            node.innerHTML = '<span class="pocket-bank-missing">No bank</span>';
+            return;
+        }
+        const logo = typeof window.bankLogoHtml === 'function' ? window.bankLogoHtml(bank, 'sm') : '';
+        node.innerHTML = logo;
+        const name = document.createElement('span');
+        name.textContent = bank.name;
+        node.appendChild(name);
+    }
+
+    function selectedBank(group) {
+        const checked = group ? q('input[data-bank-option]:checked', group) : null;
+        return checked ? checked.value : '';
+    }
+
+    function setSelectedBank(group, key) {
+        if (!group) return;
+        qa('input[data-bank-option]', group).forEach((input) => { input.checked = input.value === key; });
+    }
+
+    const BANK_REQUIRED_MESSAGE = 'Choose the bank this pocket lives in.';
+
     // Toggle both the Tailwind `hidden` class and the boolean `hidden` attribute
     // so elements that ship with either mechanism behave consistently.
     function toggleHidden(element, shouldHide) {
@@ -495,7 +526,8 @@
             emoji: (els.createEmoji && els.createEmoji.value) || '',
             name: (els.createName && els.createName.value) || '',
             cadence: (els.createCadence && els.createCadence.value) || '',
-            defaultAmount: toAmountPayload(els.createDefaultAmount && els.createDefaultAmount.value)
+            defaultAmount: toAmountPayload(els.createDefaultAmount && els.createDefaultAmount.value),
+            bank: selectedBank(els.createBank)
         };
     }
 
@@ -503,7 +535,8 @@
         emoji: { input: els.createEmoji, error: byId('createPocketEmojiError') },
         name: { input: els.createName, error: byId('createPocketNameError') },
         cadence: { input: els.createCadence, error: byId('createPocketCadenceError') },
-        defaultAmount: { input: els.createDefaultAmount, error: byId('createPocketDefaultAmountError') }
+        defaultAmount: { input: els.createDefaultAmount, error: byId('createPocketDefaultAmountError') },
+        bank: { input: els.createBank, error: byId('createPocketBankError') }
     });
 
     function applyDefinitionFieldErrors(fieldMap, list) {
@@ -517,6 +550,11 @@
         if (!els.createForm) return;
         const body = readCreateForm();
         const fieldMap = CREATE_FIELD_MAP();
+        if (!body.bank) {
+            clearFormFieldErrors(els.createForm);
+            showFieldError(fieldMap.bank.input, fieldMap.bank.error, BANK_REQUIRED_MESSAGE);
+            return;
+        }
         runMutation({
             controls: [els.createSubmit],
             statusEl: els.createStatus,
@@ -553,6 +591,8 @@
         if (els.editName) els.editName.value = dto.name || '';
         if (els.editCadence) els.editCadence.value = dto.cadence || 'Monthly';
         if (els.editDefaultAmount) els.editDefaultAmount.value = dto.defaultAmount != null ? String(dto.defaultAmount) : '';
+        setSelectedBank(els.editBank, dto.bank || '');
+        toggleHidden(q('[data-edit-bank-missing]', els.editModal), Boolean(bankFor(dto.bank)));
     }
 
     function readEditForm() {
@@ -562,7 +602,8 @@
             emoji: (els.editEmoji && els.editEmoji.value) || '',
             name: (els.editName && els.editName.value) || '',
             cadence: (els.editCadence && els.editCadence.value) || '',
-            defaultAmount: toAmountPayload(els.editDefaultAmount && els.editDefaultAmount.value)
+            defaultAmount: toAmountPayload(els.editDefaultAmount && els.editDefaultAmount.value),
+            bank: selectedBank(els.editBank)
         };
     }
 
@@ -570,7 +611,8 @@
         emoji: { input: els.editEmoji, error: byId('editPocketEmojiError') },
         name: { input: els.editName, error: byId('editPocketNameError') },
         cadence: { input: els.editCadence, error: byId('editPocketCadenceError') },
-        defaultAmount: { input: els.editDefaultAmount, error: byId('editPocketDefaultAmountError') }
+        defaultAmount: { input: els.editDefaultAmount, error: byId('editPocketDefaultAmountError') },
+        bank: { input: els.editBank, error: byId('editPocketBankError') }
     });
 
     function submitEdit() {
@@ -579,12 +621,18 @@
         const fieldMap = EDIT_FIELD_MAP();
         // Immutable snapshot of the entered values so a version conflict can
         // restore the exact draft the user typed (Req 10.7/10.9).
-        const draft = { emoji: form.emoji, name: form.name, cadence: form.cadence, defaultAmount: form.defaultAmount };
+        const draft = { emoji: form.emoji, name: form.name, cadence: form.cadence, defaultAmount: form.defaultAmount, bank: form.bank };
+        if (!form.bank) {
+            clearFormFieldErrors(els.editModal);
+            showFieldError(fieldMap.bank.input, fieldMap.bank.error, BANK_REQUIRED_MESSAGE);
+            return;
+        }
         const body = {
             emoji: form.emoji,
             name: form.name,
             cadence: form.cadence,
             defaultAmount: form.defaultAmount,
+            bank: form.bank,
             expectedVersion: form.version
         };
         const saveControl = q('[data-edit-save]', els.editModal);
@@ -609,6 +657,7 @@
                     if (els.editName) els.editName.value = draft.name;
                     if (els.editCadence) els.editCadence.value = draft.cadence;
                     if (els.editDefaultAmount) els.editDefaultAmount.value = draft.defaultAmount == null ? '' : String(draft.defaultAmount);
+                    setSelectedBank(els.editBank, draft.bank);
                 },
                 loadCurrent: async () => {
                     // Load current stored values: refresh from canonical data and
@@ -1227,6 +1276,7 @@
         state.bootstrap.canEdit = state.bootstrap.canEdit === true;
         state.bootstrap.pocketManagementEnabled = state.bootstrap.pocketManagementEnabled === true;
         state.bootstrap.pocketManagementDualWriteEnabled = state.bootstrap.pocketManagementDualWriteEnabled === true;
+        state.bootstrap.banks = Array.isArray(state.bootstrap.banks) ? state.bootstrap.banks : [];
     }
 
     function cacheElements() {
@@ -1243,6 +1293,7 @@
             createName: byId('createPocketName'),
             createCadence: byId('createPocketCadence'),
             createDefaultAmount: byId('createPocketDefaultAmount'),
+            createBank: byId('createPocketBank'),
             createSubmit: byId('pocketCreateSubmit'),
             createStatus: byId('createPocketStatus'),
             createDisclosure: byId('createPocketDisclosure'),
@@ -1273,6 +1324,7 @@
             editName: byId('editPocketName'),
             editCadence: byId('editPocketCadence'),
             editDefaultAmount: byId('editPocketDefaultAmount'),
+            editBank: byId('editPocketBank'),
             archiveModal: byId('pocketArchiveModal'),
             removalModal: byId('assignmentRemovalModal'),
             conflictModal: byId('versionConflictModal')

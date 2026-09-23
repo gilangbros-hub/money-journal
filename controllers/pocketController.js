@@ -1,6 +1,7 @@
 'use strict';
 
 const pocketManagementService = require('../services/pocketManagementService');
+const { BANK_KEYS, bankView } = require('../utils/banks');
 
 /**
  * Build the actor from the authenticated session. The server never trusts
@@ -70,7 +71,10 @@ function createPocketController({ service = pocketManagementService } = {}) {
         // later task.
         // ------------------------------------------------------------------
         getPocketManagementPage(req, res) {
+            const banks = BANK_KEYS.map(bankView);
             res.render('pocket-management', {
+                banks,
+                banksJson: JSON.stringify(banks),
                 username: req.session.username,
                 avatar: req.session.avatar || '👤',
                 role: req.session.role,

@@ -29,7 +29,8 @@
             "canEdit": {{#if canEdit}}true{{else}}false{{/if}},
             "role": "{{role}}",
             "pocketManagementEnabled": {{#if pocketManagementEnabled}}true{{else}}false{{/if}},
-            "pocketManagementDualWriteEnabled": {{#if pocketManagementDualWriteEnabled}}true{{else}}false{{/if}}
+            "pocketManagementDualWriteEnabled": {{#if pocketManagementDualWriteEnabled}}true{{else}}false{{/if}},
+            "banks": {{#if banksJson}}{{{banksJson}}}{{else}}[]{{/if}}
         }
         </script>
 
@@ -114,7 +115,7 @@
                     New pocket type
                 </summary>
                 <form id="pocketCreateForm" novalidate aria-describedby="createPocketStatus">
-                    <!-- Field order per Req 11.3: Emoji, Name, Cadence, Default amount -->
+                    <!-- Field order per Req 11.3: Emoji, Name, Cadence, Default amount, then Bank -->
                     <div class="mb-4">
                         <label class="text-xs font-semibold text-text-secondary block mb-1" for="createPocketEmoji">Emoji</label>
                         <input type="text" id="createPocketEmoji" name="emoji" inputmode="text" autocomplete="off"
@@ -164,6 +165,26 @@
                         <p class="field-error text-xs text-journal-danger mt-1 hidden"
                             id="createPocketDefaultAmountError" role="alert"></p>
                     </div>
+
+                    <fieldset class="mb-4" id="createPocketBank" data-bank-picker
+                        aria-describedby="createPocketBankError" aria-invalid="false">
+                        <legend class="text-xs font-semibold text-text-secondary block mb-1">Bank</legend>
+                        <p class="text-[11px] text-text-muted mb-2" id="createPocketBankHint">Where this pocket's money sits.</p>
+                        <div class="bank-picker">
+                            {{#each banks}}
+                            <label class="bank-option">
+                                <input type="radio" name="bank" value="{{key}}" class="sr-only" data-bank-option>
+                                <span class="bank-logo bank-logo-lg" data-bank-logo="{{key}}">
+                                    <img src="{{logo}}" alt="" data-bank-logo-img onerror="bankLogoFallback(this)">
+                                    <span class="bank-logo-fallback" style="background:{{color}}" aria-hidden="true" hidden>{{initial}}</span>
+                                </span>
+                                <span class="bank-option-name">{{name}}</span>
+                            </label>
+                            {{/each}}
+                        </div>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden" id="createPocketBankError"
+                            role="alert"></p>
+                    </fieldset>
 
                     <button type="submit" class="btn-modal-save w-full" id="pocketCreateSubmit"
                         data-mutation-control>Create pocket</button>
@@ -351,6 +372,7 @@
                 <div><dt class="text-text-muted">Default</dt>
                     <dd class="font-semibold text-text-primary" data-pocket-default>Rp 0</dd></div>
             </dl>
+            <p class="pocket-bank-row mt-2 text-xs" data-pocket-bank></p>
             <div class="flex flex-wrap gap-2 mt-3" data-pocket-actions>
                 <button type="button" class="btn-modal-cancel" data-edit-pocket data-mutation-control>Edit</button>
                 <button type="button" class="btn-modal-cancel" data-archive-pocket data-mutation-control>Archive</button>
@@ -485,6 +507,26 @@
                     <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editPocketDefaultAmountError"
                         role="alert"></p>
                 </div>
+                    <fieldset class="mb-3 text-left" id="editPocketBank" data-bank-picker
+                        aria-describedby="editPocketBankError" aria-invalid="false">
+                        <legend class="text-xs font-semibold text-text-secondary block mb-1">Bank</legend>
+                        <p class="text-[11px] text-amber mb-2 hidden" data-edit-bank-missing hidden>This pocket has no bank yet. Pick one to save.</p>
+                        <div class="bank-picker">
+                            {{#each banks}}
+                            <label class="bank-option">
+                                <input type="radio" name="bank" value="{{key}}" class="sr-only" data-bank-option>
+                                <span class="bank-logo bank-logo-lg" data-bank-logo="{{key}}">
+                                    <img src="{{logo}}" alt="" data-bank-logo-img onerror="bankLogoFallback(this)">
+                                    <span class="bank-logo-fallback" style="background:{{color}}" aria-hidden="true" hidden>{{initial}}</span>
+                                </span>
+                                <span class="bank-option-name">{{name}}</span>
+                            </label>
+                            {{/each}}
+                        </div>
+                        <p class="field-error text-xs text-journal-danger mt-1 hidden" id="editPocketBankError"
+                            role="alert"></p>
+                    </fieldset>
+
                 <p class="text-xs text-text-muted mb-3" id="pocketEditStatus" role="status" aria-live="polite"></p>
                 <div class="modal-actions">
                     <button type="button" class="btn-modal-cancel" data-edit-cancel>Cancel</button>
@@ -561,6 +603,7 @@
     {{> actionHub}}
 
     <script src="/js/common.js"></script>
+    <script src="/js/banks.js"></script>
     <script src="/js/pocket-management.js"></script>
 </body>
 
