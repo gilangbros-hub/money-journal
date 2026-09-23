@@ -399,7 +399,7 @@ test('managed view updates the Budget Month text even when the legacy salary-cyc
 // ---------------------------------------------------------------------------
 // By bank strip (managed pockets only)
 // ---------------------------------------------------------------------------
-const JAGO = { key: 'jago', name: 'Bank Jago', color: '#FDAF27', logo: '/images/banks/jago.svg', initial: 'B' };
+const JAGO = { key: 'jago', name: 'Jago', color: '#FDAF27', logo: '/images/banks/jago.svg', initial: 'J' };
 const BLU = { key: 'blu', name: 'blu', color: '#33CDCF', logo: '/images/banks/blu.svg', initial: 'B' };
 
 function bankBudgetData(overrides = {}) {
@@ -483,5 +483,16 @@ test('no banks in the summary means no By bank strip', async () => {
 
     assert.equal(document.getElementById('bankSummary').hidden, true);
     assert.equal(document.querySelectorAll('#bankStrip [data-bank-filter]').length, 0);
+    dom.window.close();
+});
+
+test('the close-month control stays under Pocket Breakdown, not the By bank header', async () => {
+    const dom = await setupPage(async () => response({ success: true, data: bankBudgetData() }));
+    const { document } = dom.window;
+    const banner = document.getElementById('closeBanner');
+
+    assert.ok(banner);
+    assert.equal(banner.previousElementSibling.id, 'pocketBreakdownHeader');
+    assert.equal(document.getElementById('bankSummary').contains(banner), false);
     dom.window.close();
 });

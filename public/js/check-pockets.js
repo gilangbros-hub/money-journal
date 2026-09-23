@@ -711,7 +711,8 @@ function installCloseBanner(data) {
     existing?.remove();
     const role = element('userRole')?.value;
     if (role !== 'Wife' || !budgetFeatureEnabled) return;
-    const sectionHeader = document.querySelector('.section-header');
+    // The Pocket Breakdown header, not the By bank one above it.
+    const sectionHeader = element('pocketBreakdownHeader');
     if (!sectionHeader) return;
     const banner = document.createElement('div');
     banner.id = 'closeBanner';
