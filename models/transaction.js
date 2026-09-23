@@ -21,6 +21,13 @@ const isCanonicalExpenseDate = (value) => {
     }
 };
 
+// `this` is the transaction (or the split share) being validated.
+function isValidPocketLabel(value) {
+    if (Object.prototype.hasOwnProperty.call(POCKETS, value)) return true;
+    const managed = this && this.pocketId !== undefined && this.pocketId !== null;
+    return managed && typeof value === 'string' && value.trim().length >= 1 && value.trim().length <= 50;
+}
+
 const integerField = (message) => ({
     validator: Number.isInteger,
     message
@@ -61,10 +68,15 @@ const transactionSchema = new mongoose.Schema({
             message: 'type must contain 1 through 50 characters after trimming.'
         }
     },
+    // A fixed legacy pocket name, or, when pocketId is set, the managed
+    // pocket's display name (managed pockets can be called anything).
     pocket: {
         type: String,
         required: true,
-        enum: Object.keys(POCKETS)
+        validate: {
+            validator: isValidPocketLabel,
+            message: 'pocket must be a supported pocket.'
+        }
     },
     // Managed immutable Pocket_Identifier reference. Optional during the
     // additive rollout so legacy documents remain valid; TransactionService
@@ -132,7 +144,10 @@ const transactionSchema = new mongoose.Schema({
     sourceBreakdowns: [{
         pocket: {
             type: String,
-            enum: Object.keys(POCKETS)
+            validate: {
+                validator: isValidPocketLabel,
+                message: 'pocket must be a supported pocket.'
+            }
         },
         // Managed immutable Pocket_Identifier reference for a split share.
         // Optional during rollout; required for each managed split share and

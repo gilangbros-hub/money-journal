@@ -183,3 +183,47 @@ test('response mapper derives a canonical local date for a legacy compatibility 
     assert.equal(result.expenseDate, '2026-04-24');
     assert.equal(result.date, '2026-04-24');
 });
+
+test('a managed pocket can have any name when its pocketId comes with it', () => {
+    const pocketId = new mongoose.Types.ObjectId().toString();
+    const other = new mongoose.Types.ObjectId().toString();
+
+    const single = normalizeTransactionSource({ sourceType: 'single', pocket: ' Dana Darurat ', pocketId, amount: 1000 });
+    assert.equal(single.pocket, 'Dana Darurat');
+    assert.equal(single.pocketId, pocketId);
+
+    const split = normalizeTransactionSource({
+        sourceType: 'multi',
+        pocket: 'Dana Darurat',
+        amount: 1000,
+        sourceBreakdowns: [
+            { pocket: 'Dana Darurat', pocketId, amount: 600 },
+            { pocket: 'Liburan', pocketId: other, amount: 400 }
+        ]
+    });
+    assert.deepEqual(split.sourceBreakdowns.map(share => share.pocket), ['Dana Darurat', 'Liburan']);
+
+    // Without a pocketId the fixed legacy list still applies.
+    assertValidation(() => normalizeTransactionSource({ sourceType: 'single', pocket: 'Dana Darurat', amount: 1000 }), 'pocket');
+    assertValidation(() => normalizeTransactionSource({ sourceType: 'single', pocket: '   ', pocketId, amount: 1000 }), 'pocket');
+});
+
+test('the transaction model accepts a managed pocket name only alongside its pocketId', () => {
+    const Transaction = require('../models/transaction');
+    const base = {
+        expenseDate: '2027-02-01', type: 'Eat', ngapain: 'lunch', amount: 1000, paidBy: 'Self',
+        budgetMonth: 2, budgetYear: 2027, schemaVersion: 2
+    };
+    const pocketId = new mongoose.Types.ObjectId();
+
+    assert.equal(new Transaction({ ...base, pocket: 'Dana Darurat', pocketId }).validateSync()?.errors?.pocket, undefined);
+    assert.ok(new Transaction({ ...base, pocket: 'Dana Darurat' }).validateSync()?.errors?.pocket);
+    assert.equal(new Transaction({ ...base, pocket: 'Kwintals' }).validateSync()?.errors?.pocket, undefined);
+
+    const split = new Transaction({
+        ...base, pocket: 'Dana Darurat', pocketId, sourceType: 'multi',
+        sourceBreakdowns: [{ pocket: 'Dana Darurat', pocketId, amount: 600 }, { pocket: 'Liburan', amount: 400 }]
+    }).validateSync();
+    assert.equal(split?.errors?.['sourceBreakdowns.0.pocket'], undefined);
+    assert.ok(split?.errors?.['sourceBreakdowns.1.pocket']);
+});

@@ -95,6 +95,21 @@ function validatePocket(value, field = 'pocket') {
     return value;
 }
 
+/**
+ * The `pocket` string that rides along with a managed Pocket_Identifier is a
+ * display snapshot, not an identity: managed pockets can have any name, and
+ * TransactionService checks the pocketId against the Budget_Month assignment.
+ * So with a pocketId, any 1-50 character label is fine; without one, the
+ * legacy fixed-pocket rule applies.
+ */
+function validatePocketLabel(value, pocketId, field = 'pocket') {
+    if (pocketId === undefined || pocketId === null) return validatePocket(value, field);
+    if (typeof value !== 'string' || value.trim().length < 1 || value.trim().length > 50) {
+        throw invalid(field, `${field} must contain 1 through 50 characters.`);
+    }
+    return value.trim();
+}
+
 function validatePayer(value = 'Self', field = 'paidBy') {
     if (typeof value !== 'string' || !PAYERS.has(value)) {
         throw invalid(field, `${field} must be Husband, Wife, or Self.`);
@@ -129,7 +144,7 @@ function normalizeSourceBreakdowns(sourceBreakdowns, amount, field = 'sourceBrea
             throw invalid(`${field}.${index}`, 'Each pocket share must be an object.');
         }
 
-        const pocket = validatePocket(share.pocket, `${field}.${index}.pocket`);
+        const pocket = validatePocketLabel(share.pocket, share.pocketId, `${field}.${index}.pocket`);
         if (pockets.has(pocket)) {
             throw invalid(`${field}.${index}.pocket`, 'Pocket shares must use unique pockets.');
         }
@@ -173,7 +188,9 @@ function normalizeTransactionSource({ sourceType, pocket, pocketId, sourceBreakd
         : validateSourceType(sourceType);
 
     if (effectiveSourceType === 'multi') {
-        if (pocket !== undefined && pocket !== null) {
+        const managedShares = Array.isArray(sourceBreakdowns)
+            && sourceBreakdowns.some(share => share && share.pocketId !== undefined && share.pocketId !== null);
+        if (pocket !== undefined && pocket !== null && !managedShares) {
             validatePocket(pocket);
         }
         const breakdowns = normalizeSourceBreakdowns(sourceBreakdowns, amount);
@@ -197,7 +214,7 @@ function normalizeTransactionSource({ sourceType, pocket, pocketId, sourceBreakd
 
     const single = {
         sourceType: 'single',
-        pocket: validatePocket(pocket),
+        pocket: validatePocketLabel(pocket, pocketId),
         sourceBreakdowns: []
     };
 
@@ -259,6 +276,7 @@ module.exports = {
     validateNote,
     validatePayer,
     validatePocket,
+    validatePocketLabel,
     validateShareAmount,
     validateSourceType
 };
