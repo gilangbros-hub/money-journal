@@ -46,8 +46,13 @@ function createTransactionController({ service = transactionService, reporting }
     const reportingAdapter = reporting || (service === transactionService ? reportingService : null);
     return {
         async createTransaction(req, res) {
-            await service.createExpense(req.body || {}, actorFromRequest(req), serviceOptions(req));
-            res.json({ success: true, message: 'Transaction saved successfully!' });
+            const created = await service.createExpense(req.body || {}, actorFromRequest(req), serviceOptions(req));
+            // `id` lets the client offer Undo (a DELETE of the new record).
+            res.json({
+                success: true,
+                message: 'Transaction saved successfully!',
+                id: created?._id ? String(created._id) : undefined
+            });
         },
 
         async getAllTransactions(req, res) {
@@ -109,23 +114,28 @@ exports.getTransactionPage = (req, res) => {
     res.render('log-spending', {
         username: req.session.username,
         avatar: req.session.avatar || '👤',
-        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true
+        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
+        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true
     });
 };
 
 exports.getTransactionsPage = (req, res) => {
     res.render('monthly-story', {
+        isDashboard: true,
         username: req.session.username,
         avatar: req.session.avatar || '👤',
-        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true
+        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
+        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true
     });
 };
 
 exports.getAllTransactionsPage = (req, res) => {
     res.render('review-history', {
+        isHistory: true,
         username: req.session.username,
         avatar: req.session.avatar || '👤',
-        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true
+        salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
+        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true
     });
 };
 

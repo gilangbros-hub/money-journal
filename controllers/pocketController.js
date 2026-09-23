@@ -78,7 +78,9 @@ function createPocketController({ service = pocketManagementService } = {}) {
                 pocketManagementEnabled: req.app?.locals?.configuration?.pocketManagementEnabled === true,
                 pocketManagementDualWriteEnabled:
                     req.app?.locals?.configuration?.pocketManagementDualWriteEnabled === true,
-                isPocketManagement: true
+                isPocketManagement: true,
+                // Pocket Management sits under the Pockets tab.
+                isBudget: true
             });
         },
 

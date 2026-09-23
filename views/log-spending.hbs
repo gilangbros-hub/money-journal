@@ -9,8 +9,8 @@
 <body class="transaction-screen">
     <div class="page-container transaction-layout">
         <header class="app-header">
-            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
-                <p class="journal-eyebrow"><a href="/monthly-story" style="color: inherit; text-decoration: none;">← Back</a></p>
+            <div>
+                <p class="journal-eyebrow"><a href="/monthly-story" id="backLink" style="color: inherit; text-decoration: none;">← Back</a></p>
                 <h1 class="page-title page-title-ledger transaction-title">Log Spending <span class="inline-flex items-center gap-1 bg-gradient-danger text-white py-1 px-3 rounded-full text-xs font-bold ml-2 align-middle" id="streakBadge" style="display:none;"></span></h1>
             </div>
             <div class="user-info" onclick="toggleMenu()">
@@ -32,12 +32,13 @@
                 <section class="transaction-counter">
                     <p class="transaction-counter-label">Amount</p>
                     <p class="transaction-counter-currency">Rp</p>
-                    <input type="number" id="amount" name="amount" placeholder="0" required class="transaction-counter-input">
+                    <input type="text" inputmode="numeric" autocomplete="off" id="amount" name="amount" placeholder="0" required class="transaction-counter-input" aria-label="Amount in rupiah">
+                    <button type="button" class="transaction-amount-quick" id="amountThousandsBtn" aria-label="Add three zeros">000</button>
                 </section>
 
                 <section class="transaction-section">
-                    <label class="transaction-field-label" for="ngapain">Description</label>
-                    <input type="text" id="ngapain" name="ngapain" placeholder="What did you spend on?" required class="transaction-note-input">
+                    <label class="transaction-field-label" for="ngapain">Note</label>
+                    <input type="text" id="ngapain" name="ngapain" placeholder="Note (optional)" class="transaction-note-input">
                 </section>
 
                 <section class="transaction-section transaction-rows">
@@ -46,7 +47,8 @@
                         <span class="transaction-row-value" id="selectedTypeDisplay">Eat</span>
                     </button>
 
-                    <div class="transaction-mode-toggle">
+                    <!-- Kept for the form state; switched by #splitToggle below. -->
+                    <div class="transaction-mode-toggle" hidden>
                         <label class="transaction-mode-pill">
                             <input type="radio" name="sourceType" value="single" checked id="sourceTypeSingle">
                             <span>Single Pocket</span>
@@ -61,6 +63,8 @@
                         <span class="transaction-row-label">Pocket</span>
                         <span class="transaction-row-value" id="selectedPocketDisplay">Loading…</span>
                     </button>
+
+                    <button type="button" class="transaction-split-link" id="splitToggle" aria-controls="multiPocketSection">Split across pockets</button>
 
                     <div class="transaction-breakdown-panel" id="multiPocketSection" style="display:none;">
                         <div class="transaction-breakdown-head">
@@ -112,6 +116,7 @@
                 </section>
 
                 <button type="submit" class="transaction-save-btn" id="submitBtn">Save Transaction</button>
+                <button type="button" class="transaction-delete-btn" id="deleteBtn" hidden>Delete transaction</button>
             </div>
 
             <div class="transaction-hidden-types" aria-hidden="true">
@@ -167,19 +172,19 @@
         </div>
     </div>
 
-        <div id="successModal" class="modal-overlay">
-        <div class="modal-card text-center">
-            <div class="text-5xl mb-4" id="successEmoji">Saved</div>
-            <h3 class="text-xl font-bold text-text-primary mb-2">Transaction Saved!</h3>
-            <p class="text-sm text-text-secondary mb-6" id="successMessage">Great job tracking your expenses!</p>
-            <div class="flex flex-col gap-3">
-                <button class="btn-neon w-full h-12" onclick="addAnother()">Add Another</button>
-                <button class="btn-ghost w-full h-12" onclick="window.location.href='/monthly-story'">Go to Monthly Story</button>
+    <div id="deleteModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+        <div class="modal-card">
+            <h3 id="deleteModalTitle">Delete this?</h3>
+            <p id="deleteDetails" class="text-text-secondary mb-5"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" id="deleteCancelBtn">Cancel</button>
+                <button type="button" class="btn-modal-danger" id="deleteConfirmBtn">Delete</button>
             </div>
         </div>
     </div>
 
     <input type="hidden" id="salaryCycleEnabled" value="{{salaryCycleBudgetingEnabled}}">
+    <input type="hidden" id="expenseTypeManagementEnabled" value="{{expenseTypeManagementEnabled}}">
     <div id="message" class="toast"></div>
     <script src="/js/common.js"></script>
     <script src="/js/confetti.js"></script>

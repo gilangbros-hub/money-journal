@@ -55,10 +55,12 @@
             motivationEl.textContent = 'Start your streak 🚀';
         }
 
-        // Redirect after delay
-        setTimeout(() => {
+        // Short greeting; a tap anywhere skips it.
+        const continueToStory = () => {
             window.location.href = '/monthly-story';
-        }, 3000);
+        };
+        setTimeout(continueToStory, 1200);
+        document.addEventListener('click', continueToStory, { once: true });
     </script>
 </body>
 

@@ -45,7 +45,8 @@ test('transaction controller delegates writes and keeps legacy response envelope
     await handlers.createTransaction(request({ body: { date: '2027-02-24', amount: 1000 } }), createRes);
     assert.deepEqual(createRes.body, {
         success: true,
-        message: 'Transaction saved successfully!'
+        message: 'Transaction saved successfully!',
+        id: 'created'
     });
 
     const updateRes = response();
@@ -148,4 +149,28 @@ test('page handlers retain the existing authenticated view names', () => {
         'monthly-story',
         'review-history'
     ]);
+});
+
+test('page handlers pass the Expense Type Management flag to the views', () => {
+    const controller = require('../controllers/transactionController');
+    const rendered = [];
+    const res = { render(view, data) { rendered.push(data); } };
+    const on = { session: { username: 'alice' }, app: { locals: { configuration: { expenseTypeManagementEnabled: true } } } };
+    const off = { session: { username: 'alice' } };
+    controller.getTransactionPage(on, res);
+    controller.getTransactionsPage(on, res);
+    controller.getAllTransactionsPage(on, res);
+    controller.getTransactionPage(off, res);
+    assert.deepEqual(rendered.map(data => data.expenseTypeManagementEnabled), [true, true, true, false]);
+});
+
+test('Story and History page handlers mark their navbar tab active', () => {
+    const controller = require('../controllers/transactionController');
+    const rendered = {};
+    const res = { render(view, data) { rendered[view] = data; } };
+    const req = { session: { username: 'alice' } };
+    controller.getTransactionsPage(req, res);
+    controller.getAllTransactionsPage(req, res);
+    assert.equal(rendered['monthly-story'].isDashboard, true);
+    assert.equal(rendered['review-history'].isHistory, true);
 });

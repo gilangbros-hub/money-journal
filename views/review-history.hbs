@@ -10,8 +10,8 @@
     <div class="page-container journal-shell">
         <!-- Header -->
         <header class="app-header">
-            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
-                <p class="journal-eyebrow"><a href="/monthly-story" style="color: inherit; text-decoration: none;">← Back</a></p>
+            <div>
+                <p class="journal-eyebrow">Money Journal</p>
                 <h1 class="page-title page-title-ledger">Review History</h1>
             </div>
             <div class="user-info" onclick="toggleMenu()">
@@ -28,6 +28,12 @@
         <div class="mb-4">
             <input type="month" id="monthFilter" class="transaction-note-input w-full font-bold">
             <p id="salaryCyclePeriod" class="text-xs text-text-muted mt-2" aria-live="polite">Loading salary-cycle period...</p>
+        </div>
+
+        <!-- Search (within the loaded month) -->
+        <div class="mb-3">
+            <label for="historySearch" class="sr-only">Search this month</label>
+            <input type="search" id="historySearch" class="transaction-note-input w-full" placeholder="Search this month" autocomplete="off" enterkeyhint="search">
         </div>
 
         <!-- Type Filter Pills -->
@@ -65,21 +71,12 @@
     </div>
 
     <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal-overlay">
-        <div class="modal-card">
-            <div class="text-5xl mb-4">🗑️</div>
-            <h3>Delete this?</h3>
-            <p id="deleteDetails" class="text-text-secondary mb-5"></p>
-            <div class="modal-actions">
-                <button class="btn-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-modal-danger" onclick="confirmDelete()">Delete</button>
-            </div>
-        </div>
-    </div>
 
+    <input type="hidden" id="expenseTypeManagementEnabled" value="{{expenseTypeManagementEnabled}}">
     <script src="/js/common.js"></script>
     <script src="/js/review-history.js"></script>
 
+    {{> navbar}}
     {{> actionHub}}
 </body>
 

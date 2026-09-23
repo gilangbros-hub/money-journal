@@ -6,7 +6,27 @@ const typeEmojis = {
     'Uang Sampah': '🗑️', 'Uang Keamanan': '👮', 'Medicine': '💊', 'Others': '📦'
 };
 
-const allTypes = Object.keys(typeEmojis);
+let allTypes = Object.keys(typeEmojis);
+
+// With Expense Type Management on, merge the managed types' emoji into
+// typeEmojis so custom types don't all render as the fallback box.
+const expenseTypeManagementEnabled = document.getElementById('expenseTypeManagementEnabled')?.value === 'true';
+
+async function loadManagedTypeEmojis() {
+    if (!expenseTypeManagementEnabled) return;
+    try {
+        const response = await fetch('/api/expense-types');
+        const result = await response.json();
+        if (!response.ok || result?.success !== true || !Array.isArray(result.data?.active)) return;
+        result.data.active.forEach((type) => {
+            if (type && typeof type.name === 'string' && type.name && type.emoji) {
+                typeEmojis[type.name] = type.emoji;
+            }
+        });
+    } catch (error) {
+        // Keep the static map.
+    }
+}
 
 const pocketIcons = {
     'Kwintals': '💰', 'Groceries': '🥦', 'Weekday Transport': '🚌',
@@ -22,8 +42,11 @@ let currentMonth = '';
 let currentType = 'all';
 let currentPocket = 'all';
 let sortDesc = true;
-
+let searchQuery = '';
+let searchTimer = null;
 document.addEventListener('DOMContentLoaded', async () => {
+    // Runs alongside the Budget Month lookup instead of after it.
+    const typeEmojisReady = loadManagedTypeEmojis();
     const params = new URLSearchParams(window.location.search);
     currentMonth = params.has('month') ? params.get('month') : await determineDefaultMonth();
 
@@ -35,9 +58,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         backBtn.href = '/monthly-story';
     }
 
+    await typeEmojisReady;
+    if (expenseTypeManagementEnabled) allTypes = Object.keys(typeEmojis);
     buildFilterPills();
     buildPocketFilterPills();
     fetchTransactions();
+
+    const search = document.getElementById('historySearch');
+    search.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+            searchQuery = search.value.trim();
+            applyFilterAndRender();
+        }, 150);
+    });
+    search.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') return;
+        clearTimeout(searchTimer);
+        search.value = '';
+        searchQuery = '';
+        applyFilterAndRender();
+    });
 
     monthFilter.addEventListener('change', (e) => {
         currentMonth = e.target.value;
@@ -148,11 +189,27 @@ function transactionHasPocket(transaction, pocket) {
         (Array.isArray(transaction?.sourceBreakdowns) && transaction.sourceBreakdowns.some(share => share?.pocket === pocket));
 }
 
+// Case-insensitive match on note, type and pocket (split shares included).
+// A query of digits (dots allowed, as in 35.000) also matches the amount.
+function transactionMatchesSearch(transaction, query) {
+    if (!query) return true;
+    const needle = query.toLowerCase();
+    const shares = Array.isArray(transaction?.sourceBreakdowns) ? transaction.sourceBreakdowns : [];
+    const text = [transaction?.ngapain, transaction?.type, transaction?.pocket, ...shares.map(share => share?.pocket)]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+    if (text.includes(needle)) return true;
+
+    const digits = /^[\d.]+$/.test(query) ? query.replace(/\./g, '') : '';
+    return Boolean(digits) && String(transaction?.amount ?? '').includes(digits);
+}
+
 function applyFilterAndRender() {
     filteredTransactions = allTransactions.filter(t => {
         const typeMatch = currentType === 'all' || t.type === currentType;
         const pocketMatch = transactionHasPocket(t, currentPocket);
-        return typeMatch && pocketMatch;
+        return typeMatch && pocketMatch && transactionMatchesSearch(t, searchQuery);
     });
 
     filteredTransactions.sort((a, b) => {
@@ -170,9 +227,10 @@ function updateSummary() {
     const total = filteredTransactions.reduce((sum, t) => sum + t.amount, 0);
 
     const summaryInfo = document.getElementById('summaryInfo');
+    // Same classes as the server-rendered placeholder: light text on the blue card.
     summaryInfo.innerHTML = `
-        <span class="text-[13px] font-semibold text-text-secondary">${count} transaction${count !== 1 ? 's' : ''}</span>
-        <span class="text-base font-extrabold text-text-primary">${formatRupiah(total)}</span>
+        <span class="journal-total-label m-0 text-white/80">${count} transaction${count !== 1 ? 's' : ''}</span>
+        <span class="journal-total-amount m-0 text-white" style="font-size: 1.6rem; margin-bottom: 0;">${formatRupiah(total)}</span>
     `;
 }
 
@@ -199,10 +257,13 @@ function renderTransactions() {
     const list = document.getElementById('transactionList');
 
     if (filteredTransactions.length === 0) {
+        const message = searchQuery
+            ? `No matches for “${escapeHtml(searchQuery)}” this month`
+            : 'No transactions found';
         list.innerHTML = `
             <div class="empty-state">
                 <div class="text-5xl mb-3">📭</div>
-                <div class="text-[15px] font-medium">No transactions found</div>
+                <div class="text-[15px] font-medium">${message}</div>
             </div>
         `;
         return;
@@ -227,9 +288,8 @@ function renderTransactions() {
             const icon = typeEmojis[t.type] || '📦';
             const formattedAmount = t.formattedAmount || formatRupiah(t.amount);
             const paidByBadge = t.paidBy && t.paidBy !== 'Self'
-                ? `<span class="text-[10px] bg-bg-tertiary text-text-secondary py-0.5 px-1.5 rounded">${t.paidBy}</span>`
+                ? `<span class="text-[10px] bg-bg-tertiary text-text-secondary py-0.5 px-1.5 rounded">${escapeHtml(t.paidBy)}</span>`
                 : '';
-            const safeNote = (t.ngapain || '').replace(/'/g, "\\'");
 
             // Render one row for the transaction. A split is filtered by its
             // shares, but its parent amount is still displayed exactly once.
@@ -244,18 +304,18 @@ function renderTransactions() {
             }
 
             html += `
-                <div class="trans-item" onclick="openOptions('${t._id}', '${safeNote}', ${t.amount})">
-                    <div class="trans-icon">${icon}</div>
+                <a class="trans-item" href="/log-spending?edit=${encodeURIComponent(t._id)}">
+                    <div class="trans-icon">${escapeHtml(icon)}</div>
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm text-text-primary mb-0.5 flex items-center gap-1.5 flex-wrap">
-                            ${t.ngapain || 'No Description'}
+                            ${escapeHtml(t.ngapain || 'No Description')}
                             ${paidByBadge}
                             ${multiBadge}
                         </div>
-                        <div class="text-xs text-text-muted">${t.type} • ${pocketDisplay}</div>
+                        <div class="text-xs text-text-muted">${escapeHtml(t.type)} • ${escapeHtml(pocketDisplay)}</div>
                     </div>
                     <div class="font-bold text-sm text-coral whitespace-nowrap ml-2">- ${formattedAmount}</div>
-                </div>
+                </a>
             `;
         });
     });
@@ -263,30 +323,12 @@ function renderTransactions() {
     list.innerHTML = html;
 }
 
-// Delete Logic
-let deleteId = null;
-
-function openOptions(id, note, amount) {
-    deleteId = id;
-    const modal = document.getElementById('deleteModal');
-    const formatted = typeof amount === 'number' ? formatRupiah(amount) : amount;
-    document.getElementById('deleteDetails').innerText = `${note} - ${formatted}`;
-    modal.classList.add('show');
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('show');
-}
-
-async function confirmDelete() {
-    if (!deleteId) return;
-    try {
-        const response = await fetch(`/api/transaction/${deleteId}`, { method: 'DELETE' });
-        if (response.ok) {
-            closeDeleteModal();
-            fetchTransactions();
-        }
-    } catch (error) {
-        console.error(error);
-    }
+// Notes, types and pocket names are household-entered text.
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }

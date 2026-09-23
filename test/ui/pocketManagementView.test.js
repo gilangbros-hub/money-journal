@@ -9,7 +9,8 @@ const hbs = require('hbs');
 const viewSource = fs.readFileSync(require.resolve('../../views/pocket-management.hbs'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
-hbs.handlebars.registerPartial('actionHub', '<div id="actionHubSheet"></div>');
+hbs.handlebars.registerPartial('actionHub', fs.readFileSync(require.resolve('../../views/partials/actionHub.hbs'), 'utf8'));
+hbs.handlebars.registerPartial('navbar', fs.readFileSync(require.resolve('../../views/partials/navbar.hbs'), 'utf8'));
 const renderView = hbs.handlebars.compile(viewSource);
 
 function render(overrides = {}) {

@@ -4,14 +4,12 @@
 <head>
     {{> head}}
     <title>Monthly Story</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 
 <body>
     <div class="page-container journal-shell">
         <header class="app-header">
-            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
+            <div>
                 <p class="journal-eyebrow">Money Journal</p>
                 <h1 class="page-title page-title-ledger">Monthly Story</h1>
             </div>
@@ -30,10 +28,11 @@
                 <input type="month" id="monthFilter" class="journal-month-input">
                 <button type="button" class="journal-chip-btn" id="jumpToTodayBtn">Jump to Today</button>
             </div>
-            <p class="journal-total-label">This Month</p>
+            <p class="journal-total-label" id="heroLabel">This Month</p>
             <p class="journal-metric-label" id="salaryCyclePeriod" aria-live="polite">Loading salary-cycle period...</p>
             <h2 class="journal-total-amount" id="totalAmount">Rp 0</h2>
-            <div class="journal-hero-metrics">
+            <p class="journal-hero-allowance" id="heroAllowance" aria-live="polite" hidden></p>
+            <div class="journal-hero-metrics" id="heroMetrics">
                 <div>
                     <p class="journal-metric-label">Today</p>
                     <p class="journal-metric-value" id="todayAmount">Rp 0</p>
@@ -49,20 +48,6 @@
             </div>
         </section>
 
-        <section class="journal-strip">
-            <button class="journal-strip-item" onclick="location.href='/log-spending'">
-                <span class="material-symbols-outlined">edit_note</span>
-                Log Spending
-            </button>
-            <button class="journal-strip-item" onclick="location.href='/review-history'">
-                <span class="material-symbols-outlined">history</span>
-                Review History
-            </button>
-            <button class="journal-strip-item" onclick="location.href='/check-pockets'">
-                <span class="material-symbols-outlined">account_balance_wallet</span>
-                Check Pockets
-            </button>
-        </section>
 
         <section class="journal-story-grid" id="storyCards">
             <article class="journal-story-card">
@@ -77,15 +62,6 @@
             </article>
         </section>
 
-        <section class="journal-surface">
-            <div class="section-header">
-                <h2 class="section-title">Today Feed</h2>
-                <a href="/review-history" class="journal-surface-link">View Full Feed</a>
-            </div>
-            <div class="journal-timeline" id="todayTimeline">
-                <p class="text-center text-text-muted py-5">Loading today...</p>
-            </div>
-        </section>
 
         <section class="journal-surface">
             <div class="section-header">
@@ -110,6 +86,7 @@
         <section class="journal-surface">
             <div class="section-header">
                 <h2 class="section-title">Month Feed</h2>
+                <a href="/review-history" class="journal-surface-link">View all</a>
             </div>
             <div id="historyList">
                 <p class="text-center text-text-muted py-5">Loading month feed...</p>
@@ -117,24 +94,14 @@
         </section>
     </div>
 
-    <div id="deleteModal" class="modal-overlay">
-        <div class="modal-card">
-            <div class="text-5xl mb-4">
-                <span class="material-symbols-outlined" style="font-size: 44px;">delete</span>
-            </div>
-            <h3>Delete this?</h3>
-            <p id="deleteDetails" class="text-text-secondary mb-5"></p>
-            <div class="modal-actions">
-                <button class="btn-modal-cancel" onclick="closeDeleteModal()">Cancel</button>
-                <button class="btn-modal-danger" onclick="confirmDelete()">Delete</button>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <input type="hidden" id="expenseTypeManagementEnabled" value="{{expenseTypeManagementEnabled}}">
     <script src="/js/common.js"></script>
     <script src="/js/monthly-story.js"></script>
 
+    <div id="message" class="toast"></div>
+    {{> navbar}}
     {{> actionHub}}
 </body>
 
