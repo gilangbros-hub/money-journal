@@ -27,7 +27,7 @@ function response(body, status = 200) {
 async function setupPage({ summary, transactions, expenseTypes } = {}) {
     const calls = [];
     const charts = [];
-    const summaryData = summary || {
+    const summaryData = (typeof summary === 'function' ? summary('') : summary) || {
         budgetMonth: '2027-03',
         timeZone: 'Asia/Jakarta',
         period: { startDate: '2027-02-25', endDate: '2027-03-24' },
@@ -73,7 +73,7 @@ async function setupPage({ summary, transactions, expenseTypes } = {}) {
             });
         }
         if (url.startsWith('/api/dashboard/summary')) {
-            return response({ success: true, data: summaryData });
+            return response({ success: true, data: typeof summary === 'function' ? summary(url) : summaryData });
         }
         if (url === '/api/expense-types') {
             return response({ success: true, data: { active: expenseTypes || [] } });
@@ -204,4 +204,183 @@ test('Monthly Story uses the bottom navbar with Story active and a + that goes s
     assert.equal(document.getElementById('actionHubTrigger').getAttribute('href'), '/log-spending');
     assert.equal(document.getElementById('actionHubSheet'), null);
     assert.equal(document.querySelector('.journal-strip'), null);
+});
+
+// Date keys relative to the real clock in UTC; the page computes "today" the
+// same way from the summary's timeZone.
+function utcDateKey(offsetDays = 0) {
+    const date = new Date(Date.now() + offsetDays * 86400000);
+    return date.toISOString().slice(0, 10);
+}
+
+function budgetSummary({ pockets, totalBudget, totalRemaining, period, availableWeeks = [], selectedWeek = null, budgetAlerts = [] }) {
+    return {
+        budgetMonth: '2027-03',
+        timeZone: 'UTC',
+        period,
+        total: { formatted: 'Rp 900.000', raw: 900000 },
+        categories: [],
+        comparison: { hasLastMonth: false },
+        budgetAlerts,
+        budget: { totalBudget, totalRemaining, pockets, availableWeeks, selectedWeek }
+    };
+}
+
+const monthlyPockets = [
+    { pocket: 'Kwintals', icon: '💰', cadence: 'Monthly', budget: 1000000, spent: 400000, alertStatus: 'normal' },
+    { pocket: 'Groceries', icon: '🥦', cadence: 'Monthly', budget: 500000, spent: 500000, alertStatus: 'danger' }
+];
+
+test('with a budget the hero leads with what is left and a daily allowance until payday', async () => {
+    const { dom } = await setupPage({
+        summary: budgetSummary({
+            pockets: monthlyPockets,
+            totalBudget: 1500000,
+            totalRemaining: 600000,
+            period: { startDate: utcDateKey(-5), endDate: utcDateKey(9) }
+        }),
+        transactions: []
+    });
+    const { document } = dom.window;
+
+    assert.equal(document.getElementById('heroLabel').textContent, 'Left this cycle');
+    assert.equal(document.getElementById('totalAmount').textContent, 'Rp 600000');
+    const allowance = document.getElementById('heroAllowance');
+    assert.equal(allowance.hidden, false);
+    assert.equal(allowance.textContent, 'Rp 60000/day · 10 days to payday');
+    assert.equal(document.getElementById('heroSpent').textContent, 'Rp 900.000');
+    assert.equal(document.getElementById('heroDaysLeft').textContent, '10');
+    assert.equal(document.getElementById('entryCount'), null);
+    dom.window.close();
+});
+
+test('on the last day of the cycle the allowance is the whole remainder', async () => {
+    const { dom } = await setupPage({
+        summary: budgetSummary({
+            pockets: monthlyPockets,
+            totalBudget: 1500000,
+            totalRemaining: 75000,
+            period: { startDate: utcDateKey(-30), endDate: utcDateKey(0) }
+        }),
+        transactions: []
+    });
+    assert.equal(dom.window.document.getElementById('heroAllowance').textContent, 'Rp 75000/day · 1 day to payday');
+    dom.window.close();
+});
+
+test('an overspent cycle says so instead of showing an allowance', async () => {
+    const { dom } = await setupPage({
+        summary: budgetSummary({
+            pockets: monthlyPockets,
+            totalBudget: 1500000,
+            totalRemaining: -50000,
+            period: { startDate: utcDateKey(-5), endDate: utcDateKey(9) }
+        }),
+        transactions: []
+    });
+    const { document } = dom.window;
+
+    assert.equal(document.getElementById('heroLabel').textContent, 'Over budget this cycle');
+    assert.equal(document.getElementById('totalAmount').textContent, 'Rp 50000');
+    assert.ok(document.getElementById('totalAmount').classList.contains('is-over'));
+    assert.equal(document.getElementById('heroAllowance').hidden, true);
+    dom.window.close();
+});
+
+test('a past cycle shows what was left without a daily allowance', async () => {
+    const { dom } = await setupPage({
+        summary: budgetSummary({
+            pockets: monthlyPockets,
+            totalBudget: 1500000,
+            totalRemaining: 120000,
+            period: { startDate: utcDateKey(-60), endDate: utcDateKey(-31) }
+        }),
+        transactions: []
+    });
+    const { document } = dom.window;
+
+    assert.equal(document.getElementById('totalAmount').textContent, 'Rp 120000');
+    assert.equal(document.getElementById('heroAllowance').hidden, true);
+    assert.equal(document.getElementById('heroDaysLeft').textContent, '–');
+    dom.window.close();
+});
+
+test('Pocket Pulse lists every pocket with a progress bar, over-budget pockets first', async () => {
+    const { dom } = await setupPage({
+        summary: budgetSummary({
+            pockets: [
+                ...monthlyPockets,
+                { pocket: 'Investasi', icon: '📈', cadence: 'Monthly', budget: 0, spent: 20000, alertStatus: 'normal' },
+                { pocket: 'Bandung', icon: '⛰️', cadence: 'Monthly', budget: 0, spent: 0, alertStatus: 'normal' }
+            ],
+            totalBudget: 1500000,
+            totalRemaining: 600000,
+            period: { startDate: utcDateKey(-5), endDate: utcDateKey(9) },
+            budgetAlerts: [{ pocket: 'Groceries', status: 'danger', message: 'Groceries: 100% over budget (Monthly · salary cycle)' }]
+        }),
+        transactions: []
+    });
+    const items = [...dom.window.document.querySelectorAll('#pocketPulseList .journal-pulse-item')];
+
+    assert.deepEqual(items.map(item => item.querySelector('.journal-pulse-title').textContent), ['🥦 Groceries', '💰 Kwintals', '📈 Investasi']);
+    assert.ok(items[0].classList.contains('danger'));
+    assert.match(items[0].textContent, /100% over budget/);
+    assert.equal(items[0].querySelector('.journal-pulse-fill').style.width, '100%');
+    assert.equal(items[1].querySelector('.journal-pulse-fill').style.width, '40%');
+    assert.equal(items[1].querySelector('.journal-pulse-amounts').textContent, 'Rp 400000 / Rp 1000000');
+    assert.equal(items[1].querySelector('.journal-pulse-scope').textContent, 'This cycle');
+    assert.equal(items[2].querySelector('.journal-pulse-amounts').textContent, 'Rp 20000 · no budget set');
+    dom.window.close();
+});
+
+test('weekly pockets are re-requested for the week containing today', async () => {
+    const weeks = [
+        { key: '2027-W01', intersectionStartDate: utcDateKey(-10), intersectionEndDate: utcDateKey(-4) },
+        { key: '2027-W02', intersectionStartDate: utcDateKey(-3), intersectionEndDate: utcDateKey(3) }
+    ];
+    const summaryFor = (url) => {
+        const week = new URL(`https://money-journal.test${url || '/'}`).searchParams.get('selectedWeek');
+        return budgetSummary({
+            pockets: [{
+                pocket: 'Groceries', icon: '🥦', cadence: 'Weekly',
+                budget: 300000, spent: week ? 120000 : 290000, alertStatus: week ? 'normal' : 'warning',
+                selectedWeek: { key: week || '2027-W01' }
+            }],
+            totalBudget: 1200000,
+            totalRemaining: 500000,
+            period: { startDate: utcDateKey(-10), endDate: utcDateKey(20) },
+            availableWeeks: weeks,
+            selectedWeek: week
+        });
+    };
+    const { dom, calls } = await setupPage({ summary: summaryFor, transactions: [] });
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.ok(calls.some(call => call.url === '/api/dashboard/summary?month=2027-03&selectedWeek=2027-W02'));
+    const item = dom.window.document.querySelector('#pocketPulseList .journal-pulse-item');
+    assert.equal(item.querySelector('.journal-pulse-scope').textContent, 'This week');
+    assert.equal(item.querySelector('.journal-pulse-amounts').textContent, 'Rp 120000 / Rp 300000');
+    dom.window.close();
+});
+
+test('no second summary request when there is no weekly pocket', async () => {
+    const { dom, calls } = await setupPage({
+        summary: budgetSummary({
+            pockets: monthlyPockets,
+            totalBudget: 1500000,
+            totalRemaining: 600000,
+            period: { startDate: utcDateKey(-5), endDate: utcDateKey(9) },
+            availableWeeks: [{ key: '2027-W02', intersectionStartDate: utcDateKey(-3), intersectionEndDate: utcDateKey(3) }]
+        }),
+        transactions: []
+    });
+    assert.equal(calls.filter(call => call.url.startsWith('/api/dashboard/summary')).length, 1);
+    dom.window.close();
+});
+
+test('Monthly Story loads Chart.js once and no longer has a Today Feed', () => {
+    const html = renderView({ username: 'tester', avatar: '👤' });
+    assert.equal((html.match(/chart\.js/g) || []).length, 1);
+    assert.doesNotMatch(html, /datalabels/);
+    assert.doesNotMatch(html, /id="todayTimeline"/);
 });

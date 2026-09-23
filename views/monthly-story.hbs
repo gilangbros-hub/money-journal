@@ -4,8 +4,6 @@
 <head>
     {{> head}}
     <title>Monthly Story</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 </head>
 
 <body>
@@ -30,10 +28,11 @@
                 <input type="month" id="monthFilter" class="journal-month-input">
                 <button type="button" class="journal-chip-btn" id="jumpToTodayBtn">Jump to Today</button>
             </div>
-            <p class="journal-total-label">This Month</p>
+            <p class="journal-total-label" id="heroLabel">This Month</p>
             <p class="journal-metric-label" id="salaryCyclePeriod" aria-live="polite">Loading salary-cycle period...</p>
             <h2 class="journal-total-amount" id="totalAmount">Rp 0</h2>
-            <div class="journal-hero-metrics">
+            <p class="journal-hero-allowance" id="heroAllowance" aria-live="polite" hidden></p>
+            <div class="journal-hero-metrics" id="heroMetrics">
                 <div>
                     <p class="journal-metric-label">Today</p>
                     <p class="journal-metric-value" id="todayAmount">Rp 0</p>
@@ -63,15 +62,6 @@
             </article>
         </section>
 
-        <section class="journal-surface">
-            <div class="section-header">
-                <h2 class="section-title">Today Feed</h2>
-                <a href="/review-history" class="journal-surface-link">View Full Feed</a>
-            </div>
-            <div class="journal-timeline" id="todayTimeline">
-                <p class="text-center text-text-muted py-5">Loading today...</p>
-            </div>
-        </section>
 
         <section class="journal-surface">
             <div class="section-header">
@@ -96,6 +86,7 @@
         <section class="journal-surface">
             <div class="section-header">
                 <h2 class="section-title">Month Feed</h2>
+                <a href="/review-history" class="journal-surface-link">View all</a>
             </div>
             <div id="historyList">
                 <p class="text-center text-text-muted py-5">Loading month feed...</p>

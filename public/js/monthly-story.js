@@ -89,12 +89,20 @@ async function loadJournalData() {
             fetch(`/api/transactions?month=${currentMonth}`)
         ]);
 
-        const summaryResult = await summaryResponse.json();
+        let summaryResult = await summaryResponse.json();
         const txResult = await txResponse.json();
         await typeEmojisReady;
-
         if (!summaryResult.success) {
             throw new Error('Failed to load summary');
+        }
+
+        // Without a week the server reports weekly pockets for the cycle's
+        // first week. Ask again for the week containing today when it matters.
+        const currentWeek = currentWeekToRequest(summaryResult.data);
+        if (currentWeek) {
+            const weekResponse = await fetch(`/api/dashboard/summary?month=${currentMonth}&selectedWeek=${encodeURIComponent(currentWeek)}`);
+            const weekResult = await weekResponse.json();
+            if (weekResponse.ok && weekResult.success) summaryResult = weekResult;
         }
 
         dashboardData = summaryResult.data;
@@ -104,7 +112,6 @@ async function loadJournalData() {
         renderPeriodMetadata();
         renderHero();
         renderStoryCards();
-        renderTodayTimeline();
         renderPocketPulse();
         renderSpendingChart();
         renderMonthFeed();
@@ -121,21 +128,99 @@ function renderPeriodMetadata() {
     target.textContent = `Budget Month ${dashboardData.budgetMonth} · Salary cycle ${period.startDate} – ${period.endDate}`;
 }
 
-function renderHero() {
-    const totalEl = document.getElementById('totalAmount');
-    const todayEl = document.getElementById('todayAmount');
-    const entryEl = document.getElementById('entryCount');
-    const nudgeEl = document.getElementById('monthNudge');
+// ---------------------------------------------------------------------------
+// Hero. With a budget for the month it leads with what is left for the salary
+// cycle and a daily allowance until payday; without one it keeps the plain
+// spending summary.
+// ---------------------------------------------------------------------------
 
-    totalEl.textContent = dashboardData.total.formatted;
+function dateKeyToUtcDay(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    return Date.UTC(year, month - 1, day) / 86400000;
+}
+
+// Days from today through the last day of the cycle, today included (so it is
+// also the number of days until payday). 0 when today is outside the cycle.
+function daysLeftInCycle(period, todayKey) {
+    const pattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (!period || !pattern.test(period.startDate || '') || !pattern.test(period.endDate || '') || !pattern.test(todayKey)) {
+        return 0;
+    }
+    if (todayKey < period.startDate || todayKey > period.endDate) return 0;
+    return dateKeyToUtcDay(period.endDate) - dateKeyToUtcDay(todayKey) + 1;
+}
+
+function hasBudget(data) {
+    return Number(data?.budget?.totalBudget) > 0 && Array.isArray(data?.budget?.pockets);
+}
+
+function renderHeroMetrics(items) {
+    document.getElementById('heroMetrics').innerHTML = items.map((item) => `
+        <div>
+            <p class="journal-metric-label">${safeText(item.label)}</p>
+            <p class="journal-metric-value" id="${item.id}">${safeText(item.value)}</p>
+        </div>
+    `).join('');
+}
+
+function renderHero() {
+    const labelEl = document.getElementById('heroLabel');
+    const totalEl = document.getElementById('totalAmount');
+    const allowanceEl = document.getElementById('heroAllowance');
 
     const todayKey = householdTodayKey(dashboardData.timeZone);
     const todayTx = monthTransactions.filter((item) => transactionDateKey(item) === todayKey);
     const todayTotal = todayTx.reduce((sum, item) => sum + (item.amount || 0), 0);
 
-    todayEl.textContent = formatRupiah(todayTotal);
-    entryEl.textContent = String(monthTransactions.length);
-    nudgeEl.textContent = buildNudgeText(dashboardData.comparison);
+    totalEl.classList.remove('is-over');
+    allowanceEl.hidden = true;
+    allowanceEl.textContent = '';
+
+    if (!hasBudget(dashboardData)) {
+        labelEl.textContent = 'This Month';
+        totalEl.textContent = dashboardData.total.formatted;
+        renderHeroMetrics([
+            { label: 'Today', id: 'todayAmount', value: formatRupiah(todayTotal) },
+            { label: 'Entries', id: 'entryCount', value: String(monthTransactions.length) },
+            { label: 'Nudge', id: 'monthNudge', value: buildNudgeText(dashboardData.comparison) }
+        ]);
+        return;
+    }
+
+    const remaining = Number(dashboardData.budget.totalRemaining) || 0;
+    const daysLeft = daysLeftInCycle(dashboardData.period || dashboardData.salaryCyclePeriod, todayKey);
+
+    if (remaining < 0) {
+        labelEl.textContent = 'Over budget this cycle';
+        totalEl.textContent = formatRupiah(Math.abs(remaining));
+        totalEl.classList.add('is-over');
+    } else {
+        labelEl.textContent = 'Left this cycle';
+        totalEl.textContent = formatRupiah(remaining);
+        if (daysLeft > 0) {
+            const perDay = Math.floor(remaining / daysLeft);
+            allowanceEl.textContent = `${formatRupiah(perDay)}/day · ${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} to payday`;
+            allowanceEl.hidden = false;
+        }
+    }
+
+    renderHeroMetrics([
+        { label: 'Spent', id: 'heroSpent', value: dashboardData.total.formatted },
+        { label: 'Today', id: 'todayAmount', value: formatRupiah(todayTotal) },
+        { label: 'Days left', id: 'heroDaysLeft', value: daysLeft > 0 ? String(daysLeft) : '–' }
+    ]);
+}
+
+// The week to re-request the summary for, or '' when the default (first
+// week of the cycle) is already right or there is no weekly pocket.
+function currentWeekToRequest(data) {
+    const budget = data?.budget;
+    const weeks = Array.isArray(budget?.availableWeeks) ? budget.availableWeeks : [];
+    if (!weeks.length || !budget.pockets?.some((pocket) => pocket.cadence === 'Weekly')) return '';
+    const todayKey = householdTodayKey(data.timeZone);
+    const week = weeks.find((item) => item.intersectionStartDate <= todayKey && todayKey <= item.intersectionEndDate);
+    const shownWeek = budget.selectedWeek || weeks[0]?.key;
+    return week && week.key !== shownWeek ? week.key : '';
 }
 
 function buildNudgeText(comparison) {
@@ -167,22 +252,6 @@ function renderStoryCards() {
     }
 }
 
-function renderTodayTimeline() {
-    const target = document.getElementById('todayTimeline');
-    const todayKey = householdTodayKey(dashboardData.timeZone);
-    const todayTx = monthTransactions.filter((item) => transactionDateKey(item) === todayKey);
-
-    if (todayTx.length === 0) {
-        target.innerHTML = '<p class="text-center text-text-muted py-5">No entries yet today. Add one while it is fresh.</p>';
-        return;
-    }
-
-    target.innerHTML = todayTx
-        .slice(0, 6)
-        .map((item) => renderTimelineRow(item))
-        .join('');
-}
-
 function renderMonthFeed() {
     const list = document.getElementById('historyList');
     if (monthTransactions.length === 0) {
@@ -204,19 +273,6 @@ function renderMonthFeed() {
             `;
         })
         .join('');
-}
-
-function renderTimelineRow(item) {
-    return `
-        <article class="journal-row compact">
-            <div class="journal-row-icon">${typeEmojis[item.type] || '📦'}</div>
-            <div class="journal-row-body">
-                <p class="journal-row-title">${safeText(item.ngapain || 'No description')}</p>
-                <p class="journal-row-meta">${safeText(item.pocket || 'Unknown')}</p>
-            </div>
-            <p class="journal-row-amount">- ${item.formattedAmount || formatRupiah(item.amount)}</p>
-        </article>
-    `;
 }
 
 function renderFeedRow(item) {
@@ -241,10 +297,60 @@ function renderFeedRow(item) {
     `;
 }
 
+const PULSE_ORDER = { danger: 0, warning: 1 };
+
+function pulseScopeLabel(pocket, currentWeekKey) {
+    if (pocket.cadence !== 'Weekly') return 'This cycle';
+    const key = pocket.selectedWeek?.key || '';
+    return key && key === currentWeekKey ? 'This week' : `Week ${key.replace(/^\d{4}-W/, '') || '?'}`;
+}
+
 function renderPocketPulse() {
     const target = document.getElementById('pocketPulseList');
     const alerts = Array.isArray(dashboardData.budgetAlerts) ? dashboardData.budgetAlerts : [];
+    const pockets = Array.isArray(dashboardData.budget?.pockets) ? dashboardData.budget.pockets : [];
 
+    if (pockets.length === 0) {
+        renderPocketAlerts(target, alerts);
+        return;
+    }
+
+    const todayKey = householdTodayKey(dashboardData.timeZone);
+    const currentWeekKey = (dashboardData.budget.availableWeeks || [])
+        .find((week) => week.intersectionStartDate <= todayKey && todayKey <= week.intersectionEndDate)?.key || '';
+
+    // A pocket with no budget and no spending has nothing to say.
+    target.innerHTML = pockets
+        .filter((pocket) => Number(pocket.budget) > 0 || Number(pocket.spent) > 0)
+        .sort((a, b) => (PULSE_ORDER[a.alertStatus] ?? 2) - (PULSE_ORDER[b.alertStatus] ?? 2))
+        .map((pocket) => {
+            const status = pocket.alertStatus === 'danger' || pocket.alertStatus === 'warning' ? pocket.alertStatus : '';
+            const budget = Number(pocket.budget) || 0;
+            const spent = Number(pocket.spent) || 0;
+            const alert = status ? alerts.find((item) => item.pocket === pocket.pocket) : null;
+            const width = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+            const amounts = budget > 0
+                ? `${formatRupiah(spent)} / ${formatRupiah(budget)}`
+                : `${formatRupiah(spent)} · no budget set`;
+            return `
+            <article class="journal-pulse-item ${status}">
+                <div class="journal-pulse-head">
+                    <p class="journal-pulse-title">${safeText(`${pocket.icon || pocket.pocketEmoji || ''} ${pocket.pocket}`.trim())}</p>
+                    <p class="journal-pulse-scope">${safeText(pulseScopeLabel(pocket, currentWeekKey))}</p>
+                </div>
+                <p class="journal-pulse-amounts">${safeText(amounts)}</p>
+                <div class="journal-pulse-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${width}" aria-label="${safeText(pocket.pocket)} budget used">
+                    <div class="journal-pulse-fill ${status}" style="width: ${width}%"></div>
+                </div>
+                ${alert ? `<p class="journal-pulse-copy">${safeText(alert.message)}</p>` : ''}
+            </article>
+        `;
+        })
+        .join('');
+}
+
+// No budget pockets in the summary (legacy data): keep the alerts-only list.
+function renderPocketAlerts(target, alerts) {
     if (alerts.length === 0) {
         target.innerHTML = '<p class="text-center text-text-muted py-5">Pockets look stable this month.</p>';
         return;
