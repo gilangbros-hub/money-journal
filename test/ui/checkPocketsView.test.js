@@ -3,12 +3,14 @@
 const fs = require('node:fs');
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const { JSDOM } = require('jsdom');
 const hbs = require('hbs');
 
 const viewSource = fs.readFileSync(require.resolve('../../views/check-pockets.hbs'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
-hbs.handlebars.registerPartial('actionHub', '<div id="actionHubSheet"></div>');
+hbs.handlebars.registerPartial('actionHub', fs.readFileSync(require.resolve('../../views/partials/actionHub.hbs'), 'utf8'));
+hbs.handlebars.registerPartial('navbar', fs.readFileSync(require.resolve('../../views/partials/navbar.hbs'), 'utf8'));
 const renderView = hbs.handlebars.compile(viewSource);
 
 function render(overrides = {}) {
@@ -81,4 +83,12 @@ test('feature-disabled rendering preserves the legacy month and edit view', () =
     assert.match(html, /id="currentMonth">Februari 2026/);
     assert.match(html, /id="editModal"/);
     assert.match(html, /id="budgetInput"/);
+});
+
+test('Check Pockets is a navbar tab with Pockets active and no back link', () => {
+    const { document } = new JSDOM(render({ isBudget: true })).window;
+
+    assert.equal(document.querySelector('.bottom-navbar .nav-item.active').getAttribute('href'), '/check-pockets');
+    assert.doesNotMatch(document.querySelector('.app-header').textContent, /Back/);
+    assert.equal(document.getElementById('actionHubTrigger').getAttribute('href'), '/log-spending');
 });

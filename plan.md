@@ -6,7 +6,8 @@ A step-by-step plan for improving the money tracking flow: Log Spending, Monthly
 
 - **Phase 1: done.** Deviation: after saving an edit, the page returns to where the edit was opened from (same-origin referrer), falling back to `/review-history`.
 - **Phase 2: done.** Deviations: Undo also puts the deleted entry's values back in the form so it can be fixed and saved again. After a save, the date, type and pocket are kept (only amount, note and split rows reset). On Log Spending the toast sits at the top of the screen, because at the bottom it covered the Save button for the 5 s it stays up. `showToast` now uses `textContent` instead of `innerText`.
-- Phases 3 to 6: not started.
+- **Phase 3: done.** Deviations: the `+` sits above the navbar (not at its old spot, which the bar now covers), and both sit below `.modal-overlay` so dialogs cover them. Story, History and Pockets headers lost their "← Back" link and click-to-home wrapper (they're tabs now), and so did the Log Spending title (tapping it navigated away mid-entry). Monthly Story and Profile got the missing `#message` toast element; their `showToast` calls were silently dropped before. Nav icons have fixed-size boxes so a failed icon-font load clips instead of spilling text. The CSS variable `--bottom-nav-height` sets the bar height; the toast and `+` positions derive from it.
+- Phases 4 to 6: not started.
 
 ## Ground rules for whoever runs this
 

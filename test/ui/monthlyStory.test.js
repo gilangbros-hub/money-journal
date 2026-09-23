@@ -10,7 +10,8 @@ const viewSource = fs.readFileSync(require.resolve('../../views/monthly-story.hb
 const browserSource = fs.readFileSync(require.resolve('../../public/js/monthly-story.js'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
-hbs.handlebars.registerPartial('actionHub', '<div id="actionHubSheet"></div>');
+hbs.handlebars.registerPartial('actionHub', fs.readFileSync(require.resolve('../../views/partials/actionHub.hbs'), 'utf8'));
+hbs.handlebars.registerPartial('navbar', fs.readFileSync(require.resolve('../../views/partials/navbar.hbs'), 'utf8'));
 const renderView = hbs.handlebars.compile(viewSource);
 
 function response(body, status = 200) {
@@ -187,4 +188,20 @@ test('Monthly Story does not fetch expense types when the feature is off', async
     const { dom, calls } = await setupPage();
     assert.equal(calls.some(call => call.url === '/api/expense-types'), false);
     dom.window.close();
+});
+
+test('Monthly Story uses the bottom navbar with Story active and a + that goes straight to Log Spending', () => {
+    const html = renderView({ username: 'tester', avatar: '👤', isDashboard: true });
+    const { document } = new JSDOM(html).window;
+
+    const active = document.querySelector('.bottom-navbar .nav-item.active');
+    assert.equal(active.getAttribute('href'), '/monthly-story');
+    assert.equal(active.getAttribute('aria-current'), 'page');
+    assert.deepEqual(
+        [...document.querySelectorAll('.bottom-navbar .nav-item')].map(item => item.getAttribute('href')),
+        ['/monthly-story', '/review-history', '/check-pockets']
+    );
+    assert.equal(document.getElementById('actionHubTrigger').getAttribute('href'), '/log-spending');
+    assert.equal(document.getElementById('actionHubSheet'), null);
+    assert.equal(document.querySelector('.journal-strip'), null);
 });

@@ -10,7 +10,8 @@ const viewSource = fs.readFileSync(require.resolve('../../views/review-history.h
 const browserSource = fs.readFileSync(require.resolve('../../public/js/review-history.js'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
-hbs.handlebars.registerPartial('actionHub', '<div id="actionHubSheet"></div>');
+hbs.handlebars.registerPartial('actionHub', fs.readFileSync(require.resolve('../../views/partials/actionHub.hbs'), 'utf8'));
+hbs.handlebars.registerPartial('navbar', fs.readFileSync(require.resolve('../../views/partials/navbar.hbs'), 'utf8'));
 const renderView = hbs.handlebars.compile(viewSource);
 
 function response(body, status = 200) {
@@ -163,4 +164,13 @@ test('Review History adds managed custom types to the filter pills with their em
     assert.match(rows[0].textContent, /Mall parking/);
     assert.match(rows[0].textContent, /🅿️/);
     dom.window.close();
+});
+
+test('Review History is a navbar tab with History active and no back link', () => {
+    const html = renderView({ username: 'tester', avatar: '👤', isHistory: true });
+    const { document } = new JSDOM(html).window;
+
+    assert.equal(document.querySelector('.bottom-navbar .nav-item.active').getAttribute('href'), '/review-history');
+    assert.equal(document.querySelector('.bottom-navbar').querySelectorAll('.nav-item.active').length, 1);
+    assert.doesNotMatch(document.querySelector('.app-header').textContent, /Back/);
 });

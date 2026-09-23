@@ -246,7 +246,9 @@
   }
 
   .toast.show {
-    @apply visible opacity-100 bottom-[100px];
+    @apply visible opacity-100;
+    /* Above the bottom navbar and the + button that sits on top of it. */
+    bottom: calc(var(--bottom-nav-height) + 90px + env(safe-area-inset-bottom, 0px));
   }
 
   .toast.success {
@@ -321,24 +323,6 @@
 
   .legend-item {
     @apply flex items-center gap-2 text-xs py-1.5 px-2 bg-bg-tertiary rounded-lg;
-  }
-
-  /* --- Bottom Navbar --- */
-  .bottom-navbar {
-    @apply fixed bottom-0 left-0 right-0 bg-bg-secondary flex justify-around py-2 pb-3 border-t border-border z-[1000];
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
-  }
-
-  .nav-item {
-    @apply flex flex-col items-center no-underline text-text-muted py-1 px-4 rounded-xl transition-all duration-200;
-  }
-
-  .nav-item.active {
-    @apply text-primary;
-  }
-
-  .nav-item:hover {
-    @apply bg-bg-tertiary;
   }
 
   /* --- Loading Shimmer --- */
@@ -620,14 +604,6 @@ body {
   font-size: 13px;
   font-weight: 700;
   color: #f6f2e8;
-}
-
-.journal-strip {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 6px;
-  margin-bottom: 16px;
 }
 
 .journal-strip-item {
@@ -938,8 +914,10 @@ body {
 .action-hub-root {
   position: fixed;
   right: 18px;
-  bottom: 18px;
-  z-index: 2100;
+  /* Sits just above the bottom navbar. */
+  bottom: calc(var(--bottom-nav-height) + 14px + env(safe-area-inset-bottom, 0px));
+  /* Below modals (.modal-overlay is z 2000) so an open dialog covers it. */
+  z-index: 1600;
 }
 
 .action-hub-trigger {
@@ -952,91 +930,91 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  text-decoration: none;
   cursor: pointer;
   box-shadow: 0 16px 30px rgba(31, 79, 146, 0.30);
 }
 
-.action-hub-backdrop {
+/* Bottom navigation */
+:root {
+  --bottom-nav-height: 64px;
+}
+
+.bottom-navbar {
   position: fixed;
-  inset: 0;
-  background: rgba(16, 18, 24, 0.42);
-  backdrop-filter: blur(2px);
-  opacity: 0;
-  transition: opacity 0.18s ease;
-}
-
-.action-hub-sheet {
-  position: fixed;
-  right: 14px;
-  left: 14px;
-  bottom: 92px;
-  background: #f6f1e7;
-  border: 1px solid #ddd4c6;
-  border-radius: 22px;
-  box-shadow: 0 18px 34px rgba(24, 25, 31, 0.2);
-  transform: translateY(20px);
-  opacity: 0;
-  transition: transform 0.18s ease, opacity 0.18s ease;
-  padding: 14px;
-}
-
-.action-hub-handle {
-  width: 42px;
-  height: 4px;
-  border-radius: 999px;
-  background: #ddd7ca;
-  margin: 0 auto 10px;
-}
-
-.action-hub-header {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Below modals (.modal-overlay is z 2000) so an open dialog covers it. */
+  z-index: 1500;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
+  justify-content: space-around;
+  align-items: stretch;
+  height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(253, 247, 234, 0.96);
+  border-top: 1px solid var(--journal-line);
+  box-shadow: 0 -6px 18px rgba(11, 33, 63, 0.06);
+  backdrop-filter: blur(8px);
 }
 
-.action-hub-header h3 {
-  font-size: 14px;
-  font-weight: 800;
-  color: var(--journal-ink);
-}
-
-.action-hub-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid #ece7db;
-  background: #faf7f0;
-  color: var(--journal-soft-ink);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.action-hub-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.action-hub-item {
-  text-decoration: none;
+.nav-item {
+  flex: 1;
+  max-width: 160px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  border-radius: 14px;
-  border: 1px solid #ebe4d8;
-  background: #fffaf1;
-  padding: 11px;
-  color: var(--journal-ink);
-  font-size: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--journal-soft-ink);
+  opacity: 0.62;
+  text-decoration: none;
+  transition: opacity 140ms ease, color 140ms ease;
+}
+
+/* Fixed-size icon boxes: if the icon font fails to load (offline, slow
+   network) the ligature text is clipped instead of spilling over the labels. */
+.nav-item .material-symbols-outlined,
+.action-hub-trigger .material-symbols-outlined {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  font-size: 24px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+
+.action-hub-trigger .material-symbols-outlined {
+  width: 28px;
+  height: 28px;
+  font-size: 28px;
+  line-height: 28px;
+}
+
+.nav-item-label {
+  font-size: 11px;
   font-weight: 700;
 }
 
-.action-hub-item:hover {
-  background: #f5ebdb;
+.nav-item.active {
+  color: var(--journal-ink);
+  opacity: 1;
+}
+
+.nav-item.active .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1;
+}
+
+.nav-item:focus-visible {
+  outline: 2px solid var(--journal-accent);
+  outline-offset: -4px;
+  border-radius: 12px;
+}
+
+/* Scroll room so the last content clears the navbar and the + button. */
+.bottom-navbar-spacer {
+  height: calc(var(--bottom-nav-height) + 24px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Transaction page primary action */
@@ -1446,15 +1424,6 @@ body {
   }
 }
 
-.action-hub-backdrop.show {
-  opacity: 1;
-}
-
-.action-hub-sheet.show {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 @media (min-width: 900px) {
   .page-container.journal-shell {
     max-width: 900px;
@@ -1462,11 +1431,6 @@ body {
 
   .journal-story-grid {
     grid-template-columns: 1fr 1fr;
-  }
-
-  .action-hub-sheet {
-    left: auto;
-    width: 360px;
   }
 }
 

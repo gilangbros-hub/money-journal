@@ -724,3 +724,38 @@ test('confetti and the streak note only appear when a save reaches a streak mile
     assert.deepEqual(await saveWithStreak(6), { confetti: 1, message: 'Saved · Rp 1000 · 🔥 7-day streak' });
     assert.deepEqual(await saveWithStreak(2), { confetti: 0, message: 'Saved · Rp 1000' });
 });
+
+test('Back returns to the previous page when Log Spending was opened from inside the app', async () => {
+    async function clickBack(referrer) {
+        const dom = new JSDOM(renderView({ username: 'tester', avatar: '👤', salaryCycleBudgetingEnabled: true }), {
+            url: 'https://money-journal.test/log-spending',
+            referrer,
+            runScripts: 'outside-only'
+        });
+        dom.window.fetch = async (url) => (url.startsWith('/api/expense-pocket-options')
+            ? pocketOptionsResponse()
+            : assignmentResponse());
+        dom.window.showToast = () => {};
+        dom.window.formatRupiah = value => `Rp ${value}`;
+        dom.window.eval(browserSource);
+        await settle();
+        let wentBack = false;
+        dom.window.history.back = () => { wentBack = true; };
+        Object.defineProperty(dom.window.history, 'length', { value: 2 });
+        const event = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+        dom.window.document.getElementById('backLink').dispatchEvent(event);
+        dom.window.close();
+        return { wentBack, prevented: event.defaultPrevented };
+    }
+
+    assert.deepEqual(await clickBack('https://money-journal.test/review-history?month=2027-02'), { wentBack: true, prevented: true });
+    assert.deepEqual(await clickBack('https://elsewhere.test/'), { wentBack: false, prevented: false });
+    assert.deepEqual(await clickBack(undefined), { wentBack: false, prevented: false });
+});
+
+test('the Log Spending title no longer navigates away mid-entry', () => {
+    const html = renderView({ username: 'tester', avatar: '👤', salaryCycleBudgetingEnabled: true });
+    const { document } = new JSDOM(html).window;
+    assert.equal(document.querySelector('.app-header [onclick*="monthly-story"]'), null);
+    assert.equal(document.getElementById('backLink').getAttribute('href'), '/monthly-story');
+});

@@ -163,3 +163,14 @@ test('page handlers pass the Expense Type Management flag to the views', () => {
     controller.getTransactionPage(off, res);
     assert.deepEqual(rendered.map(data => data.expenseTypeManagementEnabled), [true, true, true, false]);
 });
+
+test('Story and History page handlers mark their navbar tab active', () => {
+    const controller = require('../controllers/transactionController');
+    const rendered = {};
+    const res = { render(view, data) { rendered[view] = data; } };
+    const req = { session: { username: 'alice' } };
+    controller.getTransactionsPage(req, res);
+    controller.getAllTransactionsPage(req, res);
+    assert.equal(rendered['monthly-story'].isDashboard, true);
+    assert.equal(rendered['review-history'].isHistory, true);
+});

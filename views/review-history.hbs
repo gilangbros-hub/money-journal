@@ -10,8 +10,8 @@
     <div class="page-container journal-shell">
         <!-- Header -->
         <header class="app-header">
-            <div onclick="window.location.href='/monthly-story'" class="cursor-pointer">
-                <p class="journal-eyebrow"><a href="/monthly-story" style="color: inherit; text-decoration: none;">← Back</a></p>
+            <div>
+                <p class="journal-eyebrow">Money Journal</p>
                 <h1 class="page-title page-title-ledger">Review History</h1>
             </div>
             <div class="user-info" onclick="toggleMenu()">
@@ -81,6 +81,7 @@
     <script src="/js/common.js"></script>
     <script src="/js/review-history.js"></script>
 
+    {{> navbar}}
     {{> actionHub}}
 </body>
 

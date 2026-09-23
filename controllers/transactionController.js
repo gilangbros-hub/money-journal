@@ -121,6 +121,7 @@ exports.getTransactionPage = (req, res) => {
 
 exports.getTransactionsPage = (req, res) => {
     res.render('monthly-story', {
+        isDashboard: true,
         username: req.session.username,
         avatar: req.session.avatar || '👤',
         salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
@@ -130,6 +131,7 @@ exports.getTransactionsPage = (req, res) => {
 
 exports.getAllTransactionsPage = (req, res) => {
     res.render('review-history', {
+        isHistory: true,
         username: req.session.username,
         avatar: req.session.avatar || '👤',
         salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,

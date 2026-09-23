@@ -50,7 +50,7 @@ exports.postLogin = async (req, res) => {
         req.session.avatar = user.avatar || '👤'; // Cache avatar
         req.session.role = user.role || 'Self'; // Cache role
 
-        res.redirect('/welcome');
+        res.redirect('/monthly-story');
     } catch (error) {
         console.error('Login error:', error);
         res.redirect('/login?error=Error during login');

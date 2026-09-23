@@ -911,8 +911,24 @@ async function undoCreate(transactionId, snapshot, previousStreak) {
     showToast('Entry removed', 'success');
 }
 
+// Back returns to wherever Log Spending was opened from; a direct visit (no
+// same-origin referrer) keeps the link's /monthly-story fallback.
+function handleBackLink(event) {
+    let sameOrigin = false;
+    try {
+        sameOrigin = new URL(document.referrer).origin === window.location.origin;
+    } catch (error) {
+        sameOrigin = false;
+    }
+    if (sameOrigin && window.history.length > 1) {
+        event.preventDefault();
+        window.history.back();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     displayStreak();
+    document.getElementById('backLink')?.addEventListener('click', handleBackLink);
 
     document.getElementById('date').value = dateOnlyToday();
     updateDateDisplay();

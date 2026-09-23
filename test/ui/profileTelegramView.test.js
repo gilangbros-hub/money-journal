@@ -9,7 +9,8 @@ const hbs = require('hbs');
 const viewSource = fs.readFileSync(require.resolve('../../views/profile.hbs'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
-hbs.handlebars.registerPartial('actionHub', '<div id="actionHubSheet"></div>');
+hbs.handlebars.registerPartial('actionHub', fs.readFileSync(require.resolve('../../views/partials/actionHub.hbs'), 'utf8'));
+hbs.handlebars.registerPartial('navbar', fs.readFileSync(require.resolve('../../views/partials/navbar.hbs'), 'utf8'));
 hbs.handlebars.registerHelper('split', (value) => value.split(',').map((item) => item.trim()));
 hbs.handlebars.registerHelper('eq', (a, b) => a === b);
 const renderView = hbs.handlebars.compile(viewSource);
