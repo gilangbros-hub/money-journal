@@ -7,7 +7,8 @@ const mongoose = require('mongoose');
 const PocketDefinition = require('../../models/pocketDefinition');
 const {
     createPocketDefinition,
-    updatePocketDefinition
+    updatePocketDefinition,
+    listExpensePocketOptions
 } = require('../../services/pocketManagementService');
 const { validateDefinitionFields, validatePocketBank } = require('../../services/pocketValidation');
 const { BANKS, BANK_KEYS, findBank } = require('../../utils/banks');
@@ -125,4 +126,30 @@ test('a definition saved before banks existed still validates and has no bank in
     assert.equal(doc.toDTO().bank, undefined);
     doc.bank = 'seabank';
     assert.ok(doc.validateSync()?.errors?.bank);
+});
+
+test("expense pocket options carry each pocket's current bank", async () => {
+    const groceries = new mongoose.Types.ObjectId().toString();
+    const old = new mongoose.Types.ObjectId().toString();
+    const assignment = (pocketId, name) => ({
+        pocketId, pocketName: name, pocketNormalizedName: name.toLowerCase(), pocketEmoji: '🛒',
+        cadence: 'Monthly', budgetMonthKey: '2027-02'
+    });
+    let definitionFilter = null;
+    const options = await listExpensePocketOptions({ budgetMonth: '2027-02' }, wife, {
+        pocketManagementEnabled: true,
+        assignmentModel: { find: () => query([assignment(groceries, 'Groceries'), assignment(old, 'Old')]) },
+        definitionModel: {
+            find(filter) {
+                definitionFilter = filter;
+                return query([{ _id: groceries, bank: 'superbank' }, { _id: old }]);
+            }
+        }
+    });
+
+    assert.deepEqual([...definitionFilter._id.$in].sort(), [groceries, old].sort());
+    const byName = Object.fromEntries(options.map(option => [option.name, option.bank]));
+    assert.equal(byName.Groceries.key, 'superbank');
+    assert.equal(byName.Groceries.logo, '/images/banks/superbank.svg');
+    assert.equal(byName.Old, null);
 });

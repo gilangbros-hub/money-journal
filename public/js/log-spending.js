@@ -342,7 +342,8 @@ function applyManagedPocketOptions(options) {
         pocketId: String(option.pocketId),
         name: option.name || '',
         emoji: option.emoji || '',
-        cadence: option.cadence || 'Monthly'
+        cadence: option.cadence || 'Monthly',
+        bank: option.bank && option.bank.key ? option.bank : null
     }));
     managedPocketById.clear();
     managedPocketOptions.forEach((option) => managedPocketById.set(option.pocketId, option));
@@ -400,6 +401,9 @@ function renderManagedPocketSheet() {
         `<button type="button" class="picker-grid-item" data-managed-pocket-option="${escapeHtml(option.pocketId)}">`
         + `<span class="picker-grid-icon">${escapeHtml(option.emoji)}</span>`
         + `<span>${escapeHtml(option.name)}</span>`
+        + (option.bank && typeof bankLogoHtml === 'function'
+            ? `<span class="picker-grid-bank">${bankLogoHtml(option.bank, 'sm')}<span>${escapeHtml(option.bank.name)}</span></span>`
+            : '')
         + '</button>'
     )).join('');
 }
@@ -409,7 +413,8 @@ function renderManagedSingleDisplay() {
     if (!display) return;
     const option = managedPocketById.get(selectedManagedPocketId);
     if (option) {
-        display.textContent = `${option.emoji} ${option.name}`.trim();
+        // Naming the bank tells you which card to pay with.
+        display.textContent = `${option.emoji} ${option.name}${option.bank ? ` · ${option.bank.name}` : ''}`.trim();
     } else if (pocketOptionsError) {
         display.textContent = 'Could not load pockets';
     } else if (!pocketOptionsLoaded) {

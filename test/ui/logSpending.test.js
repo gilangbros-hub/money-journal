@@ -8,6 +8,7 @@ const hbs = require('hbs');
 
 const viewSource = fs.readFileSync(require.resolve('../../views/log-spending.hbs'), 'utf8');
 const browserSource = fs.readFileSync(require.resolve('../../public/js/log-spending.js'), 'utf8');
+const banksSource = fs.readFileSync(require.resolve('../../public/js/banks.js'), 'utf8');
 
 hbs.handlebars.registerPartial('head', '<meta charset="utf-8">');
 hbs.handlebars.registerHelper('split', value => value.split(',').map(item => item.trim()));
@@ -47,6 +48,7 @@ async function setupPage(fetchImpl, { edit = '', showToast = () => {}, expenseTy
     dom.window.formatRupiah = value => `Rp ${value}`;
     dom.window.launchConfetti = () => {};
     dom.window.CSS = dom.window.CSS || { escape: value => value };
+    dom.window.eval(banksSource);
     dom.window.eval(browserSource);
     await new Promise(resolve => setImmediate(resolve));
     return dom;
@@ -883,5 +885,36 @@ test('a failed delete keeps the dialog open and says so', async () => {
 
     assert.deepEqual(toasts.at(-1), { message: 'Could not delete transaction', type: 'error' });
     assert.ok(document.getElementById('deleteModal').classList.contains('show'));
+    dom.window.close();
+});
+
+test('the pocket picker shows each pocket\'s bank and the selection names it', async () => {
+    const dom = await setupPage(async (url) => {
+        if (url.startsWith('/api/salary-cycle/assignment')) {
+            return response({
+                success: true,
+                data: { budgetMonth: '2027-02', period: { startDate: '2027-01-25', endDate: '2027-02-24' } }
+            });
+        }
+        if (url.startsWith('/api/expense-pocket-options')) {
+            return pocketOptionsResponse([
+                { pocketId: 'pocket-1', name: 'Groceries', emoji: '🛒', cadence: 'Monthly',
+                    bank: { key: 'jago', name: 'Bank Jago', color: '#FDAF27', logo: '/images/banks/jago.svg' } },
+                { pocketId: 'pocket-2', name: 'Old', emoji: '📦', cadence: 'Monthly', bank: null }
+            ]);
+        }
+        return response({ success: true });
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+
+    const { document } = dom.window;
+    const groceries = document.querySelector('#pocketSheet [data-managed-pocket-option="pocket-1"]');
+    const old = document.querySelector('#pocketSheet [data-managed-pocket-option="pocket-2"]');
+    assert.ok(groceries.querySelector('[data-bank-logo="jago"] img'));
+    assert.match(groceries.textContent, /Bank Jago/);
+    assert.equal(old.querySelector('[data-bank-logo]'), null);
+
+    groceries.click();
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '🛒 Groceries · Bank Jago');
     dom.window.close();
 });

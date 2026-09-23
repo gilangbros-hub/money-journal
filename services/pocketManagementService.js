@@ -20,6 +20,7 @@ const { requirePocketManagementEnabled } = require('../utils/rollout');
 const { isDualReadActive, resolveTracker } = require('./pocketCompatibility');
 const { pocketDefinitionId } = require('./migrationTransformService');
 const { POCKETS } = require('../utils/constants');
+const { bankView } = require('../utils/banks');
 const { validateIdentifier } = require('../utils/transactionValidators');
 const {
     AuthenticationError,
@@ -1121,6 +1122,7 @@ async function listExpensePocketOptions(input, actor, options = {}) {
                     emoji,
                     cadence: 'Monthly',
                     budgetMonth: month.key,
+                    bank: null,
                     source: 'legacy'
                 };
             })
@@ -1130,17 +1132,30 @@ async function listExpensePocketOptions(input, actor, options = {}) {
             ));
     }
 
-    return assignmentDocs
-        .map(assignmentDto)
-        .sort(byAssignmentOrder)
-        .map((dto) => ({
-            pocketId: dto.pocketId,
-            name: dto.pocketName,
-            normalizedName: dto.pocketNormalizedName,
-            emoji: dto.pocketEmoji,
-            cadence: dto.cadence,
-            budgetMonth: dto.budgetMonthKey
-        }));
+    const dtos = assignmentDocs.map(assignmentDto).sort(byAssignmentOrder);
+
+    // Bank comes from the current definition (not the month snapshot), so the
+    // picker shows where the pocket's money is today.
+    const bankByPocketId = new Map();
+    if (dtos.length > 0) {
+        const definitions = await findMany(definitionModel(options, actor), {
+            _id: { $in: [...new Set(dtos.map((dto) => dto.pocketId))] }
+        }, { session: options.session });
+        definitions.forEach((doc) => {
+            const value = typeof doc?.toObject === 'function' ? doc.toObject() : doc;
+            bankByPocketId.set(String(value?._id ?? value?.id), value?.bank);
+        });
+    }
+
+    return dtos.map((dto) => ({
+        pocketId: dto.pocketId,
+        name: dto.pocketName,
+        normalizedName: dto.pocketNormalizedName,
+        emoji: dto.pocketEmoji,
+        cadence: dto.cadence,
+        budgetMonth: dto.budgetMonthKey,
+        bank: bankView(bankByPocketId.get(dto.pocketId))
+    }));
 }
 
 // ---------------------------------------------------------------------------
