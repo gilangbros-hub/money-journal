@@ -1,6 +1,7 @@
 'use strict';
 
 const ExpenseTypeDefinition = require('../models/expenseTypeDefinition');
+const Transaction = require('../models/transaction');
 
 const expenseTypeValidation = require('./expenseTypeValidation');
 const { requireExpenseTypeManagementEnabled } = require('../utils/rollout');
@@ -9,6 +10,7 @@ const { TRANSACTION_TYPES } = require('../utils/constants');
 const {
     AuthenticationError,
     AuthorizationError,
+    DomainError,
     DomainValidationError,
     PocketValidationError,
     PocketNameConflictError,
@@ -303,6 +305,59 @@ function restoreExpenseTypeDefinition(typeId, command, actor, options = {}) {
     });
 }
 
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Permanently delete an expense type (Active or Archived). Wife-role only.
+ *
+ * Only types no expense uses can go: transactions store the type name, and a
+ * deleted type would leave those expenses uneditable (edits require a defined,
+ * active type) with no way to restore it. A used type answers 409
+ * EXPENSE_TYPE_IN_USE with the usage count, pointing at Archive instead. The
+ * last remaining type can't be deleted either, because an empty collection is
+ * re-seeded with the 12 historical defaults on the next read.
+ */
+async function deleteExpenseTypeDefinition(typeId, command, actor, options = {}) {
+    requireExpenseTypeManagementEnabled(options, actor);
+    requireWife(actor);
+    const id = validateIdentifier(typeId, 'typeId');
+    const expectedVersion = normalizeExpectedVersion(command?.expectedVersion ?? command?.version);
+
+    const Definition = definitionModel(options, actor);
+    const TransactionModel = option(options, actor, 'transactionModel', Transaction);
+
+    const existing = await executeQuery(Definition.findById(id));
+    if (!existing) throw new RecordNotFoundError('expense type');
+    if (expectedVersion !== undefined && existing.version !== expectedVersion) {
+        throw new VersionConflictError(existing.version, { typeId: id });
+    }
+
+    // Stored transaction types are the definition's display name; match it the
+    // way names are compared everywhere else (trimmed, case-insensitive).
+    const usageCount = await executeQuery(TransactionModel.countDocuments({
+        type: new RegExp(`^\\s*${escapeRegExp(existing.name.trim())}\\s*$`, 'i')
+    }));
+    if (usageCount > 0) {
+        throw new DomainError(
+            `${existing.name} is used by ${usageCount} expense${usageCount === 1 ? '' : 's'}. Archive it instead.`,
+            { code: 'EXPENSE_TYPE_IN_USE', status: 409, details: { typeId: id, usageCount } }
+        );
+    }
+
+    const total = await executeQuery(Definition.countDocuments({}));
+    if (total <= 1) {
+        throw new DomainError('Keep at least one expense type.', {
+            code: 'LAST_EXPENSE_TYPE', status: 409, details: { typeId: id }
+        });
+    }
+
+    const result = await executeQuery(Definition.deleteOne({ _id: id, version: existing.version }));
+    if (!result || result.deletedCount !== 1) throw new VersionConflictError(existing.version, { typeId: id });
+    return { id, deleted: true };
+}
+
 function createExpenseTypeManagementService(defaultOptions = {}) {
     const merge = (options) => ({ ...defaultOptions, ...options });
     return {
@@ -317,7 +372,9 @@ function createExpenseTypeManagementService(defaultOptions = {}) {
         archiveExpenseTypeDefinition: (typeId, command, actor, options) =>
             archiveExpenseTypeDefinition(typeId, command, actor, merge(options)),
         restoreExpenseTypeDefinition: (typeId, command, actor, options) =>
-            restoreExpenseTypeDefinition(typeId, command, actor, merge(options))
+            restoreExpenseTypeDefinition(typeId, command, actor, merge(options)),
+        deleteExpenseTypeDefinition: (typeId, command, actor, options) =>
+            deleteExpenseTypeDefinition(typeId, command, actor, merge(options))
     };
 }
 
@@ -328,5 +385,6 @@ module.exports = {
     updateExpenseTypeDefinition,
     archiveExpenseTypeDefinition,
     restoreExpenseTypeDefinition,
+    deleteExpenseTypeDefinition,
     createExpenseTypeManagementService
 };

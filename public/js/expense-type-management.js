@@ -310,6 +310,7 @@
         const editBtn = q('[data-edit-type]', card);
         const archiveBtn = q('[data-archive-type]', card);
         const restoreBtn = q('[data-restore-type]', card);
+        const deleteBtn = q('[data-delete-type]', card);
 
         if (!state.bootstrap.canEdit) {
             if (actions) actions.remove();
@@ -327,6 +328,7 @@
                 toggleHidden(restoreBtn, isActive);
                 restoreBtn.addEventListener('click', () => restoreType(dto.id, restoreBtn));
             }
+            if (deleteBtn) deleteBtn.addEventListener('click', () => openDeleteDialog(dto.id));
         }
         return card;
     }
@@ -468,6 +470,87 @@
                     const fresh = getDefinitionDto(typeId);
                     if (fresh) els.archiveModal.dataset.version = String(fresh.version);
                 }
+            }
+        });
+    }
+
+    // =========================================================================
+    // Delete dialog. The server refuses a type any expense uses
+    // (EXPENSE_TYPE_IN_USE); the dialog then offers Archive instead.
+    // =========================================================================
+    function openDeleteDialog(typeId) {
+        const dto = getDefinitionDto(typeId);
+        if (!dto || !els.deleteModal) return;
+        els.deleteModal.dataset.typeId = typeId;
+        els.deleteModal.dataset.version = String(dto.version);
+        setStatusText(q('[data-delete-type-label]', els.deleteModal), `${dto.emoji || ''} ${dto.name}`.trim());
+        setStatusText(byId('typeDeleteStatus'), '');
+        toggleHidden(q('[data-confirm-delete]', els.deleteModal), false);
+        toggleHidden(q('[data-archive-instead]', els.deleteModal), true);
+        openDialog(els.deleteModal);
+    }
+
+    function showArchiveInstead(message) {
+        const typeId = els.deleteModal.dataset.typeId;
+        const dto = getDefinitionDto(typeId);
+        setStatusText(byId('typeDeleteStatus'), message);
+        hideGlobalError();
+        toggleHidden(q('[data-confirm-delete]', els.deleteModal), true);
+        toggleHidden(q('[data-archive-instead]', els.deleteModal), !(dto && dto.status === 'Active'));
+    }
+
+    async function confirmDelete() {
+        if (!els.deleteModal) return;
+        const typeId = els.deleteModal.dataset.typeId;
+        const version = Number(els.deleteModal.dataset.version);
+        const confirmControl = q('[data-confirm-delete]', els.deleteModal);
+        const result = await runMutation({
+            controls: [confirmControl],
+            statusEl: byId('typeDeleteStatus'),
+            typeId,
+            pendingText: 'Deleting…',
+            successText: 'Expense type deleted.',
+            perform: () => apiRequest(`/api/expense-types/${encodeURIComponent(typeId)}`, {
+                method: 'DELETE',
+                body: { expectedVersion: version }
+            }),
+            onSuccess: async () => {
+                closeDialog(els.deleteModal);
+                await loadDefinitions();
+            },
+            conflict: {
+                restore: () => { /* nothing to keep */ },
+                loadCurrent: async () => { await loadDefinitions(); }
+            }
+        });
+        const code = result && result.error && result.error.code;
+        if (code === 'EXPENSE_TYPE_IN_USE' || code === 'LAST_EXPENSE_TYPE') {
+            showArchiveInstead(messageForError(result.error));
+        }
+    }
+
+    function archiveInstead() {
+        const typeId = els.deleteModal.dataset.typeId;
+        const dto = getDefinitionDto(typeId);
+        if (!dto) return;
+        const control = q('[data-archive-instead]', els.deleteModal);
+        runMutation({
+            controls: [control],
+            statusEl: byId('typeDeleteStatus'),
+            typeId,
+            pendingText: 'Archiving…',
+            successText: 'Expense type archived.',
+            perform: () => apiRequest(`/api/expense-types/${encodeURIComponent(typeId)}/archive`, {
+                method: 'POST',
+                body: { expectedVersion: dto.version }
+            }),
+            onSuccess: async () => {
+                closeDialog(els.deleteModal);
+                await loadDefinitions();
+            },
+            conflict: {
+                restore: () => { /* nothing to keep */ },
+                loadCurrent: async () => { await loadDefinitions(); }
             }
         });
     }
@@ -624,6 +707,7 @@
             editEmoji: byId('editTypeEmoji'),
             editName: byId('editTypeName'),
             archiveModal: byId('typeArchiveModal'),
+            deleteModal: byId('typeDeleteModal'),
             conflictModal: byId('typeVersionConflictModal')
         };
     }
@@ -653,9 +737,13 @@
         wireDialogButton(els.archiveModal, '[data-cancel-archive]', () => closeDialog(els.archiveModal));
         wireDialogButton(els.archiveModal, '[data-confirm-archive]', () => confirmArchive());
 
+        wireDialogButton(els.deleteModal, '[data-cancel-delete]', () => closeDialog(els.deleteModal));
+        wireDialogButton(els.deleteModal, '[data-confirm-delete]', () => confirmDelete());
+        wireDialogButton(els.deleteModal, '[data-archive-instead]', () => archiveInstead());
+
         wireDialogButton(els.conflictModal, '[data-reload-types]', () => resolveConflictReload());
 
-        [els.editModal, els.archiveModal].forEach((modal) => {
+        [els.editModal, els.archiveModal, els.deleteModal].forEach((modal) => {
             if (!modal) return;
             modal.addEventListener('click', (event) => { if (event.target === modal) closeDialog(modal); });
         });

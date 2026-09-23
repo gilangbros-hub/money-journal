@@ -10,7 +10,8 @@ const {
     listActiveTypeNormalizedNames,
     updateExpenseTypeDefinition,
     archiveExpenseTypeDefinition,
-    restoreExpenseTypeDefinition
+    restoreExpenseTypeDefinition,
+    deleteExpenseTypeDefinition
 } = require('../../services/expenseTypeManagementService');
 const {
     AuthorizationError,
@@ -85,6 +86,12 @@ function createDefinitionModel(seed = []) {
         },
         async countDocuments() {
             return records.size;
+        },
+        async deleteOne(filter) {
+            const doc = records.get(String(filter._id));
+            if (!doc || doc.version !== filter.version) return { deletedCount: 0 };
+            records.delete(doc.id);
+            return { deletedCount: 1 };
         },
         async insertMany(docs) {
             docs.forEach((row) => {
@@ -241,4 +248,84 @@ test('listActiveTypeNormalizedNames returns only Active names and seeds when emp
     const seededNames = await listActiveTypeNormalizedNames(wife, options(emptyModel));
     assert.equal(seededNames.size, 12);
     assert.ok(seededNames.has('eat'));
+});
+
+// Transactions double: counts rows whose type matches the service's filter.
+function transactionModel(types) {
+    return {
+        filters: [],
+        async countDocuments(filter) {
+            this.filters.push(filter);
+            return types.filter((type) => filter.type.test(type)).length;
+        }
+    };
+}
+
+const idOf = (model, name) => [...model.records.values()].find((row) => row.name === name).id;
+
+test('an unused expense type can be deleted for good', async () => {
+    const model = createDefinitionModel([
+        { name: 'Parkir', normalizedName: 'parkir', emoji: '🅿️' },
+        { name: 'Eat', normalizedName: 'eat', emoji: '🍽️' }
+    ]);
+    const result = await deleteExpenseTypeDefinition(idOf(model, 'Parkir'), { expectedVersion: 1 }, wife,
+        options(model, { transactionModel: transactionModel(['Eat', 'Eat']) }));
+
+    assert.equal(result.deleted, true);
+    assert.equal(model.records.size, 1);
+});
+
+test('a type used by expenses is not deleted and says how many use it', async () => {
+    const model = createDefinitionModel([
+        { name: 'Eat', normalizedName: 'eat', emoji: '🍽️' },
+        { name: 'Snack', normalizedName: 'snack', emoji: '🍿' }
+    ]);
+    await assert.rejects(
+        () => deleteExpenseTypeDefinition(idOf(model, 'Eat'), {}, wife,
+            options(model, { transactionModel: transactionModel(['Eat', ' eat ', 'Eat out', 'Snack']) })),
+        (error) => {
+            assert.equal(error.code, 'EXPENSE_TYPE_IN_USE');
+            assert.equal(error.status, 409);
+            assert.equal(error.details.usageCount, 2);
+            assert.match(error.message, /used by 2 expenses\. Archive it instead/);
+            return true;
+        }
+    );
+    assert.equal(model.records.size, 2);
+});
+
+test('regex characters in a type name are matched literally', async () => {
+    const model = createDefinitionModel([
+        { name: 'Kopi (pagi)', normalizedName: 'kopi (pagi)', emoji: '☕' },
+        { name: 'Eat', normalizedName: 'eat', emoji: '🍽️' }
+    ]);
+    const result = await deleteExpenseTypeDefinition(idOf(model, 'Kopi (pagi)'), {}, wife,
+        options(model, { transactionModel: transactionModel(['Kopi pagi']) }));
+    assert.equal(result.deleted, true);
+});
+
+test('the last remaining type cannot be deleted', async () => {
+    const model = createDefinitionModel([{ name: 'Eat', normalizedName: 'eat', emoji: '🍽️' }]);
+    await assert.rejects(
+        () => deleteExpenseTypeDefinition(idOf(model, 'Eat'), {}, wife, options(model, { transactionModel: transactionModel([]) })),
+        (error) => error.code === 'LAST_EXPENSE_TYPE'
+    );
+    assert.equal(model.records.size, 1);
+});
+
+test('delete is Wife-only, checks the version, and 404s on an unknown id', async () => {
+    const model = createDefinitionModel([
+        { name: 'Parkir', normalizedName: 'parkir', emoji: '🅿️' },
+        { name: 'Eat', normalizedName: 'eat', emoji: '🍽️' }
+    ]);
+    const opts = options(model, { transactionModel: transactionModel([]) });
+    const id = idOf(model, 'Parkir');
+
+    await assert.rejects(() => deleteExpenseTypeDefinition(id, {}, husband, opts), AuthorizationError);
+    await assert.rejects(() => deleteExpenseTypeDefinition(id, { expectedVersion: 7 }, wife, opts), VersionConflictError);
+    await assert.rejects(
+        () => deleteExpenseTypeDefinition(new mongoose.Types.ObjectId().toString(), {}, wife, opts),
+        RecordNotFoundError
+    );
+    assert.equal(model.records.size, 2);
 });

@@ -35,6 +35,7 @@ function createExpenseTypeRoutes({ controller = expenseTypeController } = {}) {
     router.patch('/api/expense-types/:typeId', requireWife, asyncHandler(controller.updateType));
     router.post('/api/expense-types/:typeId/archive', requireWife, asyncHandler(controller.archiveType));
     router.post('/api/expense-types/:typeId/restore', requireWife, asyncHandler(controller.restoreType));
+    router.delete('/api/expense-types/:typeId', requireWife, asyncHandler(controller.deleteType));
 
     return router;
 }

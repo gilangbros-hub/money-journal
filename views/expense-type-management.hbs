@@ -179,6 +179,7 @@
                 <button type="button" class="btn-modal-cancel" data-archive-type data-mutation-control>Archive</button>
                 <button type="button" class="btn-modal-cancel hidden" data-restore-type data-mutation-control
                     hidden>Restore</button>
+                <button type="button" class="btn-modal-cancel btn-type-delete" data-delete-type data-mutation-control>Delete</button>
             </div>
         </article>
     </template>
@@ -229,6 +230,23 @@
             <div class="modal-actions">
                 <button type="button" class="btn-modal-cancel" data-cancel-archive>Cancel</button>
                 <button type="button" class="btn-modal-danger" data-confirm-archive data-mutation-control>Archive</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete confirmation dialog: permanent, only for types no expense uses -->
+    <div id="typeDeleteModal" class="modal-overlay" role="dialog" aria-modal="true"
+        aria-labelledby="typeDeleteTitle" aria-describedby="typeDeleteMessage" hidden>
+        <div class="modal-card">
+            <h3 id="typeDeleteTitle">Delete <span data-delete-type-label></span>?</h3>
+            <p class="text-sm text-text-secondary mb-4" id="typeDeleteMessage">
+                This can't be undone. Only a type no expense uses yet can be deleted; otherwise archive it.
+            </p>
+            <p class="text-xs text-text-muted mb-3" id="typeDeleteStatus" role="status" aria-live="polite"></p>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancel" data-cancel-delete>Cancel</button>
+                <button type="button" class="btn-modal-danger" data-confirm-delete data-mutation-control>Delete</button>
+                <button type="button" class="btn-modal-save hidden" data-archive-instead data-mutation-control hidden>Archive instead</button>
             </div>
         </div>
     </div>

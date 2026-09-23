@@ -70,3 +70,92 @@ test('the type definition card template has no cadence or default-amount fields'
     assert.equal(template.content.querySelector('[data-pocket-cadence]'), null);
     assert.equal(template.content.querySelector('[data-pocket-default]'), null);
 });
+
+// ---------------------------------------------------------------------------
+// Delete. Runs the page script in JSDOM with a fake fetch.
+// ---------------------------------------------------------------------------
+const pageSource = fs.readFileSync(require.resolve('../../public/js/expense-type-management.js'), 'utf8');
+const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+
+function jsonResponse(payload, status = 200) {
+    return { ok: status >= 200 && status < 300, status, json: async () => payload };
+}
+
+const TYPES = [
+    { id: 't1', name: 'Parkir', normalizedName: 'parkir', emoji: '🅿️', status: 'Active', version: 2 },
+    { id: 't2', name: 'Eat', normalizedName: 'eat', emoji: '🍽️', status: 'Active', version: 1 }
+];
+
+async function setupPage(onMutation) {
+    const calls = [];
+    const dom = new JSDOM(render(), { url: 'https://money-journal.test/expense-type-management', runScripts: 'outside-only' });
+    dom.window.fetch = async (url, options = {}) => {
+        const method = options.method || 'GET';
+        const body = options.body ? JSON.parse(options.body) : undefined;
+        calls.push({ url, method, body });
+        if (method === 'GET') return jsonResponse({ success: true, data: { active: TYPES } });
+        return onMutation({ url, method, body });
+    };
+    dom.window.showToast = () => {};
+    dom.window.eval(pageSource);
+    await settle();
+    await settle();
+    return { dom, calls };
+}
+
+const card = (document, id) => document.querySelector(`#activeTypeList [data-type-id="${id}"]`);
+
+test('every type card has a Delete button that opens a confirm naming the type', async () => {
+    const { dom } = await setupPage(() => jsonResponse({ success: true, data: {} }));
+    const { document } = dom.window;
+
+    assert.ok(card(document, 't1').querySelector('[data-delete-type]'));
+    card(document, 't1').querySelector('[data-delete-type]').click();
+    const modal = document.getElementById('typeDeleteModal');
+    assert.equal(modal.hidden, false);
+    assert.equal(modal.querySelector('[data-delete-type-label]').textContent, '🅿️ Parkir');
+    dom.window.close();
+});
+
+test('confirming sends DELETE with the version and reloads the list', async () => {
+    const { dom, calls } = await setupPage(() => jsonResponse({ success: true, data: { id: 't1', deleted: true } }));
+    const { document } = dom.window;
+
+    card(document, 't1').querySelector('[data-delete-type]').click();
+    document.querySelector('[data-confirm-delete]').click();
+    await settle();
+    await settle();
+
+    const del = calls.find(call => call.method === 'DELETE');
+    assert.equal(del.url, '/api/expense-types/t1');
+    assert.deepEqual(del.body, { expectedVersion: 2 });
+    assert.equal(document.getElementById('typeDeleteModal').hidden, true);
+    assert.ok(calls.filter(call => call.method === 'GET').length >= 2);
+    dom.window.close();
+});
+
+test('a type in use is not deleted; the dialog explains and offers Archive instead', async () => {
+    const { dom, calls } = await setupPage(({ method }) => (method === 'DELETE'
+        ? jsonResponse({ error: { code: 'EXPENSE_TYPE_IN_USE', message: 'Parkir is used by 3 expenses. Archive it instead.' } }, 409)
+        : jsonResponse({ success: true, data: {} })));
+    const { document } = dom.window;
+
+    card(document, 't1').querySelector('[data-delete-type]').click();
+    document.querySelector('[data-confirm-delete]').click();
+    await settle();
+    await settle();
+
+    const modal = document.getElementById('typeDeleteModal');
+    assert.equal(modal.hidden, false);
+    assert.match(document.getElementById('typeDeleteStatus').textContent, /used by 3 expenses/);
+    assert.equal(modal.querySelector('[data-confirm-delete]').hidden, true);
+    const archive = modal.querySelector('[data-archive-instead]');
+    assert.equal(archive.hidden, false);
+
+    archive.click();
+    await settle();
+    const post = calls.find(call => call.method === 'POST');
+    assert.equal(post.url, '/api/expense-types/t1/archive');
+    assert.deepEqual(post.body, { expectedVersion: 2 });
+    dom.window.close();
+});

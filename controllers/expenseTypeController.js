@@ -80,6 +80,16 @@ function createExpenseTypeController({ service = expenseTypeManagementService } 
                 options(req)
             );
             res.json({ success: true, data });
+        },
+
+        async deleteType(req, res) {
+            const data = await service.deleteExpenseTypeDefinition(
+                req.params.typeId,
+                req.body || {},
+                actor(req),
+                options(req)
+            );
+            res.json({ success: true, data });
         }
     };
 }

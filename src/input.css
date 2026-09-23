@@ -2167,3 +2167,8 @@ a.trans-item {
 .journal-pulse-head {
   align-items: center;
 }
+
+/* Expense types: Delete is permanent, so it reads as a warning */
+.btn-type-delete {
+  color: var(--journal-danger);
+}
