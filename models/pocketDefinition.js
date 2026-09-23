@@ -1,6 +1,7 @@
 'use strict';
 
 const mongoose = require('mongoose');
+const { BANK_KEYS } = require('../utils/banks');
 
 // This managed schema starts at version 1; unlike the legacy allocation
 // collections there are no schema-v0 documents to remain compatible with.
@@ -79,6 +80,14 @@ const pocketDefinitionSchema = new mongoose.Schema({
         enum: CADENCES
     },
     defaultAmount: rupiahField('defaultAmount must be a whole number from 0 through 999,999,999,999.'),
+    // Bank the pocket's money sits in (a utils/banks key). Required for new
+    // pockets by the service; optional here so pockets created before banks
+    // existed stay valid until someone edits them.
+    bank: {
+        type: String,
+        enum: BANK_KEYS,
+        required: false
+    },
     status: {
         type: String,
         required: true,
@@ -137,6 +146,7 @@ pocketDefinitionSchema.methods.toDTO = function toDTO() {
         emoji: this.emoji,
         cadence: this.cadence,
         defaultAmount: this.defaultAmount,
+        bank: this.bank,
         status: this.status,
         createdBy: this.createdBy ? this.createdBy.toString() : undefined,
         updatedBy: this.updatedBy ? this.updatedBy.toString() : undefined,

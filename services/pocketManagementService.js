@@ -457,6 +457,7 @@ async function createPocketDefinition(command, actor, options = {}) {
                 emoji: value.emoji,
                 cadence: value.cadence,
                 defaultAmount: value.defaultAmount,
+                bank: value.bank,
                 status: 'Active',
                 createdBy: actorId,
                 updatedBy: actorId,
@@ -544,6 +545,10 @@ async function updatePocketDefinition(pocketId, command, actor, options = {}) {
             if (Object.prototype.hasOwnProperty.call(value, 'defaultAmount')
                 && existing.defaultAmount !== value.defaultAmount) {
                 patch.defaultAmount = value.defaultAmount;
+                changed = true;
+            }
+            if (Object.prototype.hasOwnProperty.call(value, 'bank') && existing.bank !== value.bank) {
+                patch.bank = value.bank;
                 changed = true;
             }
 

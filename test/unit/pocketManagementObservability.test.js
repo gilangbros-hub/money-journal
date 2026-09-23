@@ -99,7 +99,7 @@ test('successful create emits one safe success event only after commit', async (
     const model = createDefinitionModel();
     const events = [];
     const dto = await createPocketDefinition(
-        { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 250000 },
+        { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 250000, bank: 'jago' },
         wife,
         options(model, (event) => events.push(event))
     );
@@ -124,7 +124,7 @@ test('unauthorized create emits an error event with a safe code and no actor id'
 
     await assert.rejects(
         () => createPocketDefinition(
-            { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0 },
+            { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0, bank: 'jago' },
             { userId: new mongoose.Types.ObjectId().toString(), role: 'Husband' },
             options(model, (event) => events.push(event))
         ),
@@ -147,7 +147,7 @@ test('feature-disabled create emits an error event and never persists', async ()
 
     await assert.rejects(
         () => createPocketDefinition(
-            { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0 },
+            { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0, bank: 'jago' },
             wife,
             { definitionModel: model, connection, operationEvents: (event) => events.push(event) }
         ),
@@ -163,7 +163,7 @@ test('event-sink failure is best effort and does not roll back the commit', asyn
     const model = createDefinitionModel();
 
     const dto = await createPocketDefinition(
-        { name: 'Transport', emoji: '🚌', cadence: 'Monthly', defaultAmount: 100000 },
+        { name: 'Transport', emoji: '🚌', cadence: 'Monthly', defaultAmount: 100000, bank: 'jago' },
         wife,
         options(model, () => { throw new Error('sink offline'); })
     );
@@ -175,7 +175,7 @@ test('event-sink failure is best effort and does not roll back the commit', asyn
 test('no-op update emits a success event reporting zero changed records', async () => {
     const model = createDefinitionModel();
     const created = await createPocketDefinition(
-        { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0 },
+        { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0, bank: 'jago' },
         wife,
         options(model, () => {})
     );
@@ -202,7 +202,7 @@ test('no-op update emits a success event reporting zero changed records', async 
 test('changed update emits a success event reporting one changed record', async () => {
     const model = createDefinitionModel();
     const created = await createPocketDefinition(
-        { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0 },
+        { name: 'Groceries', emoji: '🛒', cadence: 'Monthly', defaultAmount: 0, bank: 'jago' },
         wife,
         options(model, () => {})
     );

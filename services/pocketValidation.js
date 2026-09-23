@@ -1,6 +1,7 @@
 'use strict';
 
 const { DomainValidationError } = require('../utils/domainErrors');
+const { BANK_KEYS } = require('../utils/banks');
 
 /**
  * Pure pocket canonicalization and validation.
@@ -34,15 +35,16 @@ const WEEKLY_KEY_PATTERN = /^(\d{4})-W(\d{2})$/;
 
 // Deterministic field order for accumulated definition errors. Matches the
 // order pockets are described in the requirements (name, emoji, cadence,
-// default amount) so multi-field responses are stable regardless of input key
-// order.
-const DEFINITION_FIELD_ORDER = ['name', 'emoji', 'cadence', 'defaultAmount'];
+// default amount, bank) so multi-field responses are stable regardless of input
+// key order.
+const DEFINITION_FIELD_ORDER = ['name', 'emoji', 'cadence', 'defaultAmount', 'bank'];
 
 const FIELD_LABELS = {
     name: 'name',
     emoji: 'emoji',
     cadence: 'cadence',
-    defaultAmount: 'defaultAmount'
+    defaultAmount: 'defaultAmount',
+    bank: 'bank'
 };
 
 // A single lazily-constructed grapheme segmenter. `Intl.Segmenter` groups a
@@ -196,9 +198,29 @@ function validateRupiah(value, field = 'amount') {
     return value;
 }
 
+/**
+ * Validate a bank key. Case and surrounding whitespace are forgiven; the
+ * canonical lowercase key from utils/banks is returned.
+ */
+function validatePocketBank(value) {
+    const key = typeof value === 'string' ? value.trim().toLowerCase() : '';
+    if (key === '') {
+        throw validationError('bank', 'Choose the bank this pocket lives in.', { allowed: BANK_KEYS });
+    }
+    if (!BANK_KEYS.includes(key)) {
+        throw validationError(
+            'bank',
+            `bank must be one of: ${BANK_KEYS.join(', ')}.`,
+            { allowed: BANK_KEYS }
+        );
+    }
+    return key;
+}
+
 const requiredDetails = (key) => {
     if (key === 'name') return { min: NAME_MIN_LENGTH, max: NAME_MAX_LENGTH };
     if (key === 'defaultAmount') return { min: 0, max: MAX_RUPIAH };
+    if (key === 'bank') return { allowed: BANK_KEYS };
     return {};
 };
 
@@ -234,6 +256,9 @@ function validateDefinitionFields(input, mode = 'create') {
         },
         defaultAmount: (raw) => {
             value.defaultAmount = validateRupiah(raw, 'defaultAmount');
+        },
+        bank: (raw) => {
+            value.bank = validatePocketBank(raw);
         }
     };
 
@@ -255,7 +280,7 @@ function validateDefinitionFields(input, mode = 'create') {
         if (isCreate || present) {
             errors.push(validationError(
                 key,
-                `${FIELD_LABELS[key]} is required.`,
+                key === 'bank' ? 'Choose the bank this pocket lives in.' : `${FIELD_LABELS[key]} is required.`,
                 requiredDetails(key)
             ));
         }
@@ -568,6 +593,7 @@ module.exports = {
     validateCadence,
     validateAmountMode,
     validateRupiah,
+    validatePocketBank,
     validateDefinitionFields,
     // Assignment planning + equality
     canonicalizeAssignment,
