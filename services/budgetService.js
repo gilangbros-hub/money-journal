@@ -5,9 +5,11 @@ const PocketBudget = require('../models/pocketBudget');
 const PocketBudgetCadence = require('../models/pocketBudgetCadence');
 const WeeklyAllocation = require('../models/weeklyAllocation');
 const PocketAssignment = require('../models/pocketAssignment');
+const PocketDefinition = require('../models/pocketDefinition');
 const ClosedMonth = require('../models/closedMonth');
 const Transaction = require('../models/transaction');
 const { POCKETS } = require('../utils/constants');
+const { BANK_KEYS, bankView } = require('../utils/banks');
 const { formatCurrency } = require('../utils/formatters');
 const {
     DEFAULT_HOUSEHOLD_TIME_ZONE,
@@ -255,6 +257,55 @@ function managedAssignmentView(record) {
 }
 
 /**
+ * Current bank key per pocket id. Bank is read live from Pocket_Definition, not
+ * from the assignment snapshot: moving a pocket to another bank moves its
+ * remaining with it straight away, because that's where the money is now.
+ */
+async function loadPocketBanks(definitionModel, pocketIds, session) {
+    const ids = [...new Set(pocketIds.filter(Boolean))];
+    if (ids.length === 0) return new Map();
+    const definitions = await findMany(definitionModel, { _id: { $in: ids } }, { session });
+    return new Map(definitions.map((definition) => {
+        const value = asPlain(definition) || {};
+        return [String(value._id ?? value.id), value.bank];
+    }));
+}
+
+/**
+ * Sum each bank's pockets for the whole salary cycle (`periodMetrics`, so a
+ * weekly pocket counts every week, same as `totalRemaining`). Pockets without
+ * a bank land in a trailing `unassigned` entry. Banks follow catalogue order.
+ */
+function summarizeBanks(pockets) {
+    const totals = new Map();
+    for (const pocket of pockets) {
+        const key = pocket.bank?.key || 'unassigned';
+        const entry = totals.get(key) || { allocation: 0, spending: 0, pocketCount: 0 };
+        entry.allocation += pocket.periodMetrics?.allocation ?? 0;
+        entry.spending += pocket.periodMetrics?.spending ?? 0;
+        entry.pocketCount += 1;
+        totals.set(key, entry);
+    }
+
+    return [...BANK_KEYS, 'unassigned']
+        .filter(key => totals.has(key))
+        .map((key) => {
+            const { allocation, spending, pocketCount } = totals.get(key);
+            const remaining = allocation - spending;
+            const bank = bankView(key) || { key: 'unassigned', name: 'No bank', color: null, logo: null, initial: '?' };
+            return {
+                ...bank,
+                pocketCount,
+                allocation,
+                spending,
+                remaining,
+                formattedRemaining: formatCurrency(Math.abs(remaining)),
+                isOver: remaining < 0
+            };
+        });
+}
+
+/**
  * Build the Budget_Month view from managed Pocket_Assignment snapshots.
  *
  * Only assignments for the selected Budget_Month are returned (Requirement
@@ -272,6 +323,7 @@ async function buildManagedBudgetMonthView(context) {
     const assignmentModelRef = option(options, actor, 'assignmentModel', PocketAssignment);
     const transactionModel = option(options, actor, 'transactionModel', Transaction);
     const guardModel = option(options, actor, 'guardModel', ClosedMonth);
+    const definitionModel = option(options, actor, 'definitionModel', PocketDefinition);
 
     const [assignments, transactions, guard] = await Promise.all([
         findMany(assignmentModelRef, { budgetMonth: month.month, budgetYear: month.year }, {
@@ -288,6 +340,12 @@ async function buildManagedBudgetMonthView(context) {
     const expanded = expandEligibleSpendingItems(
         transactions.map(transaction => transactionForCalculation(transaction, timeZone)),
         { pocketField: 'pocketId' }
+    );
+
+    const bankByPocketId = await loadPocketBanks(
+        definitionModel,
+        assignments.map(record => managedAssignmentView(record).pocketId),
+        options.session
     );
 
     const pockets = [];
@@ -339,6 +397,7 @@ async function buildManagedBudgetMonthView(context) {
             pocketName: assignment.name,
             pocketNormalizedName: assignment.normalizedName,
             pocketEmoji: assignment.emoji,
+            bank: bankView(bankByPocketId.get(assignment.pocketId)),
             assignmentId: assignment.id,
             assignmentVersion: assignment.version,
             amountMode: assignment.amountMode,
@@ -409,6 +468,7 @@ async function buildManagedBudgetMonthView(context) {
         isClosed,
         canEdit,
         pockets,
+        banks: summarizeBanks(pockets),
         aggregate,
         totalBudget: aggregate.allocation,
         combinedAllocationTotal: aggregate.allocation,
@@ -1128,5 +1188,6 @@ module.exports = {
     putWeeklyAllocation,
     deleteAllocation,
     toggleBudgetMonthClosed,
+    summarizeBanks,
     createBudgetService
 };
