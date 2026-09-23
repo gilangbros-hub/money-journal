@@ -7,7 +7,7 @@
  * UI falls back to a letter badge in `color`.
  */
 const BANKS = Object.freeze([
-    Object.freeze({ key: 'jago', name: 'Bank Jago', color: '#FDAF27' }),
+    Object.freeze({ key: 'jago', name: 'Jago', color: '#FDAF27' }),
     Object.freeze({ key: 'blu', name: 'blu', color: '#33CDCF' }),
     Object.freeze({ key: 'superbank', name: 'Superbank', color: '#012A31' }),
     Object.freeze({ key: 'bca', name: 'BCA', color: '#0060AF' })

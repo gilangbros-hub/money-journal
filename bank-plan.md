@@ -2,6 +2,16 @@
 
 Every pocket lives in one bank (Jago, Blu, Superbank, ...). Picking a bank is mandatory when creating a pocket, each pocket shows its bank's logo, and Check Pockets shows how much is left per bank.
 
+## Status
+
+All six phases are done. Deviations from the plan below:
+
+- Banks are Jago, blu, Superbank and BCA only. The others were dropped on request, so there's no Cash entry either.
+- Logos come from the `idn-finlogos` npm package (CC BY-NC 4.0, credited in `public/images/banks/SOURCES.md`), because the network policy here blocked Wikimedia and the banks' own sites. Jago uses its square app mark rather than the wordmark.
+- There is no `bankLogo.hbs` partial. The server-rendered picker writes the markup inline, and `public/js/banks.js` (`bankLogoHtml`) renders logos on the client. The letter-badge fallback runs from an inline `onerror` plus a capture-phase `error` listener.
+- The Log Spending picker shows only the bank logo. Names like "Superbank" got cut off in the three-column grid. The selected pocket reads "Groceries · Jago".
+- Fixed a bug the By bank strip caused: `installCloseBanner` grabbed the first `.section-header` on the page, so the "Close This Month" button ended up under By bank. It now targets `#pocketBreakdownHeader`.
+
 Do the phases in order, one commit each. Same ground rules as `plan.md`: stick to the named files, run `npm run test:unit` and `npm run test:ui` after every phase, add at least one test per phase, and rebuild `public/css/tailwind.css` if `src/input.css` changes.
 
 ## Decisions (read these before building)

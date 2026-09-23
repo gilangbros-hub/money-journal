@@ -191,7 +191,7 @@ test('pocket cards show the bank logo, or a No bank chip for older pockets', asy
 
     const jagoRow = cards.find(card => card.dataset.pocketId === 'p1').querySelector('[data-pocket-bank]');
     assert.ok(jagoRow.querySelector('[data-bank-logo="jago"] img'));
-    assert.match(jagoRow.textContent, /Bank Jago/);
+    assert.match(jagoRow.textContent, /Jago/);
     const oldRow = cards.find(card => card.dataset.pocketId === 'p2').querySelector('[data-pocket-bank]');
     assert.match(oldRow.textContent, /No bank/);
     dom.window.close();

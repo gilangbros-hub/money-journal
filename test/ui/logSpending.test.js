@@ -899,7 +899,7 @@ test('the pocket picker shows each pocket\'s bank and the selection names it', a
         if (url.startsWith('/api/expense-pocket-options')) {
             return pocketOptionsResponse([
                 { pocketId: 'pocket-1', name: 'Groceries', emoji: '🛒', cadence: 'Monthly',
-                    bank: { key: 'jago', name: 'Bank Jago', color: '#FDAF27', logo: '/images/banks/jago.svg' } },
+                    bank: { key: 'jago', name: 'Jago', color: '#FDAF27', logo: '/images/banks/jago.svg' } },
                 { pocketId: 'pocket-2', name: 'Old', emoji: '📦', cadence: 'Monthly', bank: null }
             ]);
         }
@@ -910,11 +910,12 @@ test('the pocket picker shows each pocket\'s bank and the selection names it', a
     const { document } = dom.window;
     const groceries = document.querySelector('#pocketSheet [data-managed-pocket-option="pocket-1"]');
     const old = document.querySelector('#pocketSheet [data-managed-pocket-option="pocket-2"]');
-    assert.ok(groceries.querySelector('[data-bank-logo="jago"] img'));
-    assert.match(groceries.textContent, /Bank Jago/);
+    const logo = groceries.querySelector('[data-bank-logo="jago"] img');
+    assert.ok(logo);
+    assert.equal(logo.getAttribute('alt'), 'Jago');
     assert.equal(old.querySelector('[data-bank-logo]'), null);
 
     groceries.click();
-    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '🛒 Groceries · Bank Jago');
+    assert.equal(document.getElementById('selectedPocketDisplay').textContent, '🛒 Groceries · Jago');
     dom.window.close();
 });

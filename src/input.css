@@ -2104,10 +2104,6 @@ a.trans-item {
 
 .picker-grid-bank {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
   margin-top: -2px;
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--journal-soft-ink);
 }
+

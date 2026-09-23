@@ -402,7 +402,7 @@ function renderManagedPocketSheet() {
         + `<span class="picker-grid-icon">${escapeHtml(option.emoji)}</span>`
         + `<span>${escapeHtml(option.name)}</span>`
         + (option.bank && typeof bankLogoHtml === 'function'
-            ? `<span class="picker-grid-bank">${bankLogoHtml(option.bank, 'sm')}<span>${escapeHtml(option.bank.name)}</span></span>`
+            ? `<span class="picker-grid-bank">${bankLogoHtml(option.bank, 'md')}</span>`
             : '')
         + '</button>'
     )).join('');
