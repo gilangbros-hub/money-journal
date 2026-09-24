@@ -9,15 +9,22 @@ const {
     validateHouseholdTimeZone
 } = require('../config');
 
-test('configuration defaults to a disabled salary-cycle rollout in Asia/Jakarta', () => {
+test('configuration defaults to salary-cycle budgeting in Asia/Jakarta', () => {
     const configuration = createConfiguration({});
 
     assert.equal(configuration.householdTimeZone, DEFAULT_HOUSEHOLD_TIME_ZONE);
-    assert.equal(configuration.salaryCycleBudgetingEnabled, false);
-    assert.equal(configuration.featureFlags.salaryCycleBudgeting, false);
+    assert.equal(configuration.salaryCycleBudgetingEnabled, true);
+    assert.equal(configuration.featureFlags.salaryCycleBudgeting, true);
+    assert.equal(createConfiguration({ SALARY_CYCLE_BUDGETING_ENABLED: '  ' }).salaryCycleBudgetingEnabled, true);
 });
 
-test('configuration canonicalizes valid zones and enables the flag only explicitly', () => {
+test('salary-cycle budgeting turns off only through an explicit off value', () => {
+    for (const value of ['false', '0', 'no', 'off', 'unexpected']) {
+        assert.equal(createConfiguration({ SALARY_CYCLE_BUDGETING_ENABLED: value }).salaryCycleBudgetingEnabled, false, value);
+    }
+});
+
+test('configuration canonicalizes valid zones and accepts an explicit on value', () => {
     const configuration = createConfiguration({
         HOUSEHOLD_TIME_ZONE: ' UTC ',
         SALARY_CYCLE_BUDGETING_ENABLED: 'true'

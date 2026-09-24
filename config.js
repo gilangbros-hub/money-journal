@@ -63,9 +63,16 @@ function parseFeatureFlag(value) {
 }
 
 /**
- * Salary-cycle writes stay disabled unless a recognized truthy flag is set.
+ * Salary-cycle budgeting is on by default: the Budget Month is derived from
+ * the expense date, so Log Spending has no manual month picker. Setting the
+ * variable to a recognized off value ('0', 'false', 'no', 'off') brings the
+ * legacy picker back; any other set value still goes through the opt-in
+ * parser, so a malformed value leaves it off.
  */
 function parseSalaryCycleFeatureFlag(value) {
+    if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
+        return true;
+    }
     return parseFeatureFlag(value);
 }
 
