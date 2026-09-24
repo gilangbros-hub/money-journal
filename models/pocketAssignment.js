@@ -101,6 +101,23 @@ const isWeeklyEntryValid = (allocation) => (
 );
 
 /**
+ * Resolve the cadence the allocation set is checked against. On document
+ * validation `context` is the document. Under update validators (the
+ * findOneAndUpdate path used when an existing assignment is re-confirmed)
+ * `context` is the Query, so the cadence comes from the same update. An
+ * allocations-only update falls back to the first entry's kind, which still
+ * forces the set to be internally consistent.
+ */
+const cadenceFor = (context, allocations) => {
+    if (context instanceof mongoose.Query) {
+        const update = context.getUpdate() || {};
+        const set = update.$set || {};
+        return set.cadenceSnapshot ?? update.cadenceSnapshot ?? allocations[0]?.kind;
+    }
+    return context.cadenceSnapshot;
+};
+
+/**
  * Validate the complete embedded allocation set against the assignment cadence.
  *
  * Monthly cadence requires exactly one well-formed `monthly` allocation. Weekly
@@ -114,7 +131,7 @@ const validateAllocationSet = function validateAllocationSet(allocations) {
         return false;
     }
 
-    const cadence = this.cadenceSnapshot;
+    const cadence = cadenceFor(this, allocations);
 
     // Every allocation kind must match the assignment cadence snapshot.
     if (!allocations.every(allocation => allocation && allocation.kind === cadence)) {
