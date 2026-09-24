@@ -1056,6 +1056,32 @@ a.trans-item {
   text-decoration: none;
 }
 
+.trans-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trans-row > .trans-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.trans-delete-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #f1c3b8;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.trans-delete-btn:active {
+  transform: scale(0.94);
+}
+
 .transaction-mode-toggle[hidden] {
   display: none;
 }

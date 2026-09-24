@@ -80,6 +80,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         applyFilterAndRender();
     });
 
+    document.getElementById('transactionList').addEventListener('click', (event) => {
+        const button = event.target.closest('[data-delete-id]');
+        if (button) openDeleteModal(button.dataset.deleteId);
+    });
+    document.getElementById('deleteCancelBtn').addEventListener('click', closeDeleteModal);
+    document.getElementById('deleteConfirmBtn').addEventListener('click', confirmDeleteTransaction);
+    document.getElementById('deleteModal').addEventListener('click', (event) => {
+        if (event.target.id === 'deleteModal') closeDeleteModal();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeDeleteModal();
+    });
+
     monthFilter.addEventListener('change', (e) => {
         currentMonth = e.target.value;
         const url = new URL(window.location);
@@ -303,7 +316,10 @@ function renderTransactions() {
                 }
             }
 
+            // The row stays a link to the edit screen; the trash button sits
+            // beside it (not inside it) so a tap on the row never deletes.
             html += `
+                <div class="trans-row">
                 <a class="trans-item" href="/log-spending?edit=${encodeURIComponent(t._id)}">
                     <div class="trans-icon">${escapeHtml(icon)}</div>
                     <div class="flex-1 min-w-0">
@@ -316,11 +332,63 @@ function renderTransactions() {
                     </div>
                     <div class="font-bold text-sm text-coral whitespace-nowrap ml-2">- ${formattedAmount}</div>
                 </a>
+                <button type="button" class="trans-delete-btn" data-delete-id="${escapeHtml(t._id)}" aria-label="Delete ${escapeHtml(t.ngapain || t.type || 'transaction')}">🗑️</button>
+                </div>
             `;
         });
     });
 
     list.innerHTML = html;
+}
+
+let pendingDeleteId = null;
+let deleting = false;
+
+function openDeleteModal(id) {
+    const transaction = allTransactions.find(t => String(t._id) === id);
+    if (!transaction) return;
+    pendingDeleteId = id;
+    document.getElementById('deleteDetails').textContent =
+        `${transaction.ngapain || transaction.type || 'Transaction'} · ${transaction.formattedAmount || formatRupiah(Number(transaction.amount) || 0)}`;
+    document.getElementById('deleteModal').classList.add('show');
+    document.getElementById('deleteCancelBtn').focus();
+}
+
+function closeDeleteModal() {
+    if (deleting) return;
+    pendingDeleteId = null;
+    document.getElementById('deleteModal').classList.remove('show');
+}
+
+// On success the row leaves the list and the total without a refetch. A
+// rejected delete (a closed Budget Month, say) keeps the dialog open and
+// shows the server's reason.
+async function confirmDeleteTransaction() {
+    const id = pendingDeleteId;
+    if (!id || deleting) return;
+    deleting = true;
+    try {
+        const response = await fetch(`/api/transaction/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!response.ok) {
+            let message = 'Could not delete transaction';
+            try {
+                const body = await response.json();
+                if (body?.error?.message) message = body.error.message;
+            } catch (error) {
+                // Keep the generic message.
+            }
+            throw new Error(message);
+        }
+        allTransactions = allTransactions.filter(t => String(t._id) !== id);
+        deleting = false;
+        closeDeleteModal();
+        applyFilterAndRender();
+        showToast('Transaction deleted', 'success');
+    } catch (error) {
+        console.error('Error deleting transaction:', error);
+        deleting = false;
+        showToast(error.message || 'Could not delete transaction', 'error');
+    }
 }
 
 // Notes, types and pocket names are household-entered text.
