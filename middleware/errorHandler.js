@@ -116,6 +116,22 @@ function toDomainError(error) {
     });
 }
 
+/**
+ * Describe a Mongoose ValidationError by model, field path, and failure kind
+ * only. Mongoose's own messages and ValidatorError.value embed the rejected
+ * input (amounts, pocket names), so neither is logged.
+ */
+function describeValidationError(error) {
+    return {
+        name: error.name,
+        model: typeof error._message === 'string' ? error._message : undefined,
+        failures: Object.values(error.errors || {}).map(failure => ({
+            path: failure?.path,
+            kind: failure?.kind
+        }))
+    };
+}
+
 function logError(error, req, mapped) {
     // Do not include req.body/query, session contents, or financial values.
     const context = {
@@ -127,7 +143,9 @@ function logError(error, req, mapped) {
         actorId: req.session?.userId ? String(req.session.userId) : undefined
     };
 
-    if (mapped.status >= 500) {
+    if (error && error.name === 'ValidationError' && !(error instanceof DomainError)) {
+        console.error('Request failed', context, describeValidationError(error));
+    } else if (mapped.status >= 500) {
         console.error('Request failed', context, error);
     } else {
         console.warn('Request rejected', context);
