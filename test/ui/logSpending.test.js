@@ -77,8 +77,9 @@ test('enabled Log Spending renders a read-only server assignment and uses raw da
 
     const { document } = dom.window;
     assert.equal(document.getElementById('budgetMonth'), null);
-    assert.equal(document.getElementById('derivedBudgetMonth').textContent, '2027-02');
-    assert.equal(document.getElementById('derivedBudgetPeriod').textContent, '2027-01-25 – 2027-02-24');
+    assert.equal(document.getElementById('derivedBudgetMonth').textContent, 'Februari 2027');
+    assert.equal(document.getElementById('derivedBudgetMonth').tagName, 'STRONG');
+    assert.equal(document.getElementById('budgetMonthSection').textContent.trim(), 'Kamu memakai budget bulan Februari 2027');
 
     dom.window.selectManagedPocket('pocket-1');
 
@@ -86,8 +87,7 @@ test('enabled Log Spending renders a read-only server assignment and uses raw da
     date.value = '2027-02-25';
     date.dispatchEvent(new dom.window.Event('change'));
     await new Promise(resolve => setImmediate(resolve));
-    assert.equal(document.getElementById('derivedBudgetMonth').textContent, '2027-03');
-    assert.equal(document.getElementById('derivedBudgetPeriod').textContent, '2027-02-25 – 2027-03-24');
+    assert.equal(document.getElementById('derivedBudgetMonth').textContent, 'Maret 2027');
 
     document.getElementById('amount').value = '1250';
     document.getElementById('ngapain').value = 'Coffee';
@@ -151,8 +151,7 @@ test('invalid date disables submit and a 409 save refreshes the assignment previ
 
     assert.equal(saveAttempts, 1);
     assert.equal(previewCalls, 3);
-    assert.equal(document.getElementById('derivedBudgetMonth').textContent, '2027-03');
-    assert.equal(document.getElementById('derivedBudgetPeriod').textContent, '2027-02-25 – 2027-03-24');
+    assert.equal(document.getElementById('derivedBudgetMonth').textContent, 'Maret 2027');
     dom.window.close();
 });
 
@@ -171,7 +170,7 @@ test('server preview errors show the field message and server save errors show a
     });
 
     assert.equal(previewDom.window.document.getElementById('submitBtn').disabled, true);
-    assert.equal(previewDom.window.document.getElementById('derivedBudgetMonth').textContent, 'Unable to resolve');
+    assert.equal(previewDom.window.document.getElementById('derivedBudgetMonth').textContent, '—');
     assert.equal(previewDom.window.document.getElementById('dateError').textContent, 'Expense date is outside the supported calendar.');
     previewDom.window.close();
 
@@ -234,7 +233,7 @@ test('edit round trip uses the API expenseDate string directly', async () => {
     }, { edit: 'transaction-id' });
 
     assert.equal(dom.window.document.getElementById('date').value, '2027-02-24');
-    assert.equal(dom.window.document.getElementById('derivedBudgetMonth').textContent, '2027-02');
+    assert.equal(dom.window.document.getElementById('derivedBudgetMonth').textContent, 'Februari 2027');
 
     dom.window.document.getElementById('transactionForm').dispatchEvent(new dom.window.Event('submit', { bubbles: true, cancelable: true }));
     await new Promise(resolve => setImmediate(resolve));
