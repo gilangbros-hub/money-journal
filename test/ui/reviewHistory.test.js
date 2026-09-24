@@ -24,8 +24,9 @@ function response(body, status = 200) {
     };
 }
 
-async function setupPage({ transactions, expenseTypes } = {}) {
+async function setupPage({ transactions, expenseTypes, deleteResponse } = {}) {
     const calls = [];
+    const toasts = [];
     const historyTransactions = transactions || [
         {
             _id: 'split',
@@ -57,6 +58,9 @@ async function setupPage({ transactions, expenseTypes } = {}) {
     });
     dom.window.fetch = async (url, options) => {
         calls.push({ url, options });
+        if (options?.method === 'DELETE') {
+            return deleteResponse || response({ success: true });
+        }
         if (url === '/api/expense-types') {
             return response({ success: true, data: { active: expenseTypes || [] } });
         }
@@ -76,10 +80,11 @@ async function setupPage({ transactions, expenseTypes } = {}) {
         });
     };
     dom.window.formatRupiah = value => `Rp ${value}`;
+    dom.window.showToast = (text, type) => { toasts.push({ text, type }); };
     dom.window.openOptions = () => {};
     dom.window.eval(browserSource);
     await new Promise(resolve => setImmediate(resolve));
-    return { dom, calls };
+    return { dom, calls, toasts };
 }
 
 test('Review History uses the server month and cycle range, then filters a split transaction once', async () => {
@@ -188,7 +193,7 @@ test('Review History rows open the entry for editing and render notes as text', 
     assert.equal(row.getAttribute('href'), '/log-spending?edit=x1');
     assert.equal(row.querySelector('img'), null);
     assert.match(row.textContent, /<img src=x/);
-    assert.equal(dom.window.document.getElementById('deleteModal'), null);
+    assert.equal(row.querySelector('[data-delete-id]'), null, 'the delete button is beside the link, not inside it');
     dom.window.close();
 });
 
@@ -265,5 +270,67 @@ test('the no-match message shows the query as text', async () => {
     const list = dom.window.document.getElementById('transactionList');
     assert.equal(list.querySelector('b'), null);
     assert.match(list.textContent, /<b>zzz<\/b>/);
+    dom.window.close();
+});
+
+const deleteTransactions = [
+    { _id: 'd1', expenseDate: '2027-03-02', type: 'Medicine', pocket: 'Kwintals', amount: 4000, ngapain: 'Medicine', paidBy: 'Self' },
+    { _id: 'd2', expenseDate: '2027-03-01', type: 'Bensin', pocket: 'Kwintals', amount: 20, ngapain: 'Bensin', paidBy: 'Self' }
+];
+
+test('the trash button asks first, then deletes the row and updates the total', async () => {
+    const { dom, calls, toasts } = await setupPage({ transactions: deleteTransactions });
+    const doc = dom.window.document;
+    const modal = doc.getElementById('deleteModal');
+
+    doc.querySelector('[data-delete-id="d1"]').click();
+    assert.ok(modal.classList.contains('show'));
+    assert.match(doc.getElementById('deleteDetails').textContent, /Medicine · Rp 4000/);
+    assert.equal(calls.some(call => call.options?.method === 'DELETE'), false, 'nothing is deleted before confirming');
+
+    doc.getElementById('deleteConfirmBtn').click();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.deepEqual(calls.filter(call => call.options?.method === 'DELETE').map(call => call.url), ['/api/transaction/d1']);
+    assert.equal(modal.classList.contains('show'), false);
+    assert.deepEqual([...doc.querySelectorAll('.trans-item')].map(row => row.getAttribute('href')), ['/log-spending?edit=d2']);
+    assert.match(doc.getElementById('summaryInfo').textContent, /1 transaction\b/);
+    assert.match(doc.getElementById('summaryInfo').textContent, /Rp 20/);
+    assert.deepEqual(toasts, [{ text: 'Transaction deleted', type: 'success' }]);
+    dom.window.close();
+});
+
+test('cancel and Escape close the dialog without deleting', async () => {
+    const { dom, calls } = await setupPage({ transactions: deleteTransactions });
+    const doc = dom.window.document;
+    const modal = doc.getElementById('deleteModal');
+
+    doc.querySelector('[data-delete-id="d1"]').click();
+    doc.getElementById('deleteCancelBtn').click();
+    assert.equal(modal.classList.contains('show'), false);
+
+    doc.querySelector('[data-delete-id="d2"]').click();
+    doc.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    assert.equal(modal.classList.contains('show'), false);
+
+    assert.equal(calls.some(call => call.options?.method === 'DELETE'), false);
+    assert.equal(doc.querySelectorAll('.trans-item').length, 2);
+    dom.window.close();
+});
+
+test('a rejected delete keeps the row and shows the server reason', async () => {
+    const { dom, toasts } = await setupPage({
+        transactions: deleteTransactions,
+        deleteResponse: response({ error: { code: 'PERIOD_CLOSED', message: 'Budget Month 2027-03 is closed.' } }, 409)
+    });
+    const doc = dom.window.document;
+
+    doc.querySelector('[data-delete-id="d1"]').click();
+    doc.getElementById('deleteConfirmBtn').click();
+    await new Promise(resolve => setImmediate(resolve));
+
+    assert.ok(doc.getElementById('deleteModal').classList.contains('show'));
+    assert.equal(doc.querySelectorAll('.trans-item').length, 2);
+    assert.deepEqual(toasts, [{ text: 'Budget Month 2027-03 is closed.', type: 'error' }]);
     dom.window.close();
 });
