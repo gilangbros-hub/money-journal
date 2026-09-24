@@ -101,9 +101,7 @@
 
                     {{#if salaryCycleBudgetingEnabled}}
                     <div class="transaction-budget-month" id="budgetMonthSection" data-salary-cycle-enabled="true">
-                        <p class="transaction-field-label">Budget Month</p>
-                        <p id="derivedBudgetMonth" class="transaction-budget-derived" aria-live="polite">Loading…</p>
-                        <p id="derivedBudgetPeriod" class="transaction-budget-period" aria-live="polite"></p>
+                        <p class="transaction-budget-derived" aria-live="polite">Kamu memakai budget bulan <strong id="derivedBudgetMonth">…</strong></p>
                     </div>
                     {{else}}
                     <div class="transaction-budget-month" id="budgetMonthSection" data-salary-cycle-enabled="false">

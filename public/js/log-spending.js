@@ -679,13 +679,22 @@ function previewErrorMessage(result, fallback = 'Unable to resolve Budget Month'
     return result?.error?.message || result?.message || fallback;
 }
 
+const INDONESIAN_MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+// '2026-10' -> 'Oktober 2026'. Anything unexpected is shown as sent.
+function formatBudgetMonthName(budgetMonth) {
+    const match = /^(\d{4})-(\d{2})$/.exec(budgetMonth || '');
+    const name = match && INDONESIAN_MONTHS[Number(match[2]) - 1];
+    return name ? `${name} ${match[1]}` : String(budgetMonth || '—');
+}
+
 async function loadAssignmentPreview() {
     if (!salaryCycleEnabled) return true;
 
     const date = document.getElementById('date').value;
     const submit = document.getElementById('submitBtn');
     const derived = document.getElementById('derivedBudgetMonth');
-    const period = document.getElementById('derivedBudgetPeriod');
     const requestSequence = ++assignmentRequestSequence;
 
     assignmentPreview = null;
@@ -694,14 +703,12 @@ async function loadAssignmentPreview() {
 
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         if (requestSequence !== assignmentRequestSequence) return false;
-        derived.textContent = 'Enter a valid date';
-        period.textContent = '';
+        derived.textContent = '—';
         setDateError('Date must be a valid YYYY-MM-DD calendar date.');
         return false;
     }
 
-    derived.textContent = 'Checking…';
-    period.textContent = '';
+    derived.textContent = '…';
 
     try {
         const response = await fetch(`/api/salary-cycle/assignment?date=${encodeURIComponent(date)}`);
@@ -709,23 +716,18 @@ async function loadAssignmentPreview() {
         if (requestSequence !== assignmentRequestSequence) return false;
         if (!response.ok || !result.success) {
             setDateError(previewErrorMessage(result, 'Date must be a valid calendar date.'));
-            derived.textContent = 'Unable to resolve';
+            derived.textContent = '—';
             return false;
         }
 
         assignmentPreview = result.data;
-        derived.textContent = result.data.budgetMonth;
-        const previewPeriod = result.data.period || result.data.salaryCyclePeriod;
-        period.textContent = previewPeriod
-            ? `${previewPeriod.startDate} – ${previewPeriod.endDate}`
-            : '';
+        derived.textContent = formatBudgetMonthName(result.data.budgetMonth);
         submit.disabled = false;
         return true;
     } catch (error) {
         if (requestSequence !== assignmentRequestSequence) return false;
         assignmentPreview = null;
-        derived.textContent = 'Unable to resolve';
-        period.textContent = '';
+        derived.textContent = '—';
         setDateError(error.message || 'Unable to resolve Budget Month');
         return false;
     }
