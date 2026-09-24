@@ -62,8 +62,10 @@ const getGraphemeSegmenter = () => {
 // A grapheme cluster is treated as an emoji when it carries at least one
 // pictographic / emoji-presentation / regional-indicator code point. Variation
 // selectors, ZWJ, keycap combiners, and skin-tone modifiers are only meaningful
-// inside such a cluster, so the whole cluster remains one emoji.
-const EMOJI_CODEPOINT_PATTERN = /\p{Extended_Pictographic}|\p{Emoji_Presentation}|\p{Regional_Indicator}/u;
+// inside such a cluster, so the whole cluster remains one emoji. Keycap
+// sequences (1️⃣, #️⃣, *️⃣) are the exception: their base is a plain digit or
+// symbol, so the combining enclosing keycap (U+20E3) is what marks them.
+const EMOJI_CODEPOINT_PATTERN = /\p{Extended_Pictographic}|\p{Emoji_Presentation}|\p{Regional_Indicator}|[0-9#*]\uFE0F?\u20E3/u;
 
 // Count user-visible code points rather than UTF-16 units so multi-unit
 // characters are not double-counted against the 1-50 length rule.
