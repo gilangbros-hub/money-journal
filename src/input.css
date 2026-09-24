@@ -1363,6 +1363,26 @@ a.trans-item {
   font-weight: 700;
 }
 
+/* Salary-cycle mode: one centred sentence under the Date row, set in a soft
+   panel so it reads as a note on the date rather than another form row. */
+.transaction-budget-derived {
+  margin: 24px 0 0;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--journal-line);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--journal-soft-ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.transaction-budget-derived strong {
+  color: var(--journal-ink);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .transaction-budget-options {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
