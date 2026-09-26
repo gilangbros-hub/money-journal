@@ -356,6 +356,8 @@ function renderPocketPulse() {
             const budget = Number(pocket.budget) || 0;
             const spent = Number(pocket.spent) || 0;
             const alert = status ? alerts.find((item) => item.pocket === pocket.pocket) : null;
+            // Weekly pockets report the selected week's remaining, so prefer the server's number.
+            const remaining = Number.isFinite(pocket.remaining) ? pocket.remaining : budget - spent;
             const width = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
             const amounts = budget > 0
                 ? `${formatRupiah(spent)} / ${formatRupiah(budget)}`
@@ -366,7 +368,10 @@ function renderPocketPulse() {
                     <p class="journal-pulse-title">${pocket.bank && typeof bankLogoHtml === 'function' ? bankLogoHtml(pocket.bank, 'sm') : ''}<span>${safeText(`${pocket.icon || pocket.pocketEmoji || ''} ${pocket.pocket}`.trim())}</span></p>
                     <p class="journal-pulse-scope">${safeText(pulseScopeLabel(pocket, currentWeekKey))}</p>
                 </div>
-                <p class="journal-pulse-amounts">${safeText(amounts)}</p>
+                <div class="journal-pulse-head">
+                    <p class="journal-pulse-amounts">${safeText(amounts)}</p>
+                    ${budget > 0 ? `<p class="journal-pulse-left ${remaining < 0 ? 'over' : ''}">${safeText(remaining < 0 ? `${formatRupiah(-remaining)} over` : `${formatRupiah(remaining)} left`)}</p>` : ''}
+                </div>
                 <div class="journal-pulse-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${width}" aria-label="${safeText(pocket.pocket)} budget used">
                     <div class="journal-pulse-fill ${status}" style="width: ${width}%"></div>
                 </div>

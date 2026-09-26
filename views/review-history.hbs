@@ -36,19 +36,19 @@
             <input type="search" id="historySearch" class="transaction-note-input w-full" placeholder="Search this month" autocomplete="off" enterkeyhint="search">
         </div>
 
-        <!-- Type Filter Pills -->
-        <div class="mb-2 overflow-hidden">
-            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="filterPills">
-                <button class="journal-strip-item active-filter" data-type="all">All</button>
-                <!-- Injected by JS -->
+        <!-- Type and pocket filters -->
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <div>
+                <label for="typeFilter" class="sr-only">Filter by expense type</label>
+                <select id="typeFilter" class="history-filter-select">
+                    <option value="all">All types</option>
+                </select>
             </div>
-        </div>
-
-        <!-- Pocket Filter Pills (NEW) -->
-        <div class="mb-4 overflow-hidden">
-            <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none" id="pocketFilterPills">
-                <button class="journal-strip-item active-filter" data-pocket="all">All Pockets</button>
-                <!-- Injected by JS -->
+            <div>
+                <label for="pocketFilter" class="sr-only">Filter by pocket</label>
+                <select id="pocketFilter" class="history-filter-select">
+                    <option value="all">All pockets</option>
+                </select>
             </div>
         </div>
 
@@ -84,6 +84,7 @@
     <div id="message" class="toast"></div>
 
     <input type="hidden" id="expenseTypeManagementEnabled" value="{{expenseTypeManagementEnabled}}">
+    <input type="hidden" id="pocketManagementEnabled" value="{{pocketManagementEnabled}}">
     <script src="/js/common.js"></script>
     <script src="/js/review-history.js"></script>
 

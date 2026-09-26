@@ -115,7 +115,8 @@ exports.getTransactionPage = (req, res) => {
         username: req.session.username,
         avatar: req.session.avatar || '👤',
         salaryCycleBudgetingEnabled: req.app?.locals?.configuration?.salaryCycleBudgetingEnabled === true,
-        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true
+        expenseTypeManagementEnabled: req.app?.locals?.configuration?.expenseTypeManagementEnabled === true,
+        pocketManagementEnabled: req.app?.locals?.configuration?.pocketManagementEnabled === true
     });
 };
 

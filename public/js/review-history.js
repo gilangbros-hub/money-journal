@@ -6,27 +6,12 @@ const typeEmojis = {
     'Uang Sampah': '🗑️', 'Uang Keamanan': '👮', 'Medicine': '💊', 'Others': '📦'
 };
 
-let allTypes = Object.keys(typeEmojis);
-
-// With Expense Type Management on, merge the managed types' emoji into
-// typeEmojis so custom types don't all render as the fallback box.
+// With Expense Type Management or Pocket Management on, the filters list the
+// managed (active) definitions instead of the old hardcoded ones. Anything the
+// loaded month uses that isn't in that list (an archived pocket, a legacy
+// type) is added after it, so every transaction stays reachable.
 const expenseTypeManagementEnabled = document.getElementById('expenseTypeManagementEnabled')?.value === 'true';
-
-async function loadManagedTypeEmojis() {
-    if (!expenseTypeManagementEnabled) return;
-    try {
-        const response = await fetch('/api/expense-types');
-        const result = await response.json();
-        if (!response.ok || result?.success !== true || !Array.isArray(result.data?.active)) return;
-        result.data.active.forEach((type) => {
-            if (type && typeof type.name === 'string' && type.name && type.emoji) {
-                typeEmojis[type.name] = type.emoji;
-            }
-        });
-    } catch (error) {
-        // Keep the static map.
-    }
-}
+const pocketManagementEnabled = document.getElementById('pocketManagementEnabled')?.value === 'true';
 
 const pocketIcons = {
     'Kwintals': '💰', 'Groceries': '🥦', 'Weekday Transport': '🚌',
@@ -34,7 +19,35 @@ const pocketIcons = {
     'Sedeqah': '🤲', 'IPL': '🏘️'
 };
 
-const allPockets = Object.keys(pocketIcons);
+let baseTypes = Object.keys(typeEmojis);
+let basePockets = Object.keys(pocketIcons);
+
+async function loadActiveDefinitions(url) {
+    try {
+        const response = await fetch(url);
+        const result = await response.json();
+        if (!response.ok || result?.success !== true || !Array.isArray(result.data?.active)) return null;
+        return result.data.active.filter((item) => item && typeof item.name === 'string' && item.name);
+    } catch (error) {
+        return null;
+    }
+}
+
+async function loadManagedTypes() {
+    if (!expenseTypeManagementEnabled) return;
+    const types = await loadActiveDefinitions('/api/expense-types');
+    if (!types) return; // Keep the static list.
+    types.forEach((type) => { if (type.emoji) typeEmojis[type.name] = type.emoji; });
+    baseTypes = types.map((type) => type.name);
+}
+
+async function loadManagedPockets() {
+    if (!pocketManagementEnabled) return;
+    const pockets = await loadActiveDefinitions('/api/pockets');
+    if (!pockets) return;
+    pockets.forEach((pocket) => { if (pocket.emoji) pocketIcons[pocket.name] = pocket.emoji; });
+    basePockets = pockets.map((pocket) => pocket.name);
+}
 
 let allTransactions = [];
 let filteredTransactions = [];
@@ -46,7 +59,7 @@ let searchQuery = '';
 let searchTimer = null;
 document.addEventListener('DOMContentLoaded', async () => {
     // Runs alongside the Budget Month lookup instead of after it.
-    const typeEmojisReady = loadManagedTypeEmojis();
+    const definitionsReady = Promise.all([loadManagedTypes(), loadManagedPockets()]);
     const params = new URLSearchParams(window.location.search);
     currentMonth = params.has('month') ? params.get('month') : await determineDefaultMonth();
 
@@ -58,10 +71,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         backBtn.href = '/monthly-story';
     }
 
-    await typeEmojisReady;
-    if (expenseTypeManagementEnabled) allTypes = Object.keys(typeEmojis);
-    buildFilterPills();
-    buildPocketFilterPills();
+    await definitionsReady;
+    renderFilterOptions();
+    document.getElementById('typeFilter').addEventListener('change', (event) => {
+        currentType = event.target.value;
+        applyFilterAndRender();
+    });
+    document.getElementById('pocketFilter').addEventListener('change', (event) => {
+        currentPocket = event.target.value;
+        applyFilterAndRender();
+    });
+    document.getElementById('sortBtn').addEventListener('click', toggleSort);
     fetchTransactions();
 
     const search = document.getElementById('historySearch');
@@ -118,51 +138,42 @@ function renderPeriodMetadata(history) {
     target.textContent = `Budget Month ${history.budgetMonth} · Salary cycle ${period.startDate} – ${period.endDate}`;
 }
 
-function buildFilterPills() {
-    const container = document.getElementById('filterPills');
-    allTypes.forEach(type => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-pill';
-        btn.dataset.type = type;
-        btn.textContent = `${typeEmojis[type]} ${type}`;
-        btn.addEventListener('click', () => selectType(type));
-        container.appendChild(btn);
+// Managed names first (in their own order), then anything else this month
+// uses, then the current selection so a month switch never silently drops it.
+function filterValues(base, used, selected) {
+    const values = [...base];
+    const seen = new Set(values);
+    [...used].sort((x, y) => x.localeCompare(y)).forEach((value) => {
+        if (!seen.has(value)) { seen.add(value); values.push(value); }
     });
-
-    container.querySelector('[data-type="all"]').addEventListener('click', () => selectType('all'));
-    document.getElementById('sortBtn').addEventListener('click', toggleSort);
+    if (selected !== 'all' && !seen.has(selected)) values.push(selected);
+    return values;
 }
 
-function buildPocketFilterPills() {
-    const container = document.getElementById('pocketFilterPills');
-    if (!container) return;
-
-    allPockets.forEach(pocket => {
-        const btn = document.createElement('button');
-        btn.className = 'filter-pill';
-        btn.dataset.pocket = pocket;
-        btn.textContent = `${pocketIcons[pocket]} ${pocket}`;
-        btn.addEventListener('click', () => selectPocket(pocket));
-        container.appendChild(btn);
+function fillSelect(select, allLabel, values, icons, selected) {
+    select.innerHTML = '';
+    select.appendChild(new Option(allLabel, 'all'));
+    values.forEach((value) => {
+        const icon = icons[value];
+        select.appendChild(new Option(icon ? `${icon} ${value}` : value, value));
     });
-
-    container.querySelector('[data-pocket="all"]').addEventListener('click', () => selectPocket('all'));
+    select.value = selected;
 }
 
-function selectType(type) {
-    currentType = type;
-    document.querySelectorAll('#filterPills .filter-pill').forEach(pill => {
-        pill.classList.toggle('active', pill.dataset.type === type);
+function renderFilterOptions() {
+    const usedTypes = new Set();
+    const usedPockets = new Set();
+    allTransactions.forEach((t) => {
+        if (t?.type) usedTypes.add(t.type);
+        if (t?.pocket) usedPockets.add(t.pocket);
+        (Array.isArray(t?.sourceBreakdowns) ? t.sourceBreakdowns : []).forEach((share) => {
+            if (share?.pocket) usedPockets.add(share.pocket);
+        });
     });
-    applyFilterAndRender();
-}
-
-function selectPocket(pocket) {
-    currentPocket = pocket;
-    document.querySelectorAll('#pocketFilterPills .filter-pill').forEach(pill => {
-        pill.classList.toggle('active', pill.dataset.pocket === pocket);
-    });
-    applyFilterAndRender();
+    fillSelect(document.getElementById('typeFilter'), 'All types',
+        filterValues(baseTypes, usedTypes, currentType), typeEmojis, currentType);
+    fillSelect(document.getElementById('pocketFilter'), 'All pockets',
+        filterValues(basePockets, usedPockets, currentPocket), pocketIcons, currentPocket);
 }
 
 function toggleSort() {
@@ -184,6 +195,7 @@ async function fetchTransactions() {
         if (!response.ok || !result.success || !result.data) throw new Error('Failed to load history');
         allTransactions = Array.isArray(result.data.transactions) ? result.data.transactions : [];
         renderPeriodMetadata(result.data);
+        renderFilterOptions();
         applyFilterAndRender();
     } catch (error) {
         console.error('Error fetching transactions:', error);

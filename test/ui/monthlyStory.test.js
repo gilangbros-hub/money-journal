@@ -332,6 +332,30 @@ test('Pocket Pulse lists every pocket with a progress bar, over-budget pockets f
     assert.equal(items[1].querySelector('.journal-pulse-amounts').textContent, 'Rp 400000 / Rp 1000000');
     assert.equal(items[1].querySelector('.journal-pulse-scope').textContent, 'This cycle');
     assert.equal(items[2].querySelector('.journal-pulse-amounts').textContent, 'Rp 20000 · no budget set');
+    assert.equal(items[0].querySelector('.journal-pulse-left').textContent, 'Rp 0 left');
+    assert.equal(items[1].querySelector('.journal-pulse-left').textContent, 'Rp 600000 left');
+    assert.equal(items[2].querySelector('.journal-pulse-left'), null, 'no budget, nothing to be left of');
+    dom.window.close();
+});
+
+test('Pocket Pulse shows what is left, or how far over, using the server remaining when given', async () => {
+    const { dom } = await setupPage({
+        summary: budgetSummary({
+            pockets: [
+                { pocket: 'Bensin', icon: '⛽', cadence: 'Monthly', budget: 500000, spent: 620000, alertStatus: 'danger' },
+                { pocket: 'Weekly Eat', icon: '🍽️', cadence: 'Weekly', budget: 400000, spent: 100000, remaining: 250000, alertStatus: 'normal' }
+            ],
+            totalBudget: 900000,
+            totalRemaining: 180000,
+            period: { startDate: utcDateKey(-5), endDate: utcDateKey(9) }
+        }),
+        transactions: []
+    });
+    const left = [...dom.window.document.querySelectorAll('#pocketPulseList .journal-pulse-left')];
+
+    assert.deepEqual(left.map(el => el.textContent), ['Rp 120000 over', 'Rp 250000 left']);
+    assert.ok(left[0].classList.contains('over'));
+    assert.equal(left[1].classList.contains('over'), false);
     dom.window.close();
 });
 

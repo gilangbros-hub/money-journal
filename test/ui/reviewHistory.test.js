@@ -24,7 +24,13 @@ function response(body, status = 200) {
     };
 }
 
-async function setupPage({ transactions, expenseTypes, deleteResponse } = {}) {
+function choose(dom, id, value) {
+    const select = dom.window.document.getElementById(id);
+    select.value = value;
+    select.dispatchEvent(new dom.window.Event('change', { bubbles: true }));
+}
+
+async function setupPage({ transactions, expenseTypes, pockets, deleteResponse } = {}) {
     const calls = [];
     const toasts = [];
     const historyTransactions = transactions || [
@@ -52,7 +58,12 @@ async function setupPage({ transactions, expenseTypes, deleteResponse } = {}) {
             paidBy: 'Self'
         }
     ];
-    const dom = new JSDOM(renderView({ username: 'tester', avatar: '👤', expenseTypeManagementEnabled: Boolean(expenseTypes) }), {
+    const dom = new JSDOM(renderView({
+        username: 'tester',
+        avatar: '👤',
+        expenseTypeManagementEnabled: Boolean(expenseTypes),
+        pocketManagementEnabled: Boolean(pockets)
+    }), {
         url: 'https://money-journal.test/review-history',
         runScripts: 'outside-only'
     });
@@ -60,6 +71,9 @@ async function setupPage({ transactions, expenseTypes, deleteResponse } = {}) {
         calls.push({ url, options });
         if (options?.method === 'DELETE') {
             return deleteResponse || response({ success: true });
+        }
+        if (url === '/api/pockets') {
+            return response({ success: true, data: { active: pockets || [] } });
         }
         if (url === '/api/expense-types') {
             return response({ success: true, data: { active: expenseTypes || [] } });
@@ -96,7 +110,7 @@ test('Review History uses the server month and cycle range, then filters a split
     assert.match(document.getElementById('salaryCyclePeriod').textContent, /2027-02-25 – 2027-03-24/);
     assert.ok(calls.some(call => call.url === '/api/history?month=2027-03'));
 
-    document.querySelector('[data-pocket="Kwintals"]').click();
+    choose(dom, 'pocketFilter', 'Kwintals');
     const rows = [...document.querySelectorAll('.trans-item')];
     assert.equal(rows.length, 2);
     assert.equal(rows.filter(row => row.textContent.includes('Split expense')).length, 1);
@@ -149,7 +163,7 @@ test('Review History never routes date-only values through UTC serialization or 
     assert.match(browserSource, /groups\[key\]/);
 });
 
-test('Review History adds managed custom types to the filter pills with their emoji', async () => {
+test('Review History lists managed custom types in the type dropdown with their emoji', async () => {
     const { dom, calls } = await setupPage({
         expenseTypes: [{ id: 't2', name: 'Parkir', emoji: '🅿️', status: 'Active' }],
         transactions: [
@@ -161,13 +175,46 @@ test('Review History adds managed custom types to the filter pills with their em
     const { document } = dom.window;
 
     assert.ok(calls.some(call => call.url === '/api/expense-types'));
-    const pill = document.querySelector('#filterPills [data-type="Parkir"]');
-    assert.equal(pill.textContent, '🅿️ Parkir');
-    pill.click();
+    const option = document.querySelector('#typeFilter option[value="Parkir"]');
+    assert.equal(option.textContent, '🅿️ Parkir');
+    choose(dom, 'typeFilter', 'Parkir');
     const rows = [...document.querySelectorAll('.trans-item')];
     assert.equal(rows.length, 1);
     assert.match(rows[0].textContent, /Mall parking/);
     assert.match(rows[0].textContent, /🅿️/);
+    dom.window.close();
+});
+
+test('with Pocket Management on, the pocket dropdown lists managed pockets, then pockets only this month uses', async () => {
+    const { dom, calls } = await setupPage({
+        pockets: [
+            { id: 'p1', name: 'Bandung', emoji: '🏠', status: 'Active' },
+            { id: 'p2', name: 'Kwintals W1', emoji: '1️⃣', status: 'Active' }
+        ],
+        transactions: [
+            { _id: 'a', expenseDate: '2027-03-02', type: 'Eat', pocket: 'Kwintals W1', amount: 1000, ngapain: 'Lunch' },
+            { _id: 'b', expenseDate: '2027-03-01', type: 'Eat', pocket: 'Old Pocket', amount: 2000, ngapain: 'Archived pocket spend' }
+        ]
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    const { document } = dom.window;
+
+    assert.ok(calls.some(call => call.url === '/api/pockets'));
+    const labels = [...document.querySelectorAll('#pocketFilter option')].map(option => option.textContent);
+    assert.deepEqual(labels, ['All pockets', '🏠 Bandung', '1️⃣ Kwintals W1', 'Old Pocket']);
+
+    choose(dom, 'pocketFilter', 'Old Pocket');
+    assert.deepEqual(rowNotes(dom), ['Archived pocket spend']);
+    dom.window.close();
+});
+
+test('without the management flags, the dropdowns keep the built-in lists and skip the definition APIs', async () => {
+    const { dom, calls } = await setupPage();
+    const { document } = dom.window;
+
+    assert.equal(calls.some(call => call.url === '/api/pockets' || call.url === '/api/expense-types'), false);
+    assert.ok(document.querySelector('#pocketFilter option[value="Sedeqah"]'));
+    assert.ok(document.querySelector('#typeFilter option[value="Medicine"]'));
     dom.window.close();
 });
 
@@ -252,7 +299,7 @@ test('search combines with the type filter, and Escape clears it', async () => {
     const { dom } = await setupPage({ transactions: searchTransactions });
     const { document } = dom.window;
 
-    document.querySelector('#filterPills [data-type="Eat"]').click();
+    choose(dom, 'typeFilter', 'Eat');
     await search(dom, 'galon');
     assert.deepEqual(rowNotes(dom), []);
     assert.match(document.getElementById('transactionList').textContent, /No matches for “galon” this month/);
